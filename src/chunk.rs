@@ -19,6 +19,8 @@ pub struct Chunk {
 pub struct ChunkData {
     is_active: bool,
     has_spawned_mesh: bool,  
+    needs_rebuild: bool, 
+    
     chunk_state: ChunkState 
 }
 
@@ -200,7 +202,8 @@ pub fn activate_chunk_at_coords(
             ChunkData {
                is_active: true,
                chunk_state: ChunkState::PENDING,
-               has_spawned_mesh: false 
+               has_spawned_mesh: false ,
+               needs_rebuild: true 
             });
         
     }
@@ -209,6 +212,9 @@ pub fn activate_chunk_at_coords(
     
 }
 
+
+ // if height_map_data is ever edited, remember that the chunks which render those datapoints need to be flagged as needing re-render !
+             
 pub fn build_active_terrain_chunks(
     mut commands: Commands, 
     mut terrain_query: Query<(Entity, &TerrainConfig,&mut TerrainData)>,
@@ -217,7 +223,7 @@ pub fn build_active_terrain_chunks(
     asset_server: Res<AssetServer>,
     
     //assets -- temp 
-      images: Res<Assets<Image>>,
+    images: Res<Assets<Image>>,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
     
@@ -249,8 +255,8 @@ pub fn build_active_terrain_chunks(
             if !chunk_data.has_spawned_mesh {
                 chunk_data.has_spawned_mesh = true;
                 
-               let chunk_rows = terrain_config.chunk_rows;
-               let terrain_dimensions = terrain_config.terrain_dimensions;
+              let chunk_rows = terrain_config.chunk_rows;
+              let terrain_dimensions = terrain_config.terrain_dimensions;
                 
                //build the meshes !!!
               let chunk_coords = ChunkCoords::from_chunk_id(chunk_id.clone(), chunk_rows);
@@ -261,13 +267,16 @@ pub fn build_active_terrain_chunks(
               let height_map_subsection_pct = chunk_coords.get_heightmap_subsection_bounds_pct(chunk_rows);
                //sample me and build triangle data !! 
               let height_map_data =  height_map_data.as_ref().unwrap();
+              
+              println!("subsection pct {:?}", height_map_subsection_pct);
+              
+             
               let pre_mesh = PreMesh::from_heightmap_subsection( height_map_data, height_map_subsection_pct  );   //need to add chunk coords.. 
               
               let mesh = pre_mesh.build();
               
-              let sample_mesh:Mesh = shape::Plane::from_size( chunk_dimensions.x ).into();
-        
-              
+            //  let sample_mesh:Mesh = shape::Plane::from_size( chunk_dimensions.x ).into();
+         
               let terrain_mesh_handle = meshes.add( mesh );
               let terrain_material_handle = materials.add(Color::rgb(0.3, 0.5, 0.3).into());
               

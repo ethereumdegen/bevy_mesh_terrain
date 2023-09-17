@@ -28,7 +28,7 @@ impl Default for TerrainConfig {
            // chunk_width: 64.0 ,
             terrain_dimensions: Vec2::new(1024.0,1024.0),
             chunk_rows: 64 ,
-            render_distance: 400.0, 
+            render_distance: 800.0, 
         }
     }
 }

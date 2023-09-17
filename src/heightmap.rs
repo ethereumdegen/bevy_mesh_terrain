@@ -5,7 +5,8 @@ https://github.com/norman784/gaiku/blob/master/crates/gaiku_baker_heightmap/src/
 */
 
 use bevy::{prelude::*, render::render_resource::TextureFormat};
- use   thiserror::Error;
+use thiserror::Error;
+
  
 
 #[derive(Error,Debug)]
@@ -19,7 +20,8 @@ pub type HeightMapU16 = Vec<Vec<u16>>;
  
 
 pub trait HeightMap {
-    fn load_from_image( image: &Image ) ->   Result<Box<Self>,HeightMapError>  ;
+    fn load_from_image( image: &Image ) ->   Result<Box<Self>,HeightMapError>  ; 
+      
 }
  
 
@@ -54,5 +56,16 @@ impl HeightMap for HeightMapU16 {
        Ok(Box::new(  height_map  ) )
         
     }
+    
+    /*
+      fn to_collider_heightmap(&self) -> HeightField {
+        
+         Collider::heightfield(
+                    heightmap.heightmap.clone(), 
+                    heightmap.scale.clone()            
+                    )
+                    
+    }*/
+    
 }
   

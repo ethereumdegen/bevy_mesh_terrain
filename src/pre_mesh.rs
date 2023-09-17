@@ -24,21 +24,24 @@ impl PreMesh {
         }
     }
 
-    fn add_triangle(&mut self, positions: [[f32; 3]; 3]) {
+    fn add_triangle(&mut self, positions: [[f32; 3]; 3], uvs: [[f32; 2]; 3]) {
         // Add vertices and indices
         for psn in &positions {
-            println!("psn {:?}", psn);
+         //   println!("psn {:?}", psn);
             self.positions.push(*psn);
         }
         let start_idx = self.positions.len() as u32 - 3;
         self.indices.extend (&[start_idx, start_idx + 1, start_idx + 2]);   
         
-        self.normals.extend(   [ [0., 1., 0.] ,[0., 1., 0.], [0., 1., 0.]  ] );
-        self.uvs.extend([  [0., 0.], [0., 0.], [0., 0.]  ]) ; 
+        //stubbed in for now ... 
+        let normal = compute_normal(positions[0], positions[1], positions[2]);
+        self.normals.extend([normal, normal, normal]);
+        
+        
+        self.uvs.extend( uvs ) ; 
     }
     
-    
-    
+     
     
     pub fn build(self) -> Mesh{ 
             
@@ -53,22 +56,28 @@ impl PreMesh {
     
     pub fn from_heightmap_subsection( 
           heightmap: &HeightMapU16,
-          bounds_pct: [ [f32 ; 2]  ;2 ], 
+          bounds_pct: [ [f32 ; 2]  ;2 ],   //must be between 0 and 1 
         
           ) -> Self {
         
         let mut premesh = Self::new();
           
         let height_scale = 0.004; // Adjust as needed
-        let width = heightmap.len();
-        let height = heightmap[0].len();
+        let width = heightmap.len() - 1;
+        let height = heightmap[0].len() - 1;
           
         let start_bound = [ (width as f32 * bounds_pct[0][0]) as usize, (height as f32 * bounds_pct[0][1]) as usize  ];
         let end_bound = [ (width as f32 * bounds_pct[1][0]) as usize, (height as f32 * bounds_pct[1][1]) as usize  ];
           
+           //let heightmap_x_max = width - 1;
+           //let heightmap_y_max = height- 1;
+          
+          
          
            for x in start_bound[0]..end_bound[0] - 0 {
                 for y in start_bound[1]..end_bound[1] - 0 {
+                    
+                    //the entire chunk itself gets transformed laterally in the scene so we want the vertices to start at 0,0 at the chunk origin 
                     let fx = (x - start_bound[0]) as f32;
                     let fz =  (y - start_bound[1]) as f32; 
         
@@ -76,37 +85,26 @@ impl PreMesh {
                     let lf = heightmap[x][y + 1] as f32 * height_scale;
                     let rb = heightmap[x + 1][y] as f32 * height_scale;
                     let rf = heightmap[x + 1][y + 1] as f32 * height_scale;
+                                        
+                    let uv_lb = compute_uv(fx, fz, bounds_pct);
+                    let uv_rb = compute_uv(fx + 1.0, fz, bounds_pct);
+                    let uv_rf = compute_uv(fx + 1.0, fz + 1.0, bounds_pct);
+                    let uv_lf = compute_uv(fx, fz + 1.0, bounds_pct);
                     
-                    println!("sampled: {} {} {} {} ", lb,lf,rb,rf);
+                    
+              //      println!("sampled: {} {} {} {} ", lb,lf,rb,rf);
         
                     let left_back = [fx, lb, fz];
                     let right_back = [fx + 1.0, rb, fz];
                     let right_front = [fx + 1.0, rf, fz + 1.0];
                     let left_front = [fx, lf, fz + 1.0];
         
-                    premesh.add_triangle([left_front, right_back, left_back]);
-                    premesh.add_triangle([right_front, right_back, left_front]);
+                    premesh.add_triangle([left_front, right_back, left_back], [uv_lf, uv_rb, uv_lb]);
+                    premesh.add_triangle([right_front, right_back, left_front], [uv_rf, uv_rb, uv_lf]);
                 }
             }
             
-         /*
-        for x in 0..width - 1 {
-        for y in 0..height - 1 {
-                // Vertex indices
-                let lb = x * height + y;
-                let rb = (x + 1) * height + y;
-                let lf = x * height + (y + 1);
-                let rf = (x + 1) * height + (y + 1);
-    
-                // Add two triangles
-             //   premesh.indices.extend(&[lb as u32, rb as u32, lf as u32]);
-             //   premesh.indices.extend(&[lf as u32, rb as u32, rf as u32]);
-    
-                // TODO: Compute normals using cross product method and push to normals vector
-            }
-        }
-         */
-        
+       
  
 
         
@@ -117,92 +115,31 @@ impl PreMesh {
     
 }
  
- /*
-impl From<&HeightMapU16> for PreMesh {
-    
-    fn from( heightmap: &HeightMapU16 ) -> Self {
-       let mut premesh = Self::new();
-          
-        let height_scale = 0.1; // Adjust as needed
-        let width = heightmap.len();
-        let height = heightmap[0].len();
-          
-          // Calculate positions and UVs
-       /* for x in 0..width {
-            for y in 0..height {
-                let h = heightmap[x][y] as f32 * height_scale;
-                premesh.positions.push([x as f32, h, y as f32]);
-                premesh.uvs.push([x as f32 / (width as f32 - 1.0), y as f32 / (height as f32 - 1.0)]);
-            }
-        }*/
-         
-           for x in 0..heightmap.len() - 1 {
-                for y in 0..heightmap[x].len() - 1 {
-                    let fx = x as f32;
-                    let fz = y as f32; 
-        
-                    let lb = heightmap[x][y] as f32 * height_scale;
-                    let lf = heightmap[x][y + 1] as f32 * height_scale;
-                    let rb = heightmap[x + 1][y] as f32 * height_scale;
-                    let rf = heightmap[x + 1][y + 1] as f32 * height_scale;
-        
-                    let left_back = [fx, lb, fz];
-                    let right_back = [fx + 1.0, rb, fz];
-                    let right_front = [fx + 1.0, rf, fz + 1.0];
-                    let left_front = [fx, lf, fz + 1.0];
-        
-                    premesh.add_triangle([left_front, right_back, left_back]);
-                    premesh.add_triangle([right_front, right_back, left_front]);
-                }
-            }
-            
-         
-        for x in 0..width - 1 {
-        for y in 0..height - 1 {
-                // Vertex indices
-                let lb = x * height + y;
-                let rb = (x + 1) * height + y;
-                let lf = x * height + (y + 1);
-                let rf = (x + 1) * height + (y + 1);
-    
-                // Add two triangles
-             //   premesh.indices.extend(&[lb as u32, rb as u32, lf as u32]);
-             //   premesh.indices.extend(&[lf as u32, rb as u32, rf as u32]);
-    
-                // TODO: Compute normals using cross product method and push to normals vector
-            }
-        }
-         
-            
-        /*
-            for x in 0..heightmap.len() - 1 {
-                for y in 0..heightmap[x].len() - 1 {
-                    let fx = x as f32;
-                    let fz = y as f32;
-                    let height_scale = 0.1; // You can adjust this as needed
-        
-                    let lb = heightmap[x][y] as f32 * height_scale;
-                    let lf = heightmap[x][y + 1] as f32 * height_scale;
-                    let rb = heightmap[x + 1][y] as f32 * height_scale;
-                    let rf = heightmap[x + 1][y + 1] as f32 * height_scale;
-        
-                    let left_back = [fx, lb, fz];
-                    let right_back = [fx + 1.0, rb, fz];
-                    let right_front = [fx + 1.0, rf, fz + 1.0];
-                    let left_front = [fx, lf, fz + 1.0];
-        
-                    store.add_triangle([left_front, right_back, left_back]);
-                    store.add_triangle([right_front, right_back, left_front]);
-                }
-            }
-        
-            store*/
  
+ fn compute_normal(v0: [f32; 3], v1: [f32; 3], v2: [f32; 3]) -> [f32; 3] {
+    let edge1 = [
+        v1[0] - v0[0],
+        v1[1] - v0[1],
+        v1[2] - v0[2]
+    ];
+    let edge2 = [
+        v2[0] - v0[0],
+        v2[1] - v0[1],
+        v2[2] - v0[2]
+    ];
 
-        
-        premesh    
-    }
-    
-    
+    // Cross product
+    [
+        edge1[1] * edge2[2] - edge1[2] * edge2[1],
+        edge1[2] * edge2[0] - edge1[0] * edge2[2],
+        edge1[0] * edge2[1] - edge1[1] * edge2[0]
+    ]
 }
-*/
+ 
+ fn compute_uv(x: f32, y: f32, bounds: [[f32; 2]; 2]) -> [f32; 2] {
+    [
+        (x - bounds[0][0]) / (bounds[1][0] - bounds[0][0]),
+        (y - bounds[0][1]) / (bounds[1][1] - bounds[0][1])
+    ]
+}
+  

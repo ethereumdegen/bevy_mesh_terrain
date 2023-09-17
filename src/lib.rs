@@ -9,6 +9,7 @@ pub mod terrain;
 pub mod chunk;
 pub mod heightmap;
 pub mod pre_mesh;
+pub mod collider; 
      
 pub struct TerrainMeshPlugin {
     

@@ -1,6 +1,6 @@
 //! A simple 3D scene with light shining over a cube sitting on a plane.
 
-use bevy::{prelude::*, utils::HashMap};
+use bevy::{prelude::*, utils::HashMap, input::mouse::MouseMotion};
 use bevy_mesh_terrain::{TerrainMeshPlugin, terrain::{TerrainConfig, TerrainData, TerrainViewer}};
 
 
@@ -11,11 +11,11 @@ fn main() {
     App::new()
         .add_plugins(DefaultPlugins) 
          
-         .add_plugins( TerrainMeshPlugin::default() )
+        .add_plugins( TerrainMeshPlugin::default() )
           
         .add_systems(Startup, setup) 
         
-      
+        .add_systems(Update, update_camera_look ) 
        
         
         .run();
@@ -41,6 +41,7 @@ fn setup(
     .insert(terrain_data) 
     ;
     
+    
   /*   commands.spawn(  PbrBundle {
         mesh: meshes.add(shape::Plane::from_size(5.0).into()),
         material: materials.add(Color::rgb(0.3, 0.5, 0.3).into()),
@@ -56,7 +57,10 @@ fn setup(
     //see https://github.com/clynamen/bevy_terrain/blob/0.0.1/src/main.rs
     
      
-    
+    commands.spawn(DirectionalLightBundle {
+        directional_light: DirectionalLight::default(),
+        ..default()
+    });
     // light
     commands.spawn(PointLightBundle {
         point_light: PointLight {
@@ -64,12 +68,12 @@ fn setup(
             shadows_enabled: true,
             ..default()
         },
-        transform: Transform::from_xyz(4.0, 8.0, 4.0),
+        transform: Transform::from_xyz(4.0, 800.0, 4.0),
         ..default()
     });
     // camera
     commands.spawn(Camera3dBundle {
-        transform: Transform::from_xyz(20.0, 62.5, 20.0).looking_at(Vec3::ZERO, Vec3::Y),
+        transform: Transform::from_xyz(20.0, 162.5, 20.0).looking_at(Vec3::new(900.0,0.0,900.0), Vec3::Y),
         ..default()
     })
     .insert(TerrainViewer::default());
@@ -80,7 +84,38 @@ fn setup(
 
  
  
+fn update_camera_look(
+    mut event_reader:   EventReader<MouseMotion>  ,
+    mouse_input:  Res< Input<MouseButton> > ,
+    mut query: Query<(&mut Transform, &Camera3d)>,
+    
+    
+){
+    let MOUSE_SENSITIVITY = 2.0;
+     
+     if !mouse_input.pressed(MouseButton::Left) {
+        return;
+    }
+    
+      
+      // Accumulate mouse delta
+    let mut delta: Vec2 = Vec2::ZERO;
+    for event in event_reader.iter() {
+        delta += event.delta;
+    }
 
-//loop through all of the active chunks that exist to maybe deactive them if client is too far away 
-
-
+    // Apply to each camera with the CameraTag
+    for (mut transform, _) in query.iter_mut() {
+       // let rotation = transform.rotation;
+      
+        let (mut yaw, mut pitch, _roll) = transform.rotation.to_euler(EulerRot::YXZ);
+       
+        yaw -= delta.x / 180.0   * MOUSE_SENSITIVITY  ;
+        pitch -= delta.y / 180.0   * MOUSE_SENSITIVITY;
+        pitch = pitch .clamp(-std::f32::consts::PI / 2.0, std::f32::consts::PI / 2.0) ;
+   
+        transform.rotation = Quat::from_euler(EulerRot::YXZ, yaw, pitch, 0.0);
+       
+    }
+    
+}
