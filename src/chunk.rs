@@ -10,6 +10,7 @@ use crate::{terrain::{TerrainConfig, TerrainViewer, TerrainData}, pre_mesh::PreM
 #[derive(Component,Default)]
 pub struct Chunk {
     chunk_id: u32 
+    
 }
 
  
@@ -31,11 +32,12 @@ enum ChunkState{
 pub trait ChunkCoordinates {
     fn get_chunk_index(&self, chunk_rows: u32) -> u32; 
     fn from_location( location: Vec3 ,  terrain_origin: Vec3 , terrain_dimensions: Vec2 , chunk_rows: u32 ) -> Option<UVec2> ;
-
-    
+ 
     
     fn from_chunk_id(chunk_id:u32,chunk_rows:u32) -> Self;
     fn get_location_offset(&self,  chunk_dimensions: Vec2 ) -> Vec3; 
+    
+    fn get_heightmap_subsection_bounds_pct(&self, chunk_rows:u32 ) -> [ [f32 ; 2]  ;2 ] ; 
 }
 
 
@@ -68,7 +70,8 @@ impl ChunkCoordinates for  ChunkCoords {
         
     }  
         
-   fn from_location(from_location: Vec3, terrain_origin: Vec3, terrain_dimensions: Vec2, chunk_rows: u32) -> Option<UVec2> {
+        
+    fn from_location(from_location: Vec3, terrain_origin: Vec3, terrain_dimensions: Vec2, chunk_rows: u32) -> Option<UVec2> {
         let location_delta = from_location - terrain_origin;
 
         //let terrain_min = terrain_origin;
@@ -87,6 +90,24 @@ impl ChunkCoordinates for  ChunkCoords {
 
         None
     }
+    
+     fn get_heightmap_subsection_bounds_pct(
+         &self,
+         chunk_rows: u32
+         
+         ) -> [ [f32 ; 2]  ;2 ] {
+        let chunk_x = self.x;
+        let chunk_y = self.y;
+        
+        let pct_per_row = 1.0 / chunk_rows as f32;  
+        
+        return [
+            [ chunk_x as f32 * pct_per_row , chunk_y as f32 * pct_per_row ],  //start corner x and y 
+            [(chunk_x+1) as f32 * pct_per_row , (chunk_y+1) as f32 * pct_per_row]    //end corner x and y 
+        ]
+    }
+    
+    
 }
 
   
@@ -237,17 +258,17 @@ pub fn build_active_terrain_chunks(
                   
               let chunk_location_offset:Vec3 = chunk_coords.get_location_offset( chunk_dimensions ) ; 
                
-               
+              let height_map_subsection_pct = chunk_coords.get_heightmap_subsection_bounds_pct(chunk_rows);
                //sample me and build triangle data !! 
               let height_map_data =  height_map_data.as_ref().unwrap();
-              let pre_mesh = PreMesh::from( height_map_data );
+              let pre_mesh = PreMesh::from_heightmap_subsection( height_map_data, height_map_subsection_pct  );   //need to add chunk coords.. 
               
               let mesh = pre_mesh.build();
               
               let sample_mesh:Mesh = shape::Plane::from_size( chunk_dimensions.x ).into();
         
               
-              let terrain_mesh_handle = meshes.add( sample_mesh );
+              let terrain_mesh_handle = meshes.add( mesh );
               let terrain_material_handle = materials.add(Color::rgb(0.3, 0.5, 0.3).into());
               
               

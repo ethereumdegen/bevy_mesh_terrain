@@ -14,7 +14,8 @@ pub struct TerrainViewer {
 #[derive(Component)]
 pub struct TerrainConfig {
     
-    pub terrain_dimensions: Vec2,
+    pub terrain_dimensions: Vec2,  
+    
   //  pub chunk_width: f32,
     pub chunk_rows: u32,
     
@@ -39,7 +40,7 @@ impl TerrainConfig {
         let chunk_dimension_z = self.terrain_dimensions.y / self.chunk_rows as f32;
          
         
-        Vec2::new(chunk_dimension_x  , chunk_dimension_z  ) 
+        Vec2::new(chunk_dimension_x, chunk_dimension_z) 
         
     }  
     
