@@ -36,3 +36,12 @@ Currently supports bevy 0.11
 - add texture support with splatting for grass/dirt/ etc  (upgrade shader material code) 
 - add collision using parry (should be simple since heightmap is already the exact same format of parry heightfield ! )
 - add various LOD levels so far-away chunks will render but at a lower sampling rate 
+
+
+
+### Initial Thoughts 
+
+1. the vertex function of the shader can be extremely vanilla and simple.  LODs could be based on the actual chunk mesh data instead of computing LOD in the shader. 
+ However, we should experiment with doing LOD in the shader (?) so we dont have to rebuild chunks as often. 
+ 
+2. the frag function of the shader needs to integrate splatting 

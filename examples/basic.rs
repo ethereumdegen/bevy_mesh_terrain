@@ -34,27 +34,13 @@ fn setup(
     let mut terrain_data = TerrainData::default();
     terrain_data.add_height_map_image(   height_map  ) ;
     
-    // plane
+   
     commands.spawn(VisibilityBundle::default() ) 
     .insert( TransformBundle::default() )
     .insert(TerrainConfig::default())
     .insert(terrain_data) 
     ;
-    
-    
-  /*   commands.spawn(  PbrBundle {
-        mesh: meshes.add(shape::Plane::from_size(5.0).into()),
-        material: materials.add(Color::rgb(0.3, 0.5, 0.3).into()),
-        ..default()
-    } ) 
-    
-    ;*/
      
-    
-    // cube
-   
-    
-    //see https://github.com/clynamen/bevy_terrain/blob/0.0.1/src/main.rs
     
      
     commands.spawn(DirectionalLightBundle {
