@@ -111,11 +111,24 @@ pub fn update_terrain_data(
                     None => {continue} 
                 };
                 
+                let loaded_heightmap_data_result =  HeightMapU16::load_from_image( height_map_image) ;
+                   
+                match loaded_heightmap_data_result {
+                    Ok( loaded_heightmap_data ) => {
+                         println!("loaded height map data from image");
+                       //take out of box 
+                            terrain_data.height_map_data = Some( *loaded_heightmap_data ); 
+                 
+                    },
+                    Err(e) => {
+                        
+                        println!("{}",e);
+                    }
                     
+                }
+                   
             
-                println!("loading height map data from image");
-                terrain_data.height_map_data = Some(HeightMapU16::load_from_image( height_map_image)); 
-                
+               
                 //we can let go of the height map image handle now that we loaded our heightmap data from it 
                 terrain_data.height_map_image_handle = None;
          }

@@ -675,8 +675,10 @@ dependencies = [
 name = "bevy_mesh_terrain"
 version = "0.1.0"
 dependencies = [
+ "anyhow",
  "bevy",
  "image",
+ "thiserror",
 ]
 
 [[package]]

@@ -215,11 +215,13 @@ pub fn build_active_terrain_chunks(
           }
               
         let height_map_image:&Image = images.get(height_map_handle).unwrap();*/
-        let height_map_data = &terrain_data.height_map_data;
+        let height_map_data = &terrain_data.height_map_data.clone();
               
         if height_map_data.is_none() {
             continue; 
         }
+              
+       
               
         for (chunk_id , chunk_data) in terrain_data.chunks.iter_mut(){
             
@@ -235,6 +237,11 @@ pub fn build_active_terrain_chunks(
                   
               let chunk_location_offset:Vec3 = chunk_coords.get_location_offset( chunk_dimensions ) ; 
                
+               
+               //sample me and build triangle data !! 
+              let height_map_data =  height_map_data.as_ref().unwrap();
+             
+        
               
               let terrain_mesh_handle = meshes.add(shape::Plane::from_size( chunk_dimensions.x ).into());
               let terrain_material_handle = materials.add(Color::rgb(0.3, 0.5, 0.3).into());

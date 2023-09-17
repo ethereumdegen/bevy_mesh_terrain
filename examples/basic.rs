@@ -32,7 +32,7 @@ fn setup(
     let height_map = asset_server.load("terrain/source/height.png");
      
     let mut terrain_data = TerrainData::default();
-    terrain_data.height_map = height_map ;
+    terrain_data.add_height_map_image(   height_map  ) ;
     
     // plane
     commands.spawn(VisibilityBundle::default() ) 
