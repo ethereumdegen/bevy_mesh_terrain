@@ -22,7 +22,10 @@ fn fragment(
     mesh: MeshVertexOutput,
 ) -> @location(0) vec4<f32> {
     
+    //ultimately need to load this from some sort of binding -- like a texture sample.  
     let texture_splat_index = 0; 
+    
+    //also need to make sure the mesh UVs make sense ... 
     
     return material.color * textureSample(base_color_texture, base_color_sampler, mesh.uv , texture_splat_index);
 }
