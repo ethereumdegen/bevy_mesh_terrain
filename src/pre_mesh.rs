@@ -31,7 +31,7 @@ impl PreMesh {
             self.positions.push(*psn);
         }
         let start_idx = self.positions.len() as u32 - 3;
-        self.indices.extend (&[start_idx, start_idx + 1, start_idx + 2]);  //if 0 1 2 then may be upside down 
+        self.indices.extend (&[start_idx, start_idx + 1, start_idx + 2]);   
         
         self.normals.extend(   [ [0., 1., 0.] ,[0., 1., 0.], [0., 1., 0.]  ] );
         self.uvs.extend([  [0., 0.], [0., 0.], [0., 0.]  ]) ; 
@@ -59,17 +59,16 @@ impl PreMesh {
         
         let mut premesh = Self::new();
           
-        let height_scale = 0.001; // Adjust as needed
+        let height_scale = 0.004; // Adjust as needed
         let width = heightmap.len();
         let height = heightmap[0].len();
           
         let start_bound = [ (width as f32 * bounds_pct[0][0]) as usize, (height as f32 * bounds_pct[0][1]) as usize  ];
         let end_bound = [ (width as f32 * bounds_pct[1][0]) as usize, (height as f32 * bounds_pct[1][1]) as usize  ];
           
-        
          
-           for x in start_bound[0]..end_bound[0] - 1 {
-                for y in start_bound[1]..end_bound[1] - 1 {
+           for x in start_bound[0]..end_bound[0] - 0 {
+                for y in start_bound[1]..end_bound[1] - 0 {
                     let fx = (x - start_bound[0]) as f32;
                     let fz =  (y - start_bound[1]) as f32; 
         
