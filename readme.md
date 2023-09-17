@@ -23,7 +23,10 @@
  
  3. The plugin systems automatically spawn 'chunk' entities by sampling the heightfield data.  Chunks are only built and spawned when they are near the TerrainView component. 
  
- 
+
+## Bevy versions
+
+Currently supports bevy 0.11 
  
 
 ### Ideal Design
