@@ -40,6 +40,8 @@ Currently supports bevy 0.11
 
 
 ### Initial Thoughts 
+see https://github.com/bevyengine/bevy/blob/main/examples/shader/shader_material.rs
+
 
 1. the vertex function of the shader can be extremely vanilla and simple.  LODs could be based on the actual chunk mesh data instead of computing LOD in the shader. 
  However, we should experiment with doing LOD in the shader (?) so we dont have to rebuild chunks as often. 

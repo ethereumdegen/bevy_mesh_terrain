@@ -2,7 +2,7 @@
 
 use bevy::{   prelude::*, asset::LoadState};
 
-use crate::{terrain::{TerrainConfig, TerrainViewer, TerrainData}, pre_mesh::PreMesh};
+use crate::{terrain::{TerrainConfig, TerrainViewer, TerrainData}, pre_mesh::PreMesh, terrain_material::TerrainMaterial};
 
 
 
@@ -213,6 +213,10 @@ pub fn activate_chunk_at_coords(
 }
 
 
+
+pub type TerrainPbrBundle = MaterialMeshBundle<TerrainMaterial>;
+ 
+
  // if height_map_data is ever edited, remember that the chunks which render those datapoints need to be flagged as needing re-render !
              
 pub fn build_active_terrain_chunks(
@@ -227,6 +231,7 @@ pub fn build_active_terrain_chunks(
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
     
+    mut terrain_materials: ResMut<Assets<TerrainMaterial>>,
     
 ){
     
@@ -248,7 +253,14 @@ pub fn build_active_terrain_chunks(
             continue; 
         }
               
-       
+        let terrain_material_handle_option = &terrain_data.terrain_material_handle.clone() ; 
+              
+        if terrain_material_handle_option.is_none() {
+            println!("no terrain material yet.. ");
+            continue; 
+        }
+              
+        let terrain_material_handle = terrain_material_handle_option.as_ref().unwrap();
               
         for (chunk_id , chunk_data) in terrain_data.chunks.iter_mut(){
             
@@ -270,7 +282,8 @@ pub fn build_active_terrain_chunks(
               
               println!("subsection pct {:?}", height_map_subsection_pct);
               
-             
+               
+            
               let pre_mesh = PreMesh::from_heightmap_subsection( height_map_data, height_map_subsection_pct  );   //need to add chunk coords.. 
               
               let mesh = pre_mesh.build();
@@ -278,13 +291,13 @@ pub fn build_active_terrain_chunks(
             //  let sample_mesh:Mesh = shape::Plane::from_size( chunk_dimensions.x ).into();
          
               let terrain_mesh_handle = meshes.add( mesh );
-              let terrain_material_handle = materials.add(Color::rgb(0.3, 0.5, 0.3).into());
-              
-              
+               
+              let sample_material_handle = materials.add(Color::rgb(0.3, 0.5, 0.3).into());
+             
               let child_mesh =  commands.spawn(
-                     PbrBundle {
+                     TerrainPbrBundle {
                         mesh: terrain_mesh_handle,
-                        material: terrain_material_handle,
+                        material: terrain_material_handle.clone(),
                         transform: Transform::from_xyz( chunk_location_offset.x,chunk_location_offset.y,chunk_location_offset.z ) ,
                         ..default()
                         } 

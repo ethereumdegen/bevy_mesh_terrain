@@ -1,5 +1,8 @@
+use bevy::render::render_resource::{SamplerDescriptor, AddressMode, FilterMode};
+use bevy::render::texture::ImageSampler;
 use bevy::{   prelude::*, utils::HashMap, render::render_resource::Texture, asset::LoadState};
 
+use crate::terrain_material::TerrainMaterial;
 use crate::{chunk::ChunkData, heightmap::HeightMapU16};
      
  use crate::heightmap::HeightMap;
@@ -63,7 +66,15 @@ pub struct TerrainData {
     //need to add asset handles here for the heightmap image and texture image !!! 
     
      
-    pub height_map_data: Option<HeightMapU16> 
+    pub height_map_data: Option<HeightMapU16>,
+    
+    
+    
+    texture_image_handle: Option<Handle<Image>>,
+    texture_image_sections: u32, 
+    
+   // texture_image_finalized: bool , 
+    pub terrain_material_handle: Option<Handle<TerrainMaterial> >
 }
  
 impl TerrainData{
@@ -72,29 +83,29 @@ impl TerrainData{
         self.height_map_image_handle = Some(handle.clone()); //strong clone 
     }
     
+     pub fn add_array_texture_image(&mut self, handle: Handle<Image>, sections: u32  ){
+        self.texture_image_handle = Some(handle.clone()); //strong clone 
+        self.texture_image_sections = sections; 
+    }
+    
 }
  
  //finalizes loading of height map by looking for image handle and applying it to the height map data 
-pub fn update_terrain_data(  
+pub fn load_height_map_data_from_image(  
     
-    mut terrain_query: Query<(Entity, &TerrainConfig,&mut TerrainData)>,
+    mut terrain_query: Query<(Entity, &TerrainConfig,&mut TerrainData)>, 
+    asset_server: Res<AssetServer>,  
+    images: Res<Assets<Image>>, 
     
-    //terrain_viewer: Query<&Transform, With<TerrainViewer>>
-    asset_server: Res<AssetServer>,
-    
-    //assets -- temp 
-    images: Res<Assets<Image>>,
-  
-    
-){
-    
+){ 
     
     for (terrain_entity, terrain_config, mut terrain_data) in terrain_query.iter_mut() { 
         
         
         let height_map_data_is_some = terrain_data.height_map_data.is_some(); 
          
-         if !height_map_data_is_some {   
+         //try to load the height map data from the height_map_image_handle 
+         if !height_map_data_is_some {
                 
                 //try to get the loaded height map image from its handle via the asset server - must exist and be loaded 
                 let height_map_image:&Image = match &terrain_data.height_map_image_handle {
@@ -132,10 +143,71 @@ pub fn update_terrain_data(
                
                 //we can let go of the height map image handle now that we loaded our heightmap data from it 
                 terrain_data.height_map_image_handle = None;
-         }
+         } 
          
         
         
     }
 }
- 
+
+
+//consider building a custom loader for this , not  Image 
+pub fn load_terrain_texture_from_image( 
+    mut terrain_query: Query<(Entity, &TerrainConfig,&mut TerrainData)>, 
+    asset_server: Res<AssetServer>,  
+    mut images: ResMut<Assets<Image>>  , 
+    
+    mut materials: ResMut<Assets<TerrainMaterial>>,
+){
+       for (terrain_entity, terrain_config, mut terrain_data) in terrain_query.iter_mut() { 
+  
+           let texture_image_finalized_is_some = terrain_data.terrain_material_handle.is_some(); 
+         
+         //try to load the height map data from the height_map_image_handle 
+            if !texture_image_finalized_is_some {
+                 
+                let mut texture_image:&mut Image = match &terrain_data.texture_image_handle {
+                    Some(texture_image_handle) => {
+                        
+                        let texture_image_loaded = asset_server.get_load_state( texture_image_handle )  ;
+                    
+                        if texture_image_loaded != LoadState::Loaded  {
+                            println!("terrain texture not yet loaded");
+                            continue;
+                        }  
+                        
+                        images.get_mut(texture_image_handle).unwrap()
+                    }
+                    None => {continue} 
+                };
+                
+                
+                   texture_image.sampler_descriptor = ImageSampler::Descriptor(SamplerDescriptor {
+                        label: None,
+                        address_mode_u: AddressMode::Repeat,
+                        address_mode_v: AddressMode::Repeat,
+                        address_mode_w: AddressMode::Repeat,
+                        mag_filter: FilterMode::Linear,
+                        min_filter: FilterMode::Linear,
+                        mipmap_filter: FilterMode::Linear,
+                        ..default()
+                    });
+                
+                    // Create a new array texture asset from the loaded texture.
+                    let array_layers = terrain_data.texture_image_sections;
+                    
+                    if  array_layers > 1 {
+                         texture_image.reinterpret_stacked_2d_as_array(array_layers);
+                    }
+                   
+                   terrain_data.terrain_material_handle = Some(  materials.add(
+                        TerrainMaterial {
+                                color: Color::WHITE, 
+                                array_texture:  terrain_data.texture_image_handle.clone()  ,
+                            }
+                    ) ); 
+                   println!("terrain image finalized");
+                
+            }
+       }   
+}
