@@ -8,6 +8,7 @@ use terrain::update_terrain_data;
 pub mod terrain;
 pub mod chunk;
 pub mod heightmap;
+pub mod pre_mesh;
      
 pub struct TerrainMeshPlugin {
     

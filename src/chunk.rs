@@ -2,7 +2,7 @@
 
 use bevy::{   prelude::*, asset::LoadState};
 
-use crate::terrain::{TerrainConfig, TerrainViewer, TerrainData};
+use crate::{terrain::{TerrainConfig, TerrainViewer, TerrainData}, pre_mesh::PreMesh};
 
 
 
@@ -240,10 +240,14 @@ pub fn build_active_terrain_chunks(
                
                //sample me and build triangle data !! 
               let height_map_data =  height_map_data.as_ref().unwrap();
-             
+              let pre_mesh = PreMesh::from( height_map_data );
+              
+              let mesh = pre_mesh.build();
+              
+              let sample_mesh:Mesh = shape::Plane::from_size( chunk_dimensions.x ).into();
         
               
-              let terrain_mesh_handle = meshes.add(shape::Plane::from_size( chunk_dimensions.x ).into());
+              let terrain_mesh_handle = meshes.add( sample_mesh );
               let terrain_material_handle = materials.add(Color::rgb(0.3, 0.5, 0.3).into());
               
               
