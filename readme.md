@@ -6,6 +6,10 @@
  You spawn an entity and give it the 'TerrainConfig' and 'TerrainData' components, and then the plugin systems will spawn child entities which are each of the rendered chunks. 
  In this way, it works similarly to a voxel chunking system ( a la minecraft) except using heightfields (2d) instead of voxels (3d). 
  
+
+
+![terrain1](https://github.com/ethereumdegen/bevy_mesh_terrain/assets/6249263/ba21b6ed-3cc1-42fc-b033-801f93304d12)
+
   
  
  
