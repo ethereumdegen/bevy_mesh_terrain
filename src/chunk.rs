@@ -7,12 +7,17 @@ use crate::{terrain::{TerrainConfig, TerrainViewer, TerrainData}, pre_mesh::PreM
 use futures_lite::future;
 
 
+#[derive(Event )]
+pub enum ChunkEvent {
+    ChunkEntitySpawned(Entity)
+} 
+   
+   
+   
 #[derive(Component,Default)]
 pub struct Chunk {
-    chunk_id: u32 
-    
-}
- 
+    chunk_id: u32  
+} 
    
  
 pub struct ChunkData {
@@ -168,8 +173,7 @@ fn calculate_chunk_coords( from_location: Vec3, terrain_origin: Vec3, terrain_di
     
 }
   
-  
-  
+   
   
   
   
@@ -178,7 +182,7 @@ pub fn destroy_terrain_chunks(
     mut chunk_query: Query<(Entity, &mut Chunk, &Parent) > ,
     
     mut terrain_query : Query<(&mut TerrainData,&TerrainConfig, &Transform)> ,
-     terrain_viewer: Query<&Transform, With<TerrainViewer>> 
+    terrain_viewer: Query<&Transform, With<TerrainViewer>> 
 ){
      let viewer  = terrain_viewer.get_single();
         
@@ -440,16 +444,13 @@ pub fn build_active_terrain_chunks(
     mut commands: Commands, 
     mut terrain_query: Query<(Entity, &TerrainConfig,&mut TerrainData)>,
     
-    //terrain_viewer: Query<&Transform, With<TerrainViewer>>
-  //  asset_server: Res<AssetServer>,
     
-    //assets -- temp 
- //   images: Res<Assets<Image>>,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
     
     mut terrain_materials: ResMut<Assets<TerrainMaterial>>,
     
+   
 ){
     
     
@@ -565,6 +566,7 @@ pub fn finish_chunk_build_tasks(
     mut terrain_query: Query<(  &TerrainConfig,&mut TerrainData)>,
     mut terrain_materials: ResMut<Assets<TerrainMaterial>>,
     
+     mut chunk_events: EventWriter<ChunkEvent> ,
 ) {
     
     
@@ -646,8 +648,8 @@ pub fn finish_chunk_build_tasks(
                         commands.entity(old_mesh_entity).despawn();     
                };
                
-               chunk_data.spawned_mesh_entity = Some( child_mesh  ) ;
-         
+              chunk_data.spawned_mesh_entity = Some( child_mesh  ) ;
+              chunk_events.send(  ChunkEvent::ChunkEntitySpawned( child_mesh ) );
             
 
             // Task is complete, so remove task component from entity
