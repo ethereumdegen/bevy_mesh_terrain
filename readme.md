@@ -43,11 +43,4 @@ see https://github.com/bevyengine/bevy/blob/main/examples/shader/shader_material
 
  
  
-
-### Required Upgrades 
-
-Make mesh building occur in a separate thread.  When swapping out a chunk with an LOD with the same chunk with a different LOD,
- do not despawn the chunks mesh until the new one is ready (keep track of the current mesh and the one that is being built)
- 
- https://github.com/bevyengine/bevy/blob/main/examples/async_tasks/async_compute.rs
  

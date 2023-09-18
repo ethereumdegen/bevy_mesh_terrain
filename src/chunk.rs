@@ -1,10 +1,10 @@
 
 
-use bevy::{   prelude::*, asset::LoadState};
+use bevy::{   prelude::*, asset::LoadState, tasks::{Task, AsyncComputeTaskPool}};
 
 use crate::{terrain::{TerrainConfig, TerrainViewer, TerrainData}, pre_mesh::PreMesh, terrain_material::{TerrainMaterial, ChunkMaterialUniforms}};
 
-
+use futures_lite::future;
 
 
 #[derive(Component,Default)]
@@ -12,7 +12,6 @@ pub struct Chunk {
     chunk_id: u32 
     
 }
-
  
    
  
@@ -33,6 +32,23 @@ enum ChunkState{
     FULLY_BUILT,
     BUILDING,   
     PENDING 
+}
+
+
+
+#[derive(Component)]
+pub struct MeshBuilderTask(Task<BuiltChunkMeshData>);
+
+
+pub struct BuiltChunkMeshData {
+    terrain_entity_id: Entity, 
+    
+    chunk_id: u32,
+    chunk_location_offset:Vec3, 
+    
+    mesh:Mesh,
+    chunk_uv: Vec4 
+    
 }
 
 
@@ -342,7 +358,7 @@ pub fn activate_chunk_at_coords(
             
             let existing_lod = chunk_data.lod_level; 
             if lod_level != existing_lod && chunk_data.spawned_mesh_entity.is_some(){
-                need_to_despawn = chunk_data.spawned_mesh_entity;           
+                //need_to_despawn = chunk_data.spawned_mesh_entity;           
                 need_to_spawn = true;
                 
                 
@@ -353,11 +369,11 @@ pub fn activate_chunk_at_coords(
         need_to_spawn = true;    
     }
         
-        
+     /*   
     if let Some(entity) = need_to_despawn { 
          commands.entity(entity).despawn();   
          terrain_data.chunks.remove(  &chunk_index ); 
-    }
+    }*/
         
     if need_to_spawn {
         
@@ -381,7 +397,8 @@ pub type TerrainPbrBundle = MaterialMeshBundle<TerrainMaterial>;
  
 
  // if height_map_data is ever edited, remember that the chunks which render those datapoints need to be flagged as needing re-render !
-             
+// this should use async compute !!! 
+
 pub fn build_active_terrain_chunks(
     mut commands: Commands, 
     mut terrain_query: Query<(Entity, &TerrainConfig,&mut TerrainData)>,
@@ -410,7 +427,7 @@ pub fn build_active_terrain_chunks(
           }
               
         let height_map_image:&Image = images.get(height_map_handle).unwrap();*/
-        let height_map_data = &terrain_data.height_map_data.clone();
+        let height_map_data =  &terrain_data.height_map_data .clone();
               
         if height_map_data.is_none() {
             continue; 
@@ -423,12 +440,12 @@ pub fn build_active_terrain_chunks(
             continue; 
         }
               
-        let array_texture =  terrain_data.get_array_texture_image().clone();
-        let splat_texture =  terrain_data.get_splat_texture_image().clone();
+      //  let array_texture =  terrain_data.get_array_texture_image().clone();
+      //  let splat_texture =  terrain_data.get_splat_texture_image().clone();
               
         let terrain_material_handle = terrain_material_handle_option.as_ref().unwrap();
          
- 
+         let thread_pool = AsyncComputeTaskPool::get();
         
         let terrain_data_chunks = &mut terrain_data.chunks; 
         for (chunk_id , chunk_data) in terrain_data_chunks.iter_mut(){
@@ -447,32 +464,107 @@ pub fn build_active_terrain_chunks(
                
               let height_map_subsection_pct = chunk_coords.get_heightmap_subsection_bounds_pct(chunk_rows);
                //sample me and build triangle data !! 
-              let height_map_data =  height_map_data.as_ref().unwrap();
+               
+               // might use lots of RAM ? idk ..
+               //maybe we subsection first and THEN build the mesh!  oh well... anyways 
+              let height_map_data_cloned =  height_map_data.as_ref().unwrap().clone();
               
              
               
               let lod_level = chunk_data.lod_level;
-            
-              let mesh = PreMesh::from_heightmap_subsection( 
-                  height_map_data, 
-                  lod_level, 
-                  height_map_subsection_pct
-              ).build();   //need to add chunk coords.. 
               
-              
-              
-          
-            let chunk_uv = Vec4::new( //tell the shader how to use the splat map for this chunk  
+               
+               
+              let chunk_uv = Vec4::new( //tell the shader how to use the splat map for this chunk  
                                     height_map_subsection_pct[0][0],
                                     height_map_subsection_pct[0][1],
                                     height_map_subsection_pct[1][0],
                                     height_map_subsection_pct[1][1] );
                                     
+               let chunk_id_clone = chunk_id.clone();
+               
+               let task = thread_pool.spawn(async move {
+                    
+                    
+                    /*
+                    
+                    This could be optimized by not passing in the ENTIRE height map data cloned but only a subsection for this chunk... 
+                    
+                    */
+                    
+                    let mesh = PreMesh::from_heightmap_subsection( 
+                         &height_map_data_cloned, 
+                        lod_level, 
+                        height_map_subsection_pct
+                    ).build(); 
+                    
+                     BuiltChunkMeshData {
+                         chunk_id: chunk_id_clone,
+                         
+                         chunk_location_offset: chunk_location_offset.clone(),
+                         
+                         terrain_entity_id: terrain_entity.clone(),
+                         mesh,
+                         chunk_uv
+                     }
+                });
+
+                // Spawn new entity and add our new task as a component
+                commands.spawn(MeshBuilderTask(task));
+            
+            }                
+        } 
+        
+        
+    }
+    
+}
+
+pub fn finish_chunk_build_tasks(
+    mut commands: Commands,
+    mut chunk_build_tasks: Query<(Entity, &mut MeshBuilderTask)>,
+    
+    mut meshes: ResMut<Assets<Mesh>>,
+    mut terrain_query: Query<(  &TerrainConfig,&mut TerrainData)>,
+    mut terrain_materials: ResMut<Assets<TerrainMaterial>>,
+    
+) {
+    
+    
+    
+    for (entity, mut task) in &mut chunk_build_tasks {
+        if let Some(built_chunk_mesh_data) = future::block_on(future::poll_once(&mut task.0)) {
+            // Add our new PbrBundle of components to our tagged entity
+          
+           
+            let terrain_entity_id = built_chunk_mesh_data.terrain_entity_id;
+               
+            let chunk_uv = built_chunk_mesh_data.chunk_uv;
+            let mesh = built_chunk_mesh_data.mesh; 
+            
+            let chunk_id = built_chunk_mesh_data.chunk_id;
+            let chunk_location_offset = built_chunk_mesh_data.chunk_location_offset;
+            
+            //careful w this unwrap
+            if terrain_query.get_mut(terrain_entity_id).is_ok() == false {continue;}
+            
+            let (terrain_config, mut terrain_data) = terrain_query.get_mut(terrain_entity_id).unwrap(); 
+               
+             
+             
+             let array_texture =  terrain_data.get_array_texture_image().clone();
+             let splat_texture =  terrain_data.get_splat_texture_image().clone();
+                                        
+                                        
+             if terrain_data.chunks.get_mut( &chunk_id ).is_some() == false {continue;}      
+               //careful w unwrap!!! 
+             let chunk_data = &mut terrain_data.chunks.get_mut( &chunk_id ).unwrap();
+                                        
             let chunk_terrain_material:Handle<TerrainMaterial>  =  terrain_materials.add(
                     TerrainMaterial {
                                
                                
-                                  uniforms: ChunkMaterialUniforms{
+                                uniforms: ChunkMaterialUniforms{
                                      color_texture_expansion_factor: 16.0,
                                      chunk_uv 
                                 },
@@ -485,13 +577,17 @@ pub fn build_active_terrain_chunks(
          
               let terrain_mesh_handle = meshes.add( mesh );
                
-              let sample_material_handle = materials.add(Color::rgb(0.3, 0.5, 0.3).into());
+           //   let sample_material_handle = materials.add(Color::rgb(0.3, 0.5, 0.3).into());
              
               let child_mesh =  commands.spawn(
                      TerrainPbrBundle {
                         mesh: terrain_mesh_handle,
                         material: chunk_terrain_material ,
-                        transform: Transform::from_xyz( chunk_location_offset.x,chunk_location_offset.y,chunk_location_offset.z ) ,
+                        transform: Transform::from_xyz( 
+                            chunk_location_offset.x,
+                            chunk_location_offset.y,
+                            chunk_location_offset.z 
+                            ) ,
                         ..default()
                         } 
                     ).insert(  
@@ -500,20 +596,27 @@ pub fn build_active_terrain_chunks(
                         } 
                     ) 
                     .id() ; 
-              
+                    
+             
             
-              let mut terrain_entity_commands  = commands.get_entity(terrain_entity).unwrap();
+              let mut terrain_entity_commands  = commands.get_entity(terrain_entity_id).unwrap();
               terrain_entity_commands.add_child(    child_mesh  );
             
-               chunk_data.chunk_state = ChunkState::FULLY_BUILT;
+               chunk_data.chunk_state = ChunkState::FULLY_BUILT; 
+               
+               
+               if let Some(old_mesh_entity) =  chunk_data.spawned_mesh_entity { 
+                        commands.entity(old_mesh_entity).despawn();     
+               };
+               
                chunk_data.spawned_mesh_entity = Some( child_mesh  ) ;
-       
-                //update chunk data state from loading to completed -- NEVER delete the component while its loading 
-                
-            }                
+         
+            
+
+            // Task is complete, so remove task component from entity
+            commands.entity(entity).remove::<MeshBuilderTask>();
+         
         }
-        
-        
     }
-    
 }
+

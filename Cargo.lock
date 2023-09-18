@@ -673,10 +673,11 @@ dependencies = [
 
 [[package]]
 name = "bevy_mesh_terrain"
-version = "0.2.3"
+version = "0.2.4"
 dependencies = [
  "anyhow",
  "bevy",
+ "futures-lite",
  "image",
  "thiserror",
 ]
