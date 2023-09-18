@@ -68,8 +68,9 @@ impl PreMesh {
         
         let mut premesh = Self::new();
           
-         let step_size = 1 << lod_level; // doubles the step for each LOD level using bit shifting 
+        let step_size = 1 << lod_level; // doubles the step for each LOD level using bit shifting 
        
+        // let border = step_size as usize; 
           
         let height_scale = 0.004; // Adjust as needed
         let width = heightmap.len() - 0;

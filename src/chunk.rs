@@ -18,25 +18,28 @@ pub struct Chunk {
  
 pub struct ChunkData {
     is_active: bool,
-    has_spawned_mesh: bool,  
+    
     needs_rebuild: bool, 
+    
+    spawned_mesh_entity: Option<Entity> ,
     
     chunk_state: ChunkState ,
     
     lod_level: u8 //lod level of 0 is maximum quality.  1 is less, 2 is much less, 3 is very decimated 
 }
 
+#[derive(Eq,PartialEq)]
 enum ChunkState{
     FULLY_BUILT,
     BUILDING,   
-    PENDING
+    PENDING 
 }
 
 
 pub trait ChunkCoordinates {
     fn get_chunk_index(&self, chunk_rows: u32) -> u32; 
     fn from_location( location: Vec3 ,  terrain_origin: Vec3 , terrain_dimensions: Vec2 , chunk_rows: u32 ) -> Option<UVec2> ;
- 
+    fn to_location(&self, terrain_origin: Vec3, terrain_dimensions: Vec2, chunk_rows: u32) -> Option<Vec3> ;
     
     fn from_chunk_id(chunk_id:u32,chunk_rows:u32) -> Self;
     fn get_location_offset(&self,  chunk_dimensions: Vec2 ) -> Vec3; 
@@ -95,6 +98,26 @@ impl ChunkCoordinates for  ChunkCoords {
         None
     }
     
+    //returns the middle of the chunk 
+    fn to_location(&self, terrain_origin: Vec3, terrain_dimensions: Vec2, chunk_rows: u32) -> Option<Vec3> {
+    // Ensure chunk coordinates are within bounds
+    if self.x < chunk_rows && self.y < chunk_rows {
+        // Calculate the dimensions of a single chunk
+        let chunk_dim_x = terrain_dimensions.x / chunk_rows as f32;
+        let chunk_dim_z = terrain_dimensions.y / chunk_rows as f32;
+
+        // Calculate world location for the bottom-left corner of the chunk
+        let world_x = terrain_origin.x + self.x as f32 * chunk_dim_x + chunk_dim_x/2.0;
+        let world_z = terrain_origin.z + self.y as f32 * chunk_dim_z + chunk_dim_z/2.0;
+        
+        
+
+        return Some(Vec3::new(world_x, terrain_origin.y, world_z));
+    }
+
+    None
+    }
+    
      fn get_heightmap_subsection_bounds_pct(
          &self,
          chunk_rows: u32
@@ -115,20 +138,100 @@ impl ChunkCoordinates for  ChunkCoords {
 }
 
   
-
-
-
-
-
-pub fn update_terrain_chunks(
-    mut terrain_query: Query<(&TerrainConfig,&mut TerrainData,&Transform)>,
+pub fn destroy_terrain_chunks(
+    mut commands: Commands, 
+    mut chunk_query: Query<(Entity, &mut Chunk, &Parent) > ,
     
-    terrain_viewer: Query<&Transform, With<TerrainViewer>>
+    mut terrain_query : Query<(&mut TerrainData,&TerrainConfig, &Transform)> ,
+     terrain_viewer: Query<&Transform, With<TerrainViewer>> 
+){
+     let viewer  = terrain_viewer.get_single();
+        
+    let viewer_location:Vec3 = match viewer {
+        Ok(view) => { view.translation },
+        Err(e) => Vec3::new(0.0,0.0,0.0)
+    };
+        
     
+    for (chunk_entity_id, mut chunk_data, parent_terrain_entity) in chunk_query.iter_mut() { 
+        
+        let chunk_id = chunk_data.chunk_id; 
+        
+        let mut needs_despawn = None;
+        
+        if let Ok( (mut terrain_data, terrain_config, terrain_transform ) ) = terrain_query.get_mut( parent_terrain_entity.get() ){
+            
+            let chunk_rows = terrain_config.chunk_rows;
+            let terrain_dimensions= terrain_config.terrain_dimensions;
+            let terrain_origin = terrain_transform.translation;
+            let max_render_distance = terrain_config.get_max_render_distance();
+            
+            //if too far away ...
+            let chunk_coords = ChunkCoords::from_chunk_id(chunk_id, chunk_rows);
+             
+             let chunk_world_location = chunk_coords.to_location(   
+                            terrain_origin, 
+                            terrain_dimensions, 
+                            chunk_rows 
+                        );
     
+             let distance_to_chunk: Option<f32>  = match chunk_world_location {
+                             Some( location ) => {
+                                 Some( location.distance( viewer_location ) ) 
+                             },
+                             None => None
+                             
+            } ; 
+            
+           
+            
+            let should_despawn = match distance_to_chunk {
+                Some( dist ) => dist > max_render_distance,
+                None => true 
+            };
+            
+            if should_despawn {
+                 needs_despawn = Some(chunk_entity_id);
+                 terrain_data.chunks.remove(  &chunk_id ); 
+            }
+            
+        }else{
+            
+            //despawn it for sure 
+            needs_despawn = Some(chunk_entity_id);
+            
+        }
+        
+        
+        if needs_despawn.is_some() {
+           
+            commands.entity( needs_despawn.unwrap() ).despawn();    
+            
+        }
+        
+    }
+        
+    
+}
+
+
+
+/*
+Dont need this to run each frame... 
+*/
+pub fn activate_terrain_chunks(
+   mut  commands:  Commands, 
+   mut terrain_query: Query<(&TerrainConfig,&mut TerrainData,&Transform)>,
+    
+   terrain_viewer: Query<&Transform, With<TerrainViewer>> 
 ){
     
-    let viewer:&Transform = terrain_viewer.single();
+    let viewer  = terrain_viewer.get_single();
+        
+    let viewer_location:Vec3 = match viewer {
+        Ok(view) => { view.translation },
+        Err(e) => Vec3::new(0.0,0.0,0.0)
+    };
         
     for (terrain_config,mut terrain_data,terrain_transform) in terrain_query.iter_mut() { 
         
@@ -136,7 +239,7 @@ pub fn update_terrain_chunks(
         
         let terrain_dimensions = terrain_config.terrain_dimensions; 
         
-        let viewer_location:Vec3 = viewer.translation; 
+      
         
         let chunk_rows = terrain_config.chunk_rows; 
         
@@ -147,7 +250,7 @@ pub fn update_terrain_chunks(
              
                 
               let render_distance_chunks:u32 = terrain_config.get_chunk_render_distance()  ; //make based on render dist 
-            
+              let lod_level_distance:f32 = terrain_config.get_chunk_lod_distance(); 
         
                 // loop through the potential chunks that are around the client to maybe activate them 
                 for x_offset in  -1*render_distance_chunks as i32..render_distance_chunks as i32 {
@@ -156,13 +259,44 @@ pub fn update_terrain_chunks(
                         let chunk_coords_x = chunk_coords_at_viewer.x as i32 + x_offset ;
                         let chunk_coords_z = chunk_coords_at_viewer.y as i32 + z_offset ;
                         
+                        let chunk_coords = ChunkCoords::new( chunk_coords_x as u32, chunk_coords_z as u32  );
+                        
+                        //calc chunk world loc and use to calc the lod 
+                        let chunk_world_location = chunk_coords.to_location(   
+                            terrain_origin, 
+                            terrain_dimensions, 
+                            chunk_rows 
+                        );
+    
+                         let distance_to_chunk: Option<f32>  = match chunk_world_location {
+                             Some( location ) => {
+                                 Some( location.distance( viewer_location ) ) 
+                             },
+                             None => None
+                             
+                         } ;
+        
+                        let lod_level: u8 = match distance_to_chunk {
+                            Some(dist) => {
+                                 if dist > lod_level_distance*2.0 {  2 }
+                                 else if dist > lod_level_distance  {  1 }
+                                 else {
+                                 0 
+                                 }
+                            },
+                            None => 2 
+                        }; 
+                        //  ----- 
+                        
                         if  chunk_coords_x >= 0 && chunk_coords_x < chunk_rows as i32
                             && chunk_coords_z >=0 && chunk_coords_z < chunk_rows as i32  {
                                 //then this is a valid coordinate location 
                                 activate_chunk_at_coords( 
-                                    ChunkCoords::new( chunk_coords_x as u32, chunk_coords_z as u32  ),  
-                                    &mut terrain_data ,
-                                    &terrain_config
+                                    &mut commands,
+                                    chunk_coords,  
+                                    &mut terrain_data,
+                                    &terrain_config,
+                                    lod_level
                                 );
                                                                                                 
                             }
@@ -182,9 +316,11 @@ pub fn update_terrain_chunks(
 
 
 pub fn activate_chunk_at_coords( 
+    mut commands: &mut Commands, 
     chunk_coords: ChunkCoords,
     mut terrain_data: &mut TerrainData,
-    terrain_config: &TerrainConfig
+    terrain_config: &TerrainConfig,
+    lod_level: u8
 ) {
     
     let chunk_rows = terrain_config.chunk_rows;
@@ -193,25 +329,49 @@ pub fn activate_chunk_at_coords(
     
     let chunk_exists = terrain_data.chunks.contains_key( &chunk_index );
     
-    if chunk_exists {
+    let mut need_to_spawn = false;
+    let mut need_to_despawn: Option<Entity>  = None; 
+    
+    
+    if chunk_exists { 
+         
+       let chunk_data = terrain_data.chunks.get(&chunk_index).unwrap(); 
+         
+        // do not rebuild chunks until they are already fully built 
+        if chunk_data.chunk_state ==  ChunkState::FULLY_BUILT {
+            
+            let existing_lod = chunk_data.lod_level; 
+            if lod_level != existing_lod && chunk_data.spawned_mesh_entity.is_some(){
+                need_to_despawn = chunk_data.spawned_mesh_entity;           
+                need_to_spawn = true;
+                
+                
+            }  
+        }  
         
-    }else {
-        
-        //we flag the chunk so that in a SEPARATE update loop, it will have meshes generated 
-       
-        terrain_data.chunks.insert(  
-            chunk_index  , 
-            ChunkData {
-               is_active: true,
-               chunk_state: ChunkState::PENDING,
-               has_spawned_mesh: false ,
-               needs_rebuild: true ,
-               lod_level: 0
-            });
-        
+    }else { 
+        need_to_spawn = true;    
     }
         
-    
+        
+    if let Some(entity) = need_to_despawn { 
+         commands.entity(entity).despawn();   
+         terrain_data.chunks.remove(  &chunk_index ); 
+    }
+        
+    if need_to_spawn {
+        
+         terrain_data.chunks.insert(  
+            chunk_index  , 
+            ChunkData {
+               is_active: true, //useless for now 
+               chunk_state: ChunkState::PENDING,
+               spawned_mesh_entity: None,
+               needs_rebuild: true ,  //useless for now 
+               lod_level 
+            });
+            
+    } 
     
 }
 
@@ -267,11 +427,14 @@ pub fn build_active_terrain_chunks(
         let splat_texture =  terrain_data.get_splat_texture_image().clone();
               
         let terrain_material_handle = terrain_material_handle_option.as_ref().unwrap();
-              
-        for (chunk_id , chunk_data) in terrain_data.chunks.iter_mut(){
+         
+ 
+        
+        let terrain_data_chunks = &mut terrain_data.chunks; 
+        for (chunk_id , chunk_data) in terrain_data_chunks.iter_mut(){
             
-            if !chunk_data.has_spawned_mesh {
-                chunk_data.has_spawned_mesh = true;
+            if chunk_data.chunk_state == ChunkState::PENDING {
+                chunk_data.chunk_state = ChunkState::BUILDING;
                 
               let chunk_rows = terrain_config.chunk_rows;
               let terrain_dimensions = terrain_config.terrain_dimensions;
@@ -341,7 +504,11 @@ pub fn build_active_terrain_chunks(
             
               let mut terrain_entity_commands  = commands.get_entity(terrain_entity).unwrap();
               terrain_entity_commands.add_child(    child_mesh  );
-                
+            
+               chunk_data.chunk_state = ChunkState::FULLY_BUILT;
+               chunk_data.spawned_mesh_entity = Some( child_mesh  ) ;
+       
+                //update chunk data state from loading to completed -- NEVER delete the component while its loading 
                 
             }                
         }

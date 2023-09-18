@@ -16,7 +16,7 @@ fn main() {
         .add_systems(Startup, setup) 
         
         .add_systems(Update, update_camera_look ) 
-       
+        .add_systems(Update, update_camera_move ) 
         
         .run();
 }
@@ -41,7 +41,7 @@ fn setup(
     .insert( TransformBundle::default() )
     .insert(
         TerrainConfig::default()
-        .set_render_distance( 4500.0 )
+        .set_render_distance( 1500.0 )
         )
     .insert(
         TerrainData::default()
@@ -109,6 +109,40 @@ fn update_camera_look(
         pitch = pitch .clamp(-std::f32::consts::PI / 2.0, std::f32::consts::PI / 2.0) ;
    
         transform.rotation = Quat::from_euler(EulerRot::YXZ, yaw, pitch, 0.0);
+       
+    }
+    
+}
+
+
+fn update_camera_move(
+   
+    keyboard_input: Res<Input<KeyCode>>,
+    mut query: Query<(&mut Transform, &Camera3d)>,
+    
+    
+){
+      let MOVE_SPEED = 10.0; // You can adjust this value as needed
+     
+     
+     
+  
+    // Apply to each camera with the CameraTag
+    for (mut transform, _) in query.iter_mut() {
+       
+      
+           // Move the camera forward if W is pressed
+        if keyboard_input.pressed(KeyCode::W) {
+            let forward = transform.forward();
+            transform.translation += forward * MOVE_SPEED;
+        }
+         
+          if keyboard_input.pressed(KeyCode::S) {
+            let forward = transform.forward() ;
+            transform.translation -= forward * MOVE_SPEED;
+        }
+         
+        
        
     }
     

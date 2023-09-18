@@ -12,6 +12,7 @@ use crate::{chunk::ChunkData, heightmap::HeightMapU16};
 pub struct TerrainViewer {
     
 }
+ 
 
 
 #[derive(Component)]
@@ -23,6 +24,7 @@ pub struct TerrainConfig {
     pub chunk_rows: u32,
     
     pub render_distance: f32, 
+    pub lod_distance: f32 
 }
 
 impl Default for TerrainConfig {
@@ -31,7 +33,8 @@ impl Default for TerrainConfig {
            // chunk_width: 64.0 ,
             terrain_dimensions: Vec2::new(1024.0,1024.0), //this should match the heightmap dimensions... consider removing this var or changing how it fundamentally works . 
             chunk_rows: 16 ,   //making this too high produces too many materials which causes lag.  Too low and we cant LOD properly . 16 seems good . 
-            render_distance: 800.0, 
+            render_distance: 2000.0, 
+            lod_distance: 1000.0 
         }
     }
 }
@@ -53,10 +56,18 @@ impl TerrainConfig {
         
     }  
     
+    pub fn get_max_render_distance(&self) -> f32{
+        return self.render_distance  ; 
+    }
+    
     pub fn get_chunk_render_distance(&self) -> u32{
         return self.render_distance as u32 / self.chunk_rows; 
     }
-    
+     
+     
+     pub fn get_chunk_lod_distance(&self) -> f32{
+        return self.lod_distance  ; 
+    }
 }
 
 #[derive(Component,Default)]
@@ -66,6 +77,7 @@ pub struct TerrainData {
     //chunk index is   chunk_col * 64  + chunk_row   IF chunk_rows is 64 
     //this only tracks loaded and active chunks and these are all entities 
     pub chunks: HashMap<u32,ChunkData>, 
+  
     
     //could be a massive image like 4k 
     height_map_image_handle: Option<Handle<Image>>, 
