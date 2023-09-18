@@ -37,7 +37,7 @@ Currently supports bevy 0.11
 
 
 
-### Initial Thoughts 
+### Reference Material 
 see https://github.com/bevyengine/bevy/blob/main/examples/shader/shader_material.rs
 
  
