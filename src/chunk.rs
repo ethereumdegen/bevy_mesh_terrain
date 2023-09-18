@@ -210,10 +210,12 @@ pub fn destroy_terrain_chunks(
         
         if let Ok( (mut terrain_data, terrain_config, terrain_transform ) ) = terrain_query.get_mut( parent_terrain_entity.get() ){
             
+            let deadband_multiplier = 1.2; //reduces the frequency of chunks having to rebuild so often 
+            
             let chunk_rows = terrain_config.chunk_rows;
             let terrain_dimensions= terrain_config.terrain_dimensions;
             let terrain_origin = terrain_transform.translation;
-            let max_render_distance = terrain_config.get_max_render_distance() ; //safety factor 
+            let max_render_distance = terrain_config.get_max_render_distance() * deadband_multiplier;  
             
             //if too far away ...
             let chunk_coords = ChunkCoords::from_chunk_id(chunk_id, chunk_rows);
