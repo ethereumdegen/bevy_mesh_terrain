@@ -1,6 +1,14 @@
 
  ## Bevy Mesh Terrain
+
+
+### Installing
+```
+cargo add bevy_mesh_terrain 
+```
  
+### Description 
+
  A very bevy-centric terrain plugin that takes advantage of entities, components and systems as much as possible to be as easy to understand and interact with as possible. 
  
  You spawn an entity and give it the 'TerrainConfig' and 'TerrainData' components, and then the plugin systems will spawn child entities which are each of the rendered chunks. 
