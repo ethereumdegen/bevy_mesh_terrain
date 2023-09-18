@@ -33,16 +33,21 @@ fn setup(
    
     let splat_texture: Handle<Image> = asset_server.load("terrain/textures/splat_texture.png");
      
-    let mut terrain_data = TerrainData::default();
-    terrain_data.add_height_map_image(   height_map  ) ;
-    terrain_data.add_array_texture_image(array_texture, 4) ;
-    terrain_data.add_splat_texture_image( splat_texture ); 
+    
     
    
     commands.spawn(VisibilityBundle::default() ) 
     .insert( TransformBundle::default() )
-    .insert(TerrainConfig::default())
-    .insert(terrain_data) 
+    .insert(
+        TerrainConfig::default()
+        .set_render_distance( 4500.0 )
+        )
+    .insert(
+        TerrainData::default()
+        .add_height_map_image(   height_map  ) 
+        .add_array_texture_image(array_texture, 4) 
+        .add_splat_texture_image( splat_texture )
+    ) 
     ;
      
     

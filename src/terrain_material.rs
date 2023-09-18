@@ -13,14 +13,30 @@ https://github.com/bevyengine/bevy/blob/main/assets/shaders/custom_material.wgsl
 
 
 
+
+
 */
+
+
+
+#[derive( Clone, ShaderType)]
+pub struct ChunkMaterialUniforms {
+    pub chunk_uv: Vec4 ,  //start_x, start_y, end_x, end_y   -- used to subselect a region from the splat texture 
+    pub color_texture_expansion_factor: f32 
+} 
+
+
+
+
 #[derive(AsBindGroup, TypeUuid, TypePath, Clone)]
 #[uuid = "4acc53dd-2cfd-48ba-b659-c0e1a9bc0bdb"]
 pub struct TerrainMaterial {
    
     
     #[uniform(0)]
-    pub chunk_uv: Vec4,
+    pub uniforms: ChunkMaterialUniforms ,
+   // pub chunk_uv: Vec4,
+   // pub color_texture_expansion_factor: f32  ,
     
     
     #[texture(1, dimension = "2d_array")]

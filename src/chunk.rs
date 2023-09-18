@@ -2,7 +2,7 @@
 
 use bevy::{   prelude::*, asset::LoadState};
 
-use crate::{terrain::{TerrainConfig, TerrainViewer, TerrainData}, pre_mesh::PreMesh, terrain_material::TerrainMaterial};
+use crate::{terrain::{TerrainConfig, TerrainViewer, TerrainData}, pre_mesh::PreMesh, terrain_material::{TerrainMaterial, ChunkMaterialUniforms}};
 
 
 
@@ -21,7 +21,9 @@ pub struct ChunkData {
     has_spawned_mesh: bool,  
     needs_rebuild: bool, 
     
-    chunk_state: ChunkState 
+    chunk_state: ChunkState ,
+    
+    lod_level: u8 //lod level of 0 is maximum quality.  1 is less, 2 is much less, 3 is very decimated 
 }
 
 enum ChunkState{
@@ -203,7 +205,8 @@ pub fn activate_chunk_at_coords(
                is_active: true,
                chunk_state: ChunkState::PENDING,
                has_spawned_mesh: false ,
-               needs_rebuild: true 
+               needs_rebuild: true ,
+               lod_level: 0
             });
         
     }
@@ -285,24 +288,32 @@ pub fn build_active_terrain_chunks(
               
               println!("subsection pct {:?}", height_map_subsection_pct);
               
-               
+              let lod_level = chunk_data.lod_level;
             
-              let pre_mesh = PreMesh::from_heightmap_subsection( height_map_data, height_map_subsection_pct  );   //need to add chunk coords.. 
+              let mesh = PreMesh::from_heightmap_subsection( 
+                  height_map_data, 
+                  lod_level, 
+                  height_map_subsection_pct
+              ).build();   //need to add chunk coords.. 
               
-              let mesh = pre_mesh.build();
               
-            //  let sample_mesh:Mesh = shape::Plane::from_size( chunk_dimensions.x ).into();
-            
-            let chunk_terrain_material:Handle<TerrainMaterial>  =  terrain_materials.add(
-                    TerrainMaterial {
-                               //tell the shader how to use the splat map for this chunk 
-                                chunk_uv: Vec4::new( 
+              
+          
+            let chunk_uv = Vec4::new( //tell the shader how to use the splat map for this chunk  
                                     height_map_subsection_pct[0][0],
                                     height_map_subsection_pct[0][1],
                                     height_map_subsection_pct[1][0],
-                                    height_map_subsection_pct[1][1] ),
+                                    height_map_subsection_pct[1][1] );
                                     
-                                    
+            let chunk_terrain_material:Handle<TerrainMaterial>  =  terrain_materials.add(
+                    TerrainMaterial {
+                               
+                               
+                                  uniforms: ChunkMaterialUniforms{
+                                     color_texture_expansion_factor: 16.0,
+                                     chunk_uv 
+                                },
+                                
                                 array_texture: array_texture.clone(),
                                 splat_texture : splat_texture.clone()
                             }

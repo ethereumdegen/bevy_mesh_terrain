@@ -56,53 +56,55 @@ impl PreMesh {
     
     pub fn from_heightmap_subsection( 
           heightmap: &HeightMapU16,
+          lod_level: u8, // 0 is full quality, higher levels decimate the mesh 
           bounds_pct: [ [f32 ; 2]  ;2 ],   //must be between 0 and 1 
         
           ) -> Self {
         
         let mut premesh = Self::new();
           
+         let step_size = 1 << lod_level; // doubles the step for each LOD level using bit shifting 
+       
+          
         let height_scale = 0.004; // Adjust as needed
-        let width = heightmap.len() - 1;
-        let height = heightmap[0].len() - 1;
+        let width = heightmap.len() - step_size;
+        let height = heightmap[0].len() - step_size;
           
         let start_bound = [ (width as f32 * bounds_pct[0][0]) as usize, (height as f32 * bounds_pct[0][1]) as usize  ];
         let end_bound = [ (width as f32 * bounds_pct[1][0]) as usize, (height as f32 * bounds_pct[1][1]) as usize  ];
           
-        let texture_dimensions =  [ (width+1) as f32 , (height+1) as f32 ]; 
+       
+        
+        let texture_dimensions =  [ (width+step_size) as f32 , (height+step_size) as f32 ]; 
           
          
-           for x in start_bound[0]..end_bound[0] - 0 {
-                for y in start_bound[1]..end_bound[1] - 0 {
-                    
-                    //the entire chunk itself gets transformed laterally in the scene so we want the vertices to start at 0,0 at the chunk origin 
-                    let fx = (x - start_bound[0]) as f32;
-                    let fz =  (y - start_bound[1]) as f32; 
-        
-                    let lb = heightmap[x][y] as f32 * height_scale;
-                    let lf = heightmap[x][y + 1] as f32 * height_scale;
-                    let rb = heightmap[x + 1][y] as f32 * height_scale;
-                    let rf = heightmap[x + 1][y + 1] as f32 * height_scale;
-                                        
-                    let uv_lb = compute_uv(fx, fz, bounds_pct, texture_dimensions);
-                    let uv_rb = compute_uv(fx + 1.0, fz, bounds_pct,texture_dimensions);
-                    let uv_rf = compute_uv(fx + 1.0, fz + 1.0, bounds_pct,texture_dimensions);
-                    let uv_lf = compute_uv(fx, fz + 1.0, bounds_pct,texture_dimensions);
-                    
-                    
-              //      println!("sampled: {} {} {} {} ", lb,lf,rb,rf);
-        
-                    let left_back = [fx, lb, fz];
-                    let right_back = [fx + 1.0, rb, fz];
-                    let right_front = [fx + 1.0, rf, fz + 1.0];
-                    let left_front = [fx, lf, fz + 1.0];
-        
-                    premesh.add_triangle([left_front, right_back, left_back], [uv_lf, uv_rb, uv_lb]);
-                    premesh.add_triangle([right_front, right_back, left_front], [uv_rf, uv_rb, uv_lf]);
-                }
+         
+          for x in (start_bound[0]..end_bound[0]).step_by(step_size) {
+            for y in (start_bound[1]..end_bound[1]).step_by(step_size) {
+                
+                let fx = (x - start_bound[0]) as f32;
+                let fz = (y - start_bound[1]) as f32;
+    
+                let lb = heightmap[x][y] as f32 * height_scale;
+                let lf = heightmap[x][y + step_size] as f32 * height_scale; 
+                let rb = heightmap[x + step_size][y] as f32 * height_scale;
+                let rf = heightmap[x + step_size][y + step_size] as f32 * height_scale;
+                
+                let uv_lb = compute_uv(fx, fz, bounds_pct, texture_dimensions);
+                let uv_rb = compute_uv(fx + step_size as f32, fz, bounds_pct, texture_dimensions);
+                let uv_rf = compute_uv(fx + step_size as f32, fz + step_size as f32, bounds_pct, texture_dimensions);
+                let uv_lf = compute_uv(fx, fz + step_size as f32, bounds_pct, texture_dimensions);
+                
+                let left_back = [fx, lb, fz];
+                let right_back = [fx + step_size as f32, rb, fz];
+                let right_front = [fx + step_size as f32, rf, fz + step_size as f32];
+                let left_front = [fx, lf, fz + step_size as f32];
+    
+                premesh.add_triangle([left_front, right_back, left_back], [uv_lf, uv_rb, uv_lb]);
+                premesh.add_triangle([right_front, right_back, left_front], [uv_rf, uv_rb, uv_lf]);
             }
-            
-       
+        }
+        
  
 
         

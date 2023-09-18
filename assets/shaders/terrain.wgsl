@@ -7,12 +7,13 @@
 
 #import bevy_pbr::mesh_vertex_output MeshVertexOutput
 
-struct ChunkMaterial {
-    chunk_uv: vec4<f32>,  //start_x, start_y, end_x, end_y 
+struct ChunkMaterialUniforms {
+    chunk_uv: vec4<f32>,  //start_x, start_y, end_x, end_y   -- used to subselect a region from the splat texture 
+    color_texture_expansion_factor: f32 
 };
 
 @group(1) @binding(0)
-var<uniform> material: ChunkMaterial;
+var<uniform> material: ChunkMaterialUniforms;
 @group(1) @binding(1)
 var base_color_texture: texture_2d_array<f32>;
 @group(1) @binding(2)
@@ -31,15 +32,18 @@ fn fragment(
     mesh: MeshVertexOutput,
 ) -> @location(0) vec4<f32> {
     
-    // fix me up  -- seems to be ALMOST working right 
+   
+    let tiled_uv = material.color_texture_expansion_factor*mesh.uv;
+    
+    // seems to be working !! yay ! makes our splat texture encompass all of the chunks 
     let splat_uv = material.chunk_uv.xy + mesh.uv * (material.chunk_uv.zw - material.chunk_uv.xy);
     
     let splat_values = textureSample(splat_map_texture, splat_map_sampler, splat_uv );
 
-    let color_from_texture_0 = textureSample(base_color_texture, base_color_sampler, mesh.uv, 0);
-    let color_from_texture_1 = textureSample(base_color_texture, base_color_sampler, mesh.uv, 1);
-    let color_from_texture_2 = textureSample(base_color_texture, base_color_sampler, mesh.uv, 2);
-    let color_from_texture_3 = textureSample(base_color_texture, base_color_sampler, mesh.uv, 3);
+    let color_from_texture_0 = textureSample(base_color_texture, base_color_sampler, tiled_uv, 0);
+    let color_from_texture_1 = textureSample(base_color_texture, base_color_sampler, tiled_uv, 1);
+    let color_from_texture_2 = textureSample(base_color_texture, base_color_sampler, tiled_uv, 2);
+    let color_from_texture_3 = textureSample(base_color_texture, base_color_sampler, tiled_uv, 3);
 
     let final_color = color_from_texture_0 * splat_values.r +
                       color_from_texture_1 * splat_values.g +

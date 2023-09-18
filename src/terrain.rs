@@ -2,7 +2,7 @@ use bevy::render::render_resource::{SamplerDescriptor, AddressMode, FilterMode};
 use bevy::render::texture::ImageSampler;
 use bevy::{   prelude::*, utils::HashMap, render::render_resource::Texture, asset::LoadState};
 
-use crate::terrain_material::TerrainMaterial;
+use crate::terrain_material::{TerrainMaterial, ChunkMaterialUniforms};
 use crate::{chunk::ChunkData, heightmap::HeightMapU16};
      
  use crate::heightmap::HeightMap;
@@ -30,13 +30,19 @@ impl Default for TerrainConfig {
         Self {
            // chunk_width: 64.0 ,
             terrain_dimensions: Vec2::new(1024.0,1024.0),
-            chunk_rows: 64 ,
+            chunk_rows: 16 ,   //making this too high produces too many materials which causes lag.  Too low and we cant LOD properly . 16 seems good . 
             render_distance: 800.0, 
         }
     }
 }
 
 impl TerrainConfig {
+    
+     pub fn set_render_distance(mut self, distance: f32 ) -> Self {
+         
+         self.render_distance = distance;
+         self 
+     }
     
      pub fn get_chunk_dimensions(&self ) -> Vec2 {
         let chunk_dimension_x = self.terrain_dimensions.x / self.chunk_rows as f32;
@@ -83,17 +89,20 @@ pub struct TerrainData {
  
 impl TerrainData{
     
-    pub fn add_height_map_image(&mut self, handle: Handle<Image> ){
+    pub fn add_height_map_image( mut self, handle: Handle<Image> ) -> Self {
         self.height_map_image_handle = Some(handle.clone()); //strong clone 
+        self 
     }
     
-    pub fn add_array_texture_image(&mut self, handle: Handle<Image>, sections: u32  ){
+    pub fn add_array_texture_image(mut self, handle: Handle<Image>, sections: u32  )-> Self{
         self.texture_image_handle = Some(handle.clone()); //strong clone 
         self.texture_image_sections = sections; 
+        self 
     }
     
-    pub fn add_splat_texture_image(&mut self, handle: Handle<Image>   ){
+    pub fn add_splat_texture_image(mut self, handle: Handle<Image>   )-> Self{
         self.splat_image_handle = Some(handle.clone()); //strong clone 
+        self 
        
     }
     
@@ -225,7 +234,11 @@ pub fn load_terrain_texture_from_image(
                    
                    terrain_data.terrain_material_handle = Some(  materials.add(
                         TerrainMaterial {
-                                chunk_uv: Vec4::new( 0.0,1.0,0.0,1.0 ),
+                                uniforms: ChunkMaterialUniforms{
+                                     color_texture_expansion_factor: 16.0,
+                                     chunk_uv: Vec4::new( 0.0,1.0,0.0,1.0 ),
+                                },
+                               
                                 array_texture:  terrain_data.texture_image_handle.clone(),
                                 splat_texture:  terrain_data.splat_image_handle.clone()
                             }
