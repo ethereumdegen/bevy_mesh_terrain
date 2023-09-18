@@ -1,7 +1,7 @@
 use bevy::prelude::Mesh;
 use bevy::render::mesh::Indices;
 
-use crate::heightmap::HeightMapU16;
+use crate::heightmap::{HeightMapU16, SubHeightMapU16};
 
 use bevy::prelude::*;
 
@@ -60,42 +60,48 @@ impl PreMesh {
     
     */
     pub fn from_heightmap_subsection( 
-          heightmap: &HeightMapU16,
+          sub_heightmap : &SubHeightMapU16, 
+         
           lod_level: u8, // 0 is full quality, higher levels decimate the mesh 
-          bounds_pct: [ [f32 ; 2]  ;2 ],   //must be between 0 and 1 
-        
+       
+          texture_dimensions: [f32 ; 2]
           ) -> Self {
         
         let mut premesh = Self::new();
           
         let step_size = 1 << lod_level; // doubles the step for each LOD level using bit shifting 
        
-        // let border = step_size as usize; 
+        
           
         let height_scale = 0.004; // Adjust as needed
-        let width = heightmap.len() - 0;
-        let height = heightmap[0].len() - 0;
+      
           
-        let start_bound = [ (width as f32 * bounds_pct[0][0]) as usize, (height as f32 * bounds_pct[0][1]) as usize  ];
-        let end_bound = [ (width as f32 * bounds_pct[1][0]) as usize , (height as f32 * bounds_pct[1][1]) as usize   ];
+          let width = texture_dimensions[0];
+          let height = texture_dimensions[1]; 
           
-        let texture_dimensions =  [ (width ) as f32 , (height ) as f32 ]; 
+          let bounds_pct = sub_heightmap.bounds_pct;
           
-          for x in (start_bound[0]..end_bound[0]).step_by(step_size) {
-            for y in (start_bound[1]..end_bound[1]).step_by(step_size) {
-                
-                let fx = (x - start_bound[0]) as f32;
-                let fz = (y - start_bound[1]) as f32;
+           let sub_heightmap_width = sub_heightmap.height_data.len() ;
+           let sub_heightmap_height = sub_heightmap.height_data[0].len() ;
+          
+            for x in (0..sub_heightmap_width).step_by(step_size) {
+            for y in (0..sub_heightmap_height).step_by(step_size) {
+                 
+                let fx = (x  ) as f32;
+                let fz = (y  ) as f32;
                 
                 //cant sample so we just continue 
-                if  x+step_size >= width {  continue;}
-                if  y+step_size >= height {  continue;}
+                if  x+sub_heightmap.start_bound[0]+step_size >= width as usize {  continue; }
+                if  y+sub_heightmap.start_bound[1]+step_size >= height as usize {  continue; }
+                
+                 if  x+step_size >= sub_heightmap_width as usize {  continue; }
+                 if  y+step_size  >= sub_heightmap_height as usize {  continue; }
                 
     
-                let lb = heightmap[x][y] as f32 * height_scale;
-                let lf = heightmap[x][y + step_size] as f32 * height_scale; 
-                let rb = heightmap[x + step_size][y] as f32 * height_scale;
-                let rf = heightmap[x + step_size][y + step_size] as f32 * height_scale;
+                let lb = sub_heightmap.height_data[x][y] as f32 * height_scale;
+                let lf = sub_heightmap.height_data[x][y + step_size] as f32 * height_scale; 
+                let rb = sub_heightmap.height_data[x + step_size][y] as f32 * height_scale;
+                let rf = sub_heightmap.height_data[x + step_size][y + step_size] as f32 * height_scale;
                 
                 let uv_lb = compute_uv(fx, fz, bounds_pct, texture_dimensions);
                 let uv_rb = compute_uv(fx + step_size as f32, fz, bounds_pct, texture_dimensions);

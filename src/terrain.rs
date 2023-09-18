@@ -24,7 +24,9 @@ pub struct TerrainConfig {
     pub chunk_rows: u32,
     
     pub render_distance: f32, 
-    pub lod_distance: f32 
+    pub lod_distance: f32 ,
+    
+    pub attach_collision_data: bool 
 }
 
 impl Default for TerrainConfig {
@@ -34,7 +36,9 @@ impl Default for TerrainConfig {
             terrain_dimensions: Vec2::new(1024.0,1024.0), //this should match the heightmap dimensions... consider removing this var or changing how it fundamentally works . 
             chunk_rows: 16 ,   //making this too high produces too many materials which causes lag.  Too low and we cant LOD properly . 16 seems good . 
             render_distance: 2000.0, 
-            lod_distance: 1000.0 
+            lod_distance: 1000.0 ,
+            
+            attach_collision_data: true 
         }
     }
 }

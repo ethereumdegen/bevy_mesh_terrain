@@ -17,7 +17,74 @@ pub enum HeightMapError{
 }
 
 pub type HeightMapU16 = Vec<Vec<u16>>;
- 
+
+
+pub struct SubHeightMapU16 {
+    
+    pub height_data: Vec<Vec<u16>>,
+    pub start_bound: [ usize; 2 ],
+    pub end_bound: [ usize; 2 ],
+    pub bounds_pct:  [ [f32 ; 2]  ;2 ]
+    
+}
+
+impl SubHeightMapU16 {
+    
+    pub fn from_heightmap_u16( 
+         heightmap: &HeightMapU16,
+         bounds_pct: [ [f32 ; 2]  ;2 ],
+     ) -> Self {
+           
+       
+         
+        let width = heightmap.len() - 0;
+        let height = heightmap[0].len() - 0;
+          
+       // let start_bound = [ (width as f32 * bounds_pct[0][0]) as usize, (height as f32 * bounds_pct[0][1]) as usize  ];
+        //let end_bound = [ (width as f32 * bounds_pct[1][0]) as usize , (height as f32 * bounds_pct[1][1]) as usize   ];
+          
+         let start_bound = [
+            (width as f32 * bounds_pct[0][0]).ceil() as usize,
+            (height as f32 * bounds_pct[0][1]).ceil() as usize,
+        ];
+        
+        //really need to load 1 extra row than we normally would think we would... so here it is  
+        let end_bound = [
+            (width as f32 * bounds_pct[1][0]).ceil() as usize + 1 ,
+            (height as f32 * bounds_pct[1][1]).ceil() as usize + 1,
+        ];
+
+        let mut height_data = Vec::new();
+                
+
+        for x in start_bound[0]..end_bound[0] {
+            
+               if x >= width {continue;}
+               
+            let mut row = Vec::new();
+            for y in start_bound[1]..end_bound[1] {
+                if y >= height {continue;}
+                    
+                row.push(heightmap[x][y]);
+            }
+            height_data.push(row);
+        }
+        
+        Self {
+            
+            height_data,
+            start_bound,
+            end_bound ,
+            bounds_pct
+            
+        }
+        
+        
+    }
+    
+    
+}
+
 
 pub trait HeightMap {
     fn load_from_image( image: &Image ) ->   Result<Box<Self>,HeightMapError>  ; 

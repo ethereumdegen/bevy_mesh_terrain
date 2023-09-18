@@ -2,7 +2,7 @@
 
 use bevy::{   prelude::*, asset::LoadState, tasks::{Task, AsyncComputeTaskPool}};
 
-use crate::{terrain::{TerrainConfig, TerrainViewer, TerrainData}, pre_mesh::PreMesh, terrain_material::{TerrainMaterial, ChunkMaterialUniforms}};
+use crate::{terrain::{TerrainConfig, TerrainViewer, TerrainData}, pre_mesh::PreMesh, terrain_material::{TerrainMaterial, ChunkMaterialUniforms}, heightmap::SubHeightMapU16};
 
 use futures_lite::future;
 
@@ -16,7 +16,7 @@ pub enum ChunkEvent {
    
 #[derive(Component,Default)]
 pub struct Chunk {
-    chunk_id: u32  
+    pub chunk_id: u32 //same as chunk index   
 } 
    
  
@@ -58,6 +58,10 @@ pub struct BuiltChunkMeshData {
 
 
 pub trait ChunkCoordinates {
+    
+    fn x(&self) -> u32 ;
+    fn y(&self) -> u32 ;
+    
     fn get_chunk_index(&self, chunk_rows: u32) -> u32; 
     fn from_location( location: Vec3 ,  terrain_origin: Vec3 , terrain_dimensions: Vec2 , chunk_rows: u32 ) -> Option<UVec2> ;
     fn to_location(&self, terrain_origin: Vec3, terrain_dimensions: Vec2, chunk_rows: u32) -> Option<Vec3> ;
@@ -69,15 +73,21 @@ pub trait ChunkCoordinates {
 }
 
 
-type ChunkCoords = UVec2 ; 
+type ChunkCoords =  [u32; 2 ] ; 
 
 impl ChunkCoordinates for  ChunkCoords {
     
+     fn x(&self) -> u32 {
+        self[0]
+    }
+     fn y(&self) -> u32 {
+        self[1]
+    }
     
      //chunk index is   chunk_col * 64  + chunk_row   IF chunk_rows is 64 
     fn get_chunk_index(&self, chunk_rows: u32) -> u32 {
         
-        return self.y * chunk_rows + self.x as u32; 
+        return self.y() * chunk_rows + self.x() as u32; 
         
     }
     
@@ -86,7 +96,7 @@ impl ChunkCoordinates for  ChunkCoords {
         let coords_y = chunk_id / chunk_rows;
         let coords_x = chunk_id % chunk_rows;
         
-        UVec2::new(coords_x,coords_y)
+        [coords_x,coords_y]
     }
       
       
@@ -94,7 +104,7 @@ impl ChunkCoordinates for  ChunkCoords {
     
     fn get_location_offset(&self,  chunk_dimensions: Vec2 ) -> Vec3 { 
          
-        Vec3::new(chunk_dimensions.x * self.x as f32,0.0,chunk_dimensions.y * self.y as f32) 
+        Vec3::new(chunk_dimensions.x * self.x() as f32,0.0,chunk_dimensions.y * self.y() as f32) 
         
     }  
         
@@ -122,14 +132,14 @@ impl ChunkCoordinates for  ChunkCoords {
     //returns the middle of the chunk 
     fn to_location(&self, terrain_origin: Vec3, terrain_dimensions: Vec2, chunk_rows: u32) -> Option<Vec3> {
     // Ensure chunk coordinates are within bounds
-    if self.x < chunk_rows && self.y < chunk_rows {
+    if self.x() < chunk_rows && self.y() < chunk_rows {
         // Calculate the dimensions of a single chunk
         let chunk_dim_x = terrain_dimensions.x / chunk_rows as f32;
         let chunk_dim_z = terrain_dimensions.y / chunk_rows as f32;
 
         // Calculate world location for the bottom-left corner of the chunk
-        let world_x = terrain_origin.x + self.x as f32 * chunk_dim_x + chunk_dim_x/2.0;
-        let world_z = terrain_origin.z + self.y as f32 * chunk_dim_z + chunk_dim_z/2.0;
+        let world_x = terrain_origin.x + self.x() as f32 * chunk_dim_x + chunk_dim_x/2.0;
+        let world_z = terrain_origin.z + self.y() as f32 * chunk_dim_z + chunk_dim_z/2.0;
         
         
 
@@ -144,8 +154,8 @@ impl ChunkCoordinates for  ChunkCoords {
          chunk_rows: u32
          
          ) -> [ [f32 ; 2]  ;2 ] {
-        let chunk_x = self.x;
-        let chunk_y = self.y;
+        let chunk_x = self.x();
+        let chunk_y = self.y();
         
         let pct_per_row = 1.0 / chunk_rows as f32;  
         
@@ -305,7 +315,7 @@ pub fn activate_terrain_chunks(
                         let chunk_coords_x = chunk_coords_signed[0] as i32 + x_offset ;
                         let chunk_coords_z =chunk_coords_signed[1] as i32 + z_offset ;
                         
-                        let chunk_coords = ChunkCoords::new( chunk_coords_x as u32, chunk_coords_z as u32  );
+                        let chunk_coords =  [ chunk_coords_x as u32, chunk_coords_z as u32  ];
                         
                         //calc chunk world loc and use to calc the lod 
                         let chunk_world_location = chunk_coords.to_location(   
@@ -506,8 +516,7 @@ pub fn build_active_terrain_chunks(
                // might use lots of RAM ? idk ..
                //maybe we subsection first and THEN build the mesh!  oh well... anyways 
               let height_map_data_cloned =  height_map_data.as_ref().unwrap().clone();
-              
-             
+           
               
               let lod_level = chunk_data.lod_level;
               
@@ -528,12 +537,20 @@ pub fn build_active_terrain_chunks(
                     
                     This could be optimized by not passing in the ENTIRE height map data cloned but only a subsection for this chunk... 
                     
-                    */
+                    */ 
+                    
+                    let sub_heightmap = SubHeightMapU16::from_heightmap_u16(
+                        &height_map_data_cloned,
+                        height_map_subsection_pct
+                    );
+                    
+                    
                     
                     let mesh = PreMesh::from_heightmap_subsection( 
-                         &height_map_data_cloned, 
-                        lod_level, 
-                        height_map_subsection_pct
+                         &sub_heightmap, 
+                        lod_level,  
+                        
+                        [terrain_dimensions.x, terrain_dimensions.y]
                     ).build(); 
                     
                      BuiltChunkMeshData {
