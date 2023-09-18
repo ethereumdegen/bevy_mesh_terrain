@@ -156,8 +156,8 @@ pub fn load_height_map_data_from_image(
                    
                 match loaded_heightmap_data_result {
                     Ok( loaded_heightmap_data ) => {
-                         println!("loaded height map data from image");
-                       //take out of box 
+                       
+                           //take out of box 
                             terrain_data.height_map_data = Some( *loaded_heightmap_data ); 
                  
                     },
@@ -246,7 +246,7 @@ pub fn load_terrain_texture_from_image(
                     
                     
                     
-                   println!("terrain image finalized");
+                 
                 
             }
        }   

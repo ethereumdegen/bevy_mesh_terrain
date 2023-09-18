@@ -54,6 +54,11 @@ impl PreMesh {
     
     }
     
+    /*
+    
+    Could improve this so that NO MATTER WHAT lod level, the edges are never decimated at all and always full resolution.  Only decimate the middle. (interim fix for stitching) . 
+    
+    */
     pub fn from_heightmap_subsection( 
           heightmap: &HeightMapU16,
           lod_level: u8, // 0 is full quality, higher levels decimate the mesh 
@@ -67,23 +72,24 @@ impl PreMesh {
        
           
         let height_scale = 0.004; // Adjust as needed
-        let width = heightmap.len() - step_size;
-        let height = heightmap[0].len() - step_size;
+        let width = heightmap.len() - 0;
+        let height = heightmap[0].len() - 0;
           
         let start_bound = [ (width as f32 * bounds_pct[0][0]) as usize, (height as f32 * bounds_pct[0][1]) as usize  ];
-        let end_bound = [ (width as f32 * bounds_pct[1][0]) as usize, (height as f32 * bounds_pct[1][1]) as usize  ];
+        let end_bound = [ (width as f32 * bounds_pct[1][0]) as usize , (height as f32 * bounds_pct[1][1]) as usize   ];
           
-       
-        
-        let texture_dimensions =  [ (width+step_size) as f32 , (height+step_size) as f32 ]; 
+        let texture_dimensions =  [ (width ) as f32 , (height ) as f32 ]; 
           
-         
-         
           for x in (start_bound[0]..end_bound[0]).step_by(step_size) {
             for y in (start_bound[1]..end_bound[1]).step_by(step_size) {
                 
                 let fx = (x - start_bound[0]) as f32;
                 let fz = (y - start_bound[1]) as f32;
+                
+                //cant sample so we just continue 
+                if  x+step_size >= width {  continue;}
+                if  y+step_size >= height {  continue;}
+                
     
                 let lb = heightmap[x][y] as f32 * height_scale;
                 let lf = heightmap[x][y + step_size] as f32 * height_scale; 

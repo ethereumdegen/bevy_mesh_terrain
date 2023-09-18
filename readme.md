@@ -26,16 +26,14 @@
 
 ## Bevy versions
 
-Currently supports bevy 0.11 
- 
+Currently supports bevy 0.11  
 
 
-
-### TODO 
-- fix the visual bug with the missing strip  -- is it due to rotation ?  
+### TODO  
+- add various LOD levels so far-away chunks will render but at a lower sampling rate (will SIGNIFICANTLY reduce lag )
+- despawn chunks / change their LOD and flag em for rebuild  when you get farther than render_distance away ( build a new system for this )
 
 - add collision using parry (should be simple since heightmap is already the exact same format of parry heightfield ! )
-- add various LOD levels so far-away chunks will render but at a lower sampling rate (will SIGNIFICANTLY reduce lag )
 
 
 

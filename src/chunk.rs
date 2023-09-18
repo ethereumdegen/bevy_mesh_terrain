@@ -198,7 +198,7 @@ pub fn activate_chunk_at_coords(
     }else {
         
         //we flag the chunk so that in a SEPARATE update loop, it will have meshes generated 
-        println!("activating chunk! ");
+       
         terrain_data.chunks.insert(  
             chunk_index  , 
             ChunkData {
@@ -286,7 +286,7 @@ pub fn build_active_terrain_chunks(
                //sample me and build triangle data !! 
               let height_map_data =  height_map_data.as_ref().unwrap();
               
-              println!("subsection pct {:?}", height_map_subsection_pct);
+             
               
               let lod_level = chunk_data.lod_level;
             
@@ -335,13 +335,10 @@ pub fn build_active_terrain_chunks(
                         Chunk {
                             chunk_id: chunk_id.clone()
                         } 
-                    )
-                    
-                    
-                    
+                    ) 
                     .id() ; 
               
-              println!("adding plane mesh to chunk ");
+            
               let mut terrain_entity_commands  = commands.get_entity(terrain_entity).unwrap();
               terrain_entity_commands.add_child(    child_mesh  );
                 
