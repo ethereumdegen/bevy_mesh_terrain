@@ -79,11 +79,12 @@ pub struct TerrainData {
     
     texture_image_handle: Option<Handle<Image>>,
     texture_image_sections: u32, 
-    texture_image_finalized: bool, 
+    texture_image_finalized: bool,  //need this for now bc of the weird way we have to load an array texture w polling and stuff...
     
     splat_image_handle: Option<Handle<Image>>,
     
-   // texture_image_finalized: bool , 
+ 
+   
     pub terrain_material_handle: Option<Handle<TerrainMaterial> >
 }
  
