@@ -154,6 +154,25 @@ impl ChunkCoordinates for  ChunkCoords {
 }
 
   
+  
+  
+fn calculate_chunk_coords( from_location: Vec3, terrain_origin: Vec3, terrain_dimensions: Vec2, chunk_rows: u32  ) -> [ i32 ;2] {
+     
+        let location_delta = from_location - terrain_origin;
+
+        
+        let chunk_x = (location_delta.x / terrain_dimensions.x * chunk_rows as f32) as i32;
+        let chunk_z = (location_delta.z / terrain_dimensions.y * chunk_rows as f32) as i32;
+
+        return  [chunk_x, chunk_z] ; 
+    
+}
+  
+  
+  
+  
+  
+  
 pub fn destroy_terrain_chunks(
     mut commands: Commands, 
     mut chunk_query: Query<(Entity, &mut Chunk, &Parent) > ,
@@ -180,7 +199,7 @@ pub fn destroy_terrain_chunks(
             let chunk_rows = terrain_config.chunk_rows;
             let terrain_dimensions= terrain_config.terrain_dimensions;
             let terrain_origin = terrain_transform.translation;
-            let max_render_distance = terrain_config.get_max_render_distance();
+            let max_render_distance = terrain_config.get_max_render_distance() ; //safety factor 
             
             //if too far away ...
             let chunk_coords = ChunkCoords::from_chunk_id(chunk_id, chunk_rows);
@@ -208,7 +227,7 @@ pub fn destroy_terrain_chunks(
             
             if should_despawn {
                  needs_despawn = Some(chunk_entity_id);
-                 terrain_data.chunks.remove(  &chunk_id ); 
+                 terrain_data.chunks.remove(  &chunk_id );   // this works 
             }
             
         }else{
@@ -259,21 +278,28 @@ pub fn activate_terrain_chunks(
         
         let chunk_rows = terrain_config.chunk_rows; 
         
-        let chunk_coords_opt: Option<ChunkCoords> = ChunkCoords::from_location( viewer_location , terrain_origin, terrain_dimensions, chunk_rows);  
+        
+        let chunk_coords_signed = calculate_chunk_coords ( viewer_location , terrain_origin, terrain_dimensions, chunk_rows  );
+        
+        //let chunk_coords_opt: Option<ChunkCoords> = ChunkCoords::from_location( viewer_location , terrain_origin, terrain_dimensions, chunk_rows);  
+          
+       
         
         //these are the chunk coords of the viewer - the center 
-        if let Some(chunk_coords_at_viewer) = chunk_coords_opt {
+       // if let Some(chunk_coords_at_viewer) = chunk_coords_opt {
              
                 
-              let render_distance_chunks:u32 = terrain_config.get_chunk_render_distance()  ; //make based on render dist 
+              let render_distance_chunks:u32 = terrain_config.get_chunk_render_distance() * 1 ; //make based on render dist 
               let lod_level_distance:f32 = terrain_config.get_chunk_lod_distance(); 
+               
+              
         
                 // loop through the potential chunks that are around the client to maybe activate them 
                 for x_offset in  -1*render_distance_chunks as i32..render_distance_chunks as i32 {
                     for z_offset in  -1*render_distance_chunks as i32..render_distance_chunks as i32 {
                         
-                        let chunk_coords_x = chunk_coords_at_viewer.x as i32 + x_offset ;
-                        let chunk_coords_z = chunk_coords_at_viewer.y as i32 + z_offset ;
+                        let chunk_coords_x = chunk_coords_signed[0] as i32 + x_offset ;
+                        let chunk_coords_z =chunk_coords_signed[1] as i32 + z_offset ;
                         
                         let chunk_coords = ChunkCoords::new( chunk_coords_x as u32, chunk_coords_z as u32  );
                         
@@ -302,9 +328,20 @@ pub fn activate_terrain_chunks(
                             },
                             None => 2 
                         }; 
-                        //  ----- 
+                         
                         
-                        if  chunk_coords_x >= 0 && chunk_coords_x < chunk_rows as i32
+                           let max_render_distance = terrain_config.get_max_render_distance() ;  
+               
+                            let should_despawn = match distance_to_chunk {
+                                Some( dist ) => dist > max_render_distance,
+                                None => true 
+                            };
+                                        
+                         
+                        
+                       
+                        if !should_despawn  //prevents flicker 
+                           &&  chunk_coords_x >= 0 && chunk_coords_x < chunk_rows as i32
                             && chunk_coords_z >=0 && chunk_coords_z < chunk_rows as i32  {
                                 //then this is a valid coordinate location 
                                 activate_chunk_at_coords( 
@@ -323,7 +360,7 @@ pub fn activate_terrain_chunks(
         
         
         
-        }
+    //    }
         
       
         
@@ -404,10 +441,10 @@ pub fn build_active_terrain_chunks(
     mut terrain_query: Query<(Entity, &TerrainConfig,&mut TerrainData)>,
     
     //terrain_viewer: Query<&Transform, With<TerrainViewer>>
-    asset_server: Res<AssetServer>,
+  //  asset_server: Res<AssetServer>,
     
     //assets -- temp 
-    images: Res<Assets<Image>>,
+ //   images: Res<Assets<Image>>,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
     
