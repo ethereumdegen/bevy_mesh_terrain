@@ -29,7 +29,7 @@ impl Default for TerrainConfig {
     fn default() -> Self {
         Self {
            // chunk_width: 64.0 ,
-            terrain_dimensions: Vec2::new(1024.0,1024.0),
+            terrain_dimensions: Vec2::new(1024.0,1024.0), //this should match the heightmap dimensions... consider removing this var or changing how it fundamentally works . 
             chunk_rows: 16 ,   //making this too high produces too many materials which causes lag.  Too low and we cant LOD properly . 16 seems good . 
             render_distance: 800.0, 
         }
