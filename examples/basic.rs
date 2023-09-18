@@ -1,4 +1,4 @@
-//! A simple 3D scene with light shining over a cube sitting on a plane.
+ 
 
 use bevy::{prelude::*, utils::HashMap, input::mouse::MouseMotion};
 use bevy_mesh_terrain::{TerrainMeshPlugin, terrain::{TerrainConfig, TerrainData, TerrainViewer}};
