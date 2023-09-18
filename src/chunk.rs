@@ -16,7 +16,11 @@ pub enum ChunkEvent {
    
 #[derive(Component,Default)]
 pub struct Chunk {
-    pub chunk_id: u32 //same as chunk index   
+    pub chunk_id: u32, //same as chunk index   
+    pub chunk_bounds: [[usize;2]; 2 ],
+    pub built: bool ,
+    pub lod_level: u8
+    
 } 
    
  
@@ -47,12 +51,15 @@ pub struct MeshBuilderTask(Task<BuiltChunkMeshData>);
 
 pub struct BuiltChunkMeshData {
     terrain_entity_id: Entity, 
+    chunk_bounds: [[usize;2]; 2 ],
     
     chunk_id: u32,
     chunk_location_offset:Vec3, 
     
     mesh:Mesh,
-    chunk_uv: Vec4 
+    chunk_uv: Vec4,
+    
+     lod_level: u8  
     
 }
 
@@ -550,19 +557,21 @@ pub fn build_active_terrain_chunks(
                     
                     let mesh = PreMesh::from_heightmap_subsection( 
                          &sub_heightmap, 
-                        lod_level,  
+                         lod_level,  
                         
                         [terrain_dimensions.x, terrain_dimensions.y]
                     ).build(); 
                     
                      BuiltChunkMeshData {
                          chunk_id: chunk_id_clone,
+                         chunk_bounds: [sub_heightmap.start_bound,sub_heightmap.end_bound],
                          
                          chunk_location_offset: chunk_location_offset.clone(),
                          
                          terrain_entity_id: terrain_entity.clone(),
                          mesh,
-                         chunk_uv
+                         chunk_uv,
+                         lod_level 
                      }
                 });
 
@@ -650,7 +659,10 @@ pub fn finish_chunk_build_tasks(
                         } 
                     ).insert(  
                         Chunk {
-                            chunk_id: chunk_id.clone()
+                            chunk_id: chunk_id.clone(),
+                            chunk_bounds: built_chunk_mesh_data.chunk_bounds ,
+                            built: true,
+                            lod_level : built_chunk_mesh_data.lod_level
                         } 
                     ) 
                     .id() ; 
