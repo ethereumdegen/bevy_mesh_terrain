@@ -28,21 +28,10 @@
 
 Currently supports bevy 0.11  
 
-
-### TODO  
-- add various LOD levels so far-away chunks will render but at a lower sampling rate (will SIGNIFICANTLY reduce lag )
-- despawn chunks / change their LOD and flag em for rebuild  when you get farther than render_distance away ( build a new system for this )
-
-- add collision using parry (should be simple since heightmap is already the exact same format of parry heightfield ! )
-
-
+ 
 
 ### Reference Material 
 see https://github.com/bevyengine/bevy/blob/main/examples/shader/shader_material.rs
 
  
-
-### Small bugs 
-
-Need to improve the way chunks are stitched together at their bounds at lower LOD levels.... thats a tricky one. 
- ***  Maybe do not 'decimate' near the bounds when doing LOD. !! 
+ 
