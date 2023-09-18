@@ -42,11 +42,9 @@ Currently supports bevy 0.11
 ### Initial Thoughts 
 see https://github.com/bevyengine/bevy/blob/main/examples/shader/shader_material.rs
 
-
-1.  the lag is due to needing LOD on faraway chunks.   When chunks are going to build or rebuild, they need an LOD level.  Lod level of 0 is full res.  Higher level makes the mesh more and more decimated .
-
-
+ 
 
 ### Small bugs 
 
-Need to improve the way chunks are stitched together at their bounds.... hmmm 
+Need to improve the way chunks are stitched together at their bounds at lower LOD levels.... thats a tricky one. 
+ ***  Maybe do not 'decimate' near the bounds when doing LOD. !! 
