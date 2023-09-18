@@ -7,7 +7,7 @@
  In this way, it works similarly to a voxel chunking system ( a la minecraft) except using heightfields (2d) instead of voxels (3d). 
  
 
-![terrain1](https://github.com/ethereumdegen/bevy_mesh_terrain/assets/6249263/ed37d748-777e-4f73-ad83-9ec299b0c308)
+ ![terrain1](https://github.com/ethereumdegen/bevy_mesh_terrain/assets/6249263/cc4ed950-dd54-430f-a40e-dc1df76d303f)
 
 
   
