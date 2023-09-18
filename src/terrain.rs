@@ -63,6 +63,7 @@ pub struct TerrainData {
     
     //could be a massive image like 4k 
     height_map_image_handle: Option<Handle<Image>>, 
+    
     //need to add asset handles here for the heightmap image and texture image !!! 
     
      
@@ -72,6 +73,8 @@ pub struct TerrainData {
     
     texture_image_handle: Option<Handle<Image>>,
     texture_image_sections: u32, 
+    
+    splat_image_handle: Option<Handle<Image>>,
     
    // texture_image_finalized: bool , 
     pub terrain_material_handle: Option<Handle<TerrainMaterial> >
@@ -83,9 +86,14 @@ impl TerrainData{
         self.height_map_image_handle = Some(handle.clone()); //strong clone 
     }
     
-     pub fn add_array_texture_image(&mut self, handle: Handle<Image>, sections: u32  ){
+    pub fn add_array_texture_image(&mut self, handle: Handle<Image>, sections: u32  ){
         self.texture_image_handle = Some(handle.clone()); //strong clone 
         self.texture_image_sections = sections; 
+    }
+    
+    pub fn add_splat_texture_image(&mut self, handle: Handle<Image>   ){
+        self.splat_image_handle = Some(handle.clone()); //strong clone 
+       
     }
     
 }
@@ -202,8 +210,9 @@ pub fn load_terrain_texture_from_image(
                    
                    terrain_data.terrain_material_handle = Some(  materials.add(
                         TerrainMaterial {
-                                color: Color::WHITE, 
-                                array_texture:  terrain_data.texture_image_handle.clone()  ,
+                                
+                                array_texture:  terrain_data.texture_image_handle.clone(),
+                                splat_texture:  terrain_data.splat_image_handle.clone()
                             }
                     ) ); 
                    println!("terrain image finalized");

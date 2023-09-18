@@ -19,12 +19,17 @@ https://github.com/bevyengine/bevy/blob/main/assets/shaders/custom_material.wgsl
 pub struct TerrainMaterial {
    
     
-    #[uniform(0)]
-    pub color: Color,
+    //#[uniform(0)]
+    //pub color: Color,
+    
+    
     #[texture(1, dimension = "2d_array")]
     #[sampler(2)]
-    pub array_texture: Option<Handle<Image>>,
-  
+    pub array_texture: Option<Handle<Image>>, 
+    
+    #[texture(3)]
+    #[sampler(4)]
+    pub splat_texture: Option<Handle<Image>>, 
     
 }
 

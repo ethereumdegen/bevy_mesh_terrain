@@ -69,9 +69,7 @@ impl PreMesh {
         let start_bound = [ (width as f32 * bounds_pct[0][0]) as usize, (height as f32 * bounds_pct[0][1]) as usize  ];
         let end_bound = [ (width as f32 * bounds_pct[1][0]) as usize, (height as f32 * bounds_pct[1][1]) as usize  ];
           
-           //let heightmap_x_max = width - 1;
-           //let heightmap_y_max = height- 1;
-          
+        let texture_dimensions =  [ (width+1) as f32 , (height+1) as f32 ]; 
           
          
            for x in start_bound[0]..end_bound[0] - 0 {
@@ -86,10 +84,10 @@ impl PreMesh {
                     let rb = heightmap[x + 1][y] as f32 * height_scale;
                     let rf = heightmap[x + 1][y + 1] as f32 * height_scale;
                                         
-                    let uv_lb = compute_uv(fx, fz, bounds_pct);
-                    let uv_rb = compute_uv(fx + 1.0, fz, bounds_pct);
-                    let uv_rf = compute_uv(fx + 1.0, fz + 1.0, bounds_pct);
-                    let uv_lf = compute_uv(fx, fz + 1.0, bounds_pct);
+                    let uv_lb = compute_uv(fx, fz, bounds_pct, texture_dimensions);
+                    let uv_rb = compute_uv(fx + 1.0, fz, bounds_pct,texture_dimensions);
+                    let uv_rf = compute_uv(fx + 1.0, fz + 1.0, bounds_pct,texture_dimensions);
+                    let uv_lf = compute_uv(fx, fz + 1.0, bounds_pct,texture_dimensions);
                     
                     
               //      println!("sampled: {} {} {} {} ", lb,lf,rb,rf);
@@ -136,10 +134,31 @@ impl PreMesh {
     ]
 }
  
- fn compute_uv(x: f32, y: f32, bounds: [[f32; 2]; 2]) -> [f32; 2] {
-    [
-        (x - bounds[0][0]) / (bounds[1][0] - bounds[0][0]),
-        (y - bounds[0][1]) / (bounds[1][1] - bounds[0][1])
-    ]
+ //is this right !!?? 
+ fn compute_uv(x: f32, y: f32, bounds: [[f32; 2]; 2], texture_dimensions: [f32; 2]) -> [f32; 2] {
+     
+     let start_bounds_x = bounds[0][0];
+     let end_bounds_x = bounds[1][0];
+     
+     let start_bounds_y = bounds[0][1];
+     let end_bounds_y = bounds[1][1];
+     
+     //x and y are the origin coords 
+     
+    let uv_worldspace = [
+        (x ) / (end_bounds_x - start_bounds_x),
+        (y ) / (end_bounds_y - start_bounds_y)
+    ];
+    
+    let uv = [
+        uv_worldspace[0] / texture_dimensions[0],
+        uv_worldspace[1] / texture_dimensions[1],  
+        
+    ];
+    
+   // println!("uv {:?}", uv);
+     
+    
+    uv
 }
   
