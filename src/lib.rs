@@ -2,7 +2,7 @@
 use std::time::Duration;
 
 use bevy::{   prelude::*, time::common_conditions::on_timer};
-use chunk::{activate_terrain_chunks, destroy_terrain_chunks, build_active_terrain_chunks, finish_chunk_build_tasks, ChunkEvent};
+use chunk::{activate_terrain_chunks, destroy_terrain_chunks, despawn_terrain_chunks,  build_active_terrain_chunks, finish_chunk_build_tasks, ChunkEvent};
 use collision::spawn_chunk_collision_data;
 use terrain::{
     load_height_map_data_from_image,
@@ -43,6 +43,7 @@ impl Plugin for TerrainMeshPlugin {
         
         app.add_systems(Update, activate_terrain_chunks .run_if(on_timer(Duration::from_millis(100)) )   );
         app.add_systems(Update, destroy_terrain_chunks .run_if(on_timer(Duration::from_millis(100)) )   );
+        app.add_systems( Last , despawn_terrain_chunks ); 
         
         app.add_systems(Update, finish_chunk_build_tasks.run_if(on_timer(Duration::from_millis(100)) )   );
         

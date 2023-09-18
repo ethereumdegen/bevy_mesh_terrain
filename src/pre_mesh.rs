@@ -61,7 +61,8 @@ impl PreMesh {
     */
     pub fn from_heightmap_subsection( 
           sub_heightmap : &SubHeightMapU16, 
-         
+          
+          height_scale: f32,
           lod_level: u8, // 0 is full quality, higher levels decimate the mesh 
        
           texture_dimensions: [f32 ; 2]
@@ -73,7 +74,7 @@ impl PreMesh {
        
         
           
-        let height_scale = 0.004; // Adjust as needed
+     
       
           
           let width = texture_dimensions[0];

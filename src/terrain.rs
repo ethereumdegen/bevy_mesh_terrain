@@ -16,15 +16,18 @@ pub struct TerrainViewer {
 
 
 #[derive(Component)]
-pub struct TerrainConfig {
-    
+pub struct TerrainConfig { 
     pub terrain_dimensions: Vec2,  
-    
-  //  pub chunk_width: f32,
+     
     pub chunk_rows: u32,
     
     pub render_distance: f32, 
     pub lod_distance: f32 ,
+    
+    pub lod_level_offset: u8 , 
+
+    pub height_scale: f32,
+
     
     pub attach_collision_data: bool 
 }
@@ -37,6 +40,10 @@ impl Default for TerrainConfig {
             chunk_rows: 16 ,   //making this too high produces too many materials which causes lag.  Too low and we cant LOD properly . 16 seems good . 
             render_distance: 2000.0, 
             lod_distance: 1000.0 ,
+
+            lod_level_offset: 0, 
+            
+             height_scale: 0.004,  //for building the mesh 
             
             attach_collision_data: true 
         }
@@ -48,6 +55,12 @@ impl TerrainConfig {
      pub fn set_render_distance(mut self, distance: f32 ) -> Self {
          
          self.render_distance = distance;
+         self 
+     }
+     
+     pub fn set_lod_distance(mut self, distance: f32 ) -> Self {
+         
+         self.lod_distance = distance;
          self 
      }
     
