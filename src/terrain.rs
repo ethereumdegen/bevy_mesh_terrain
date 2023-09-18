@@ -73,6 +73,7 @@ pub struct TerrainData {
     
     texture_image_handle: Option<Handle<Image>>,
     texture_image_sections: u32, 
+    texture_image_finalized: bool, 
     
     splat_image_handle: Option<Handle<Image>>,
     
@@ -94,6 +95,17 @@ impl TerrainData{
     pub fn add_splat_texture_image(&mut self, handle: Handle<Image>   ){
         self.splat_image_handle = Some(handle.clone()); //strong clone 
        
+    }
+    
+    
+    pub fn get_array_texture_image(&self) -> &Option<Handle<Image>> {
+        
+        &self.texture_image_handle 
+    }
+    
+    pub fn get_splat_texture_image(&self) -> &Option<Handle<Image>> {
+        
+        &self.splat_image_handle 
     }
     
 }
@@ -169,10 +181,10 @@ pub fn load_terrain_texture_from_image(
 ){
        for (terrain_entity, terrain_config, mut terrain_data) in terrain_query.iter_mut() { 
   
-           let texture_image_finalized_is_some = terrain_data.terrain_material_handle.is_some(); 
+           let texture_image_finalized  = terrain_data.texture_image_finalized; 
          
          //try to load the height map data from the height_map_image_handle 
-            if !texture_image_finalized_is_some {
+            if !texture_image_finalized {
                  
                 let mut texture_image:&mut Image = match &terrain_data.texture_image_handle {
                     Some(texture_image_handle) => {
@@ -208,13 +220,19 @@ pub fn load_terrain_texture_from_image(
                          texture_image.reinterpret_stacked_2d_as_array(array_layers);
                     }
                    
+                   terrain_data. texture_image_finalized = true; 
+                   
+                   
                    terrain_data.terrain_material_handle = Some(  materials.add(
                         TerrainMaterial {
-                                
+                                chunk_uv: Vec4::new( 0.0,1.0,0.0,1.0 ),
                                 array_texture:  terrain_data.texture_image_handle.clone(),
                                 splat_texture:  terrain_data.splat_image_handle.clone()
                             }
                     ) ); 
+                    
+                    
+                    
                    println!("terrain image finalized");
                 
             }

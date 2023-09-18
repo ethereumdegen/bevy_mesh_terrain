@@ -7,12 +7,12 @@
 
 #import bevy_pbr::mesh_vertex_output MeshVertexOutput
 
-struct CustomMaterial {
-    color: vec4<f32>,
+struct ChunkMaterial {
+    chunk_uv: vec4<f32>,  //start_x, start_y, end_x, end_y 
 };
 
-//@group(1) @binding(0)
-//var<uniform> material: CustomMaterial;
+@group(1) @binding(0)
+var<uniform> material: ChunkMaterial;
 @group(1) @binding(1)
 var base_color_texture: texture_2d_array<f32>;
 @group(1) @binding(2)
@@ -31,7 +31,10 @@ fn fragment(
     mesh: MeshVertexOutput,
 ) -> @location(0) vec4<f32> {
     
-    let splat_values = textureSample(splat_map_texture, splat_map_sampler, mesh.uv);
+    // fix me up  -- seems to be ALMOST working right 
+    let splat_uv = material.chunk_uv.xy + mesh.uv * (material.chunk_uv.zw - material.chunk_uv.xy);
+    
+    let splat_values = textureSample(splat_map_texture, splat_map_sampler, splat_uv );
 
     let color_from_texture_0 = textureSample(base_color_texture, base_color_sampler, mesh.uv, 0);
     let color_from_texture_1 = textureSample(base_color_texture, base_color_sampler, mesh.uv, 1);

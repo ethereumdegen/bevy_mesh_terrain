@@ -260,6 +260,9 @@ pub fn build_active_terrain_chunks(
             continue; 
         }
               
+        let array_texture =  terrain_data.get_array_texture_image().clone();
+        let splat_texture =  terrain_data.get_splat_texture_image().clone();
+              
         let terrain_material_handle = terrain_material_handle_option.as_ref().unwrap();
               
         for (chunk_id , chunk_data) in terrain_data.chunks.iter_mut(){
@@ -289,6 +292,22 @@ pub fn build_active_terrain_chunks(
               let mesh = pre_mesh.build();
               
             //  let sample_mesh:Mesh = shape::Plane::from_size( chunk_dimensions.x ).into();
+            
+            let chunk_terrain_material:Handle<TerrainMaterial>  =  terrain_materials.add(
+                    TerrainMaterial {
+                               //tell the shader how to use the splat map for this chunk 
+                                chunk_uv: Vec4::new( 
+                                    height_map_subsection_pct[0][0],
+                                    height_map_subsection_pct[0][1],
+                                    height_map_subsection_pct[1][0],
+                                    height_map_subsection_pct[1][1] ),
+                                    
+                                    
+                                array_texture: array_texture.clone(),
+                                splat_texture : splat_texture.clone()
+                            }
+                
+            )  ;
          
               let terrain_mesh_handle = meshes.add( mesh );
                
@@ -297,7 +316,7 @@ pub fn build_active_terrain_chunks(
               let child_mesh =  commands.spawn(
                      TerrainPbrBundle {
                         mesh: terrain_mesh_handle,
-                        material: terrain_material_handle.clone(),
+                        material: chunk_terrain_material ,
                         transform: Transform::from_xyz( chunk_location_offset.x,chunk_location_offset.y,chunk_location_offset.z ) ,
                         ..default()
                         } 

@@ -19,8 +19,8 @@ https://github.com/bevyengine/bevy/blob/main/assets/shaders/custom_material.wgsl
 pub struct TerrainMaterial {
    
     
-    //#[uniform(0)]
-    //pub color: Color,
+    #[uniform(0)]
+    pub chunk_uv: Vec4,
     
     
     #[texture(1, dimension = "2d_array")]
