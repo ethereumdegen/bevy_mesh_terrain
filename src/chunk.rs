@@ -23,7 +23,11 @@ pub struct NeedToDespawnChunk {
 
 #[derive(Component,Default)]
 pub struct Chunk {
-    pub chunk_id: u32 //same as chunk index   
+    pub chunk_id: u32, //same as chunk index   
+    pub chunk_bounds: [[usize;2]; 2 ],
+    pub built: bool ,
+    pub lod_level: u8
+    
 } 
    
  
@@ -54,12 +58,15 @@ pub struct MeshBuilderTask(Task<BuiltChunkMeshData>);
 
 pub struct BuiltChunkMeshData {
     terrain_entity_id: Entity, 
+    chunk_bounds: [[usize;2]; 2 ],
     
     chunk_id: u32,
     chunk_location_offset:Vec3, 
     
     mesh:Mesh,
-    chunk_uv: Vec4 
+    chunk_uv: Vec4,
+    
+     lod_level: u8  
     
 }
 
@@ -219,10 +226,12 @@ pub fn destroy_terrain_chunks(
         
         if let Ok( (mut terrain_data, terrain_config, terrain_transform ) ) = terrain_query.get_mut( parent_terrain_entity.get() ){
             
+            let deadband_multiplier = 1.2; //reduces the frequency of chunks having to rebuild so often 
+            
             let chunk_rows = terrain_config.chunk_rows;
             let terrain_dimensions= terrain_config.terrain_dimensions;
             let terrain_origin = terrain_transform.translation();
-            let max_render_distance = terrain_config.get_max_render_distance() ; //safety factor 
+            let max_render_distance = terrain_config.get_max_render_distance() * deadband_multiplier;  
             
             //if too far away ...
             let chunk_coords = ChunkCoords::from_chunk_id(chunk_id, chunk_rows);
@@ -594,20 +603,23 @@ pub fn build_active_terrain_chunks(
                     let mesh = PreMesh::from_heightmap_subsection( 
                          &sub_heightmap, 
                          
-                         height_scale,
-                        lod_level,  
+                          height_scale,
+                          lod_level,  
+                       
                         
                         [terrain_dimensions.x, terrain_dimensions.y]
                     ).build(); 
                     
                      BuiltChunkMeshData {
                          chunk_id: chunk_id_clone,
+                         chunk_bounds: [sub_heightmap.start_bound,sub_heightmap.end_bound],
                          
                          chunk_location_offset: chunk_location_offset.clone(),
                          
                          terrain_entity_id: terrain_entity.clone(),
                          mesh,
-                         chunk_uv
+                         chunk_uv,
+                         lod_level 
                      }
                 });
 
@@ -657,6 +669,7 @@ pub fn finish_chunk_build_tasks(
              
              let array_texture =  terrain_data.get_array_texture_image().clone();
              let splat_texture =  terrain_data.get_splat_texture_image().clone();
+             let alpha_mask_texture =  terrain_data.get_alpha_mask_texture_image().clone();
                                         
                                         
              if terrain_data.chunks.get_mut( &chunk_id ).is_some() == false {continue;}      
@@ -673,7 +686,8 @@ pub fn finish_chunk_build_tasks(
                                 },
                                 
                                 array_texture: array_texture.clone(),
-                                splat_texture : splat_texture.clone()
+                                splat_texture : splat_texture.clone(),
+                                alpha_mask_texture: alpha_mask_texture.clone() 
                             }
                 
             )  ;
@@ -695,7 +709,10 @@ pub fn finish_chunk_build_tasks(
                         } 
                     ).insert(  
                         Chunk {
-                            chunk_id: chunk_id.clone()
+                            chunk_id: chunk_id.clone(),
+                            chunk_bounds: built_chunk_mesh_data.chunk_bounds ,
+                            built: true,
+                            lod_level : built_chunk_mesh_data.lod_level
                         } 
                     ) 
                     .id() ; 

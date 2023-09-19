@@ -47,11 +47,19 @@ pub struct TerrainMaterial {
     #[sampler(4)]
     pub splat_texture: Option<Handle<Image>>, 
     
+    #[texture(5)]
+    #[sampler(6)]
+    pub alpha_mask_texture: Option<Handle<Image>>, 
+    
 }
 
 impl Material for TerrainMaterial {
     fn fragment_shader() -> ShaderRef {
         "shaders/terrain.wgsl".into()
+    }
+    
+     fn alpha_mode(&self) -> AlphaMode {
+        AlphaMode::Blend
     }
 }
  

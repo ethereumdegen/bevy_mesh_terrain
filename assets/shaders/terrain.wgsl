@@ -24,7 +24,12 @@ var splat_map_texture: texture_2d<f32>; //each chunk will need its own  !
 @group(1) @binding(4)
 var splat_map_sampler: sampler;
 
-//use a U16 bit texture for splat mapping where each pixel acts like a bitfield..?    
+//works similar to splat mask 
+@group(1) @binding(5)
+var alpha_mask_texture: texture_2d<f32>; 
+@group(1) @binding(6)
+var alpha_mask_sampler: sampler;
+ 
 
 
 @fragment
@@ -39,18 +44,23 @@ fn fragment(
     let splat_uv = material.chunk_uv.xy + mesh.uv * (material.chunk_uv.zw - material.chunk_uv.xy);
     
     let splat_values = textureSample(splat_map_texture, splat_map_sampler, splat_uv );
+    let alpha_mask_value = textureSample(alpha_mask_texture, alpha_mask_sampler, splat_uv );
 
     let color_from_texture_0 = textureSample(base_color_texture, base_color_sampler, tiled_uv, 0);
     let color_from_texture_1 = textureSample(base_color_texture, base_color_sampler, tiled_uv, 1);
     let color_from_texture_2 = textureSample(base_color_texture, base_color_sampler, tiled_uv, 2);
     let color_from_texture_3 = textureSample(base_color_texture, base_color_sampler, tiled_uv, 3);
 
-    let final_color = color_from_texture_0 * splat_values.r +
+    let pre_mask_color = color_from_texture_0 * splat_values.r +
                       color_from_texture_1 * splat_values.g +
                       color_from_texture_2 * splat_values.b +
                       color_from_texture_3 * splat_values.a;
 
-    return final_color;
+    // If hole_mask_value is 0.0, make the fragment transparent, otherwise keep original final_color
     
+    
+    let final_color = vec4(pre_mask_color.rgb,   alpha_mask_value.r ); 
+    
+    return final_color;
     
 }

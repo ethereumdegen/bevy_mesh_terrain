@@ -1,4 +1,4 @@
-use bevy::render::render_resource::{SamplerDescriptor, AddressMode, FilterMode};
+use bevy::render::render_resource::{SamplerDescriptor, AddressMode, FilterMode, TextureFormat};
 use bevy::render::texture::ImageSampler;
 use bevy::{   prelude::*, utils::HashMap, render::render_resource::Texture, asset::LoadState};
 
@@ -112,7 +112,7 @@ pub struct TerrainData {
     
     splat_image_handle: Option<Handle<Image>>,
     
- 
+    alpha_mask_image_handle: Option<Handle<Image>>, //built from the height map 
    
     pub terrain_material_handle: Option<Handle<TerrainMaterial> >
 }
@@ -147,6 +147,11 @@ impl TerrainData{
         &self.splat_image_handle 
     }
     
+    pub fn get_alpha_mask_texture_image(&self) -> &Option<Handle<Image>> {
+        
+        &self.alpha_mask_image_handle 
+    }
+    
 }
  
  //finalizes loading of height map by looking for image handle and applying it to the height map data 
@@ -154,7 +159,7 @@ pub fn load_height_map_data_from_image(
     
     mut terrain_query: Query<(Entity, &TerrainConfig,&mut TerrainData)>, 
     asset_server: Res<AssetServer>,  
-    images: Res<Assets<Image>>, 
+    mut images: ResMut<Assets<Image>>, 
     
 ){ 
     
@@ -197,6 +202,9 @@ pub fn load_height_map_data_from_image(
                     }
                     
                 }
+                
+                let alpha_mask_image:Image = build_alpha_mask_image( height_map_image );
+                terrain_data.alpha_mask_image_handle = Some(images.add(  alpha_mask_image   ));
                    
             
                
@@ -207,6 +215,45 @@ pub fn load_height_map_data_from_image(
         
         
     }
+}
+
+
+pub fn build_alpha_mask_image( height_map_image: &Image ) -> Image {
+    
+     
+    
+    let width = height_map_image.size().x as usize;
+    let height = height_map_image.size().y as usize;
+    
+    const THRESHOLD: u16 = (0.05 * 65535.0) as u16;
+    
+    // With the format being R16Uint, each pixel is represented by 2 bytes
+    let mut modified_data = Vec::with_capacity(height * width * 2);  // 2 bytes per pixel
+    
+    for y in 0..height {
+        for x in 0..width {
+            let index = 2 * (y * width + x); // 2 because of R16Uint
+            let height_value = u16::from_le_bytes([height_map_image.data[index], height_map_image.data[index + 1]]);
+            
+            let pixel_value:f32 = if height_value > THRESHOLD {
+                1.0
+            } else {
+                0.0
+            };
+            modified_data.extend_from_slice(&pixel_value.to_le_bytes());
+        }
+    }
+
+    // Assuming Image has a method from_data for creating an instance from raw data
+  
+    
+    Image::new(
+        height_map_image.texture_descriptor.size, 
+        height_map_image.texture_descriptor.dimension, 
+        modified_data,
+        TextureFormat::R32Float)
+    
+   
 }
 
 
@@ -270,7 +317,8 @@ pub fn load_terrain_texture_from_image(
                                 },
                                
                                 array_texture:  terrain_data.texture_image_handle.clone(),
-                                splat_texture:  terrain_data.splat_image_handle.clone()
+                                splat_texture:  terrain_data.splat_image_handle.clone(),
+                                alpha_mask_texture: terrain_data.alpha_mask_image_handle.clone() 
                             }
                     ) ); 
                     
