@@ -1,6 +1,7 @@
  
 
-use bevy::{prelude::*, utils::HashMap, input::mouse::MouseMotion};
+use bevy::prelude::*;
+use bevy::input::mouse::MouseMotion;
 use bevy_mesh_terrain::{TerrainMeshPlugin, terrain::{TerrainConfig, TerrainData, TerrainViewer}};
 
 
