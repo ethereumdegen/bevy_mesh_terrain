@@ -28,21 +28,17 @@ pub struct NeedToDespawnChunk {
 pub struct Chunk {
     pub chunk_id: u32, //same as chunk index   
     pub chunk_bounds: [[usize;2]; 2 ],
-    pub built: bool ,
+    pub built: bool,
     pub lod_level: u8
     
 } 
    
  
 pub struct ChunkData {
-    is_active: bool,
-    
-    needs_rebuild: bool, 
-    
+    _is_active: bool,
+    _needs_rebuild: bool, 
     spawned_mesh_entity: Option<Entity> ,
-    
     chunk_state: ChunkState ,
-    
     lod_level: u8 //lod level of 0 is maximum quality.  1 is less, 2 is much less, 3 is very decimated 
 }
 
@@ -487,11 +483,11 @@ pub fn activate_chunk_at_coords(
          terrain_data.chunks.insert(  
             chunk_index  , 
             ChunkData {
-               is_active: true, //useless for now 
-               chunk_state: ChunkState::PENDING,
+               _is_active: true, //useless for now 
+               _needs_rebuild: true ,  //useless for now 
                spawned_mesh_entity: None,
-               needs_rebuild: true ,  //useless for now 
-               lod_level 
+               chunk_state: ChunkState::PENDING,
+               lod_level
             });
             
     } 
