@@ -44,9 +44,9 @@ pub struct ChunkData {
 
 #[derive(Eq,PartialEq)]
 enum ChunkState{
-    FULLY_BUILT,
-    BUILDING,   
-    PENDING 
+    FullyBuilt,
+    Building,   
+    Pending 
 }
 
 
@@ -454,7 +454,7 @@ pub fn activate_chunk_at_coords(
        let chunk_data = terrain_data.chunks.get(&chunk_index).unwrap(); 
          
         // do not rebuild chunks until they are already fully built 
-        if chunk_data.chunk_state ==  ChunkState::FULLY_BUILT {
+        if chunk_data.chunk_state ==  ChunkState::FullyBuilt {
             
             let existing_lod = chunk_data.lod_level; 
             if lod_level != existing_lod && chunk_data.spawned_mesh_entity.is_some(){
@@ -484,7 +484,7 @@ pub fn activate_chunk_at_coords(
                _is_active: true, //useless for now 
                _needs_rebuild: true ,  //useless for now 
                spawned_mesh_entity: None,
-               chunk_state: ChunkState::PENDING,
+               chunk_state: ChunkState::Pending,
                lod_level
             });
             
@@ -538,8 +538,8 @@ pub fn build_active_terrain_chunks(
         let terrain_data_chunks = &mut terrain_data.chunks; 
         for (chunk_id , chunk_data) in terrain_data_chunks.iter_mut(){
             
-            if chunk_data.chunk_state == ChunkState::PENDING {
-                chunk_data.chunk_state = ChunkState::BUILDING;
+            if chunk_data.chunk_state == ChunkState::Pending {
+                chunk_data.chunk_state = ChunkState::Building;
                 
               let chunk_rows = terrain_config.chunk_rows;
               let terrain_dimensions = terrain_config.terrain_dimensions;
@@ -709,7 +709,7 @@ pub fn finish_chunk_build_tasks(
               let mut terrain_entity_commands  = commands.get_entity(terrain_entity_id).unwrap();
               terrain_entity_commands.add_child(    child_mesh  );
             
-               chunk_data.chunk_state = ChunkState::FULLY_BUILT; 
+               chunk_data.chunk_state = ChunkState::FullyBuilt; 
                
                //need to do this in a safer way!!! 
                if let Some(old_mesh_entity) =  chunk_data.spawned_mesh_entity { 
