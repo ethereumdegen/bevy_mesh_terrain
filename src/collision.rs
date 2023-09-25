@@ -1,7 +1,7 @@
 
 use bevy::prelude::*;
 
-use crate::chunk::{Chunk, ChunkEvent, ChunkCoordinates};
+use crate::chunk::{Chunk, ChunkCoordinates};
 use crate::heightmap::SubHeightMapU16;
 use crate::terrain::{TerrainData, TerrainConfig}; 
 

@@ -2,7 +2,7 @@ use bevy::prelude::Mesh;
 use bevy::render::mesh::Indices;
 use bevy::render::render_resource::PrimitiveTopology::TriangleList; 
 
-use crate::heightmap::{HeightMapU16, SubHeightMapU16};
+use crate::heightmap::SubHeightMapU16;
 
 
 pub struct PreMesh {
