@@ -3,7 +3,10 @@ use bevy::tasks::{Task, AsyncComputeTaskPool};
 
 use futures_lite::future;
 
-use crate::{terrain::{TerrainConfig, TerrainViewer, TerrainData}, pre_mesh::PreMesh, terrain_material::{TerrainMaterial, ChunkMaterialUniforms}, heightmap::SubHeightMapU16};
+use crate::heightmap::SubHeightMapU16;
+use crate::pre_mesh::PreMesh;
+use crate::terrain::{TerrainConfig, TerrainViewer, TerrainData};
+use crate::terrain_material::{TerrainMaterial, ChunkMaterialUniforms};
 
 
 

@@ -5,9 +5,8 @@ use bevy::render::texture::ImageSampler;
 use bevy::utils::HashMap;
 
 use crate::terrain_material::{TerrainMaterial, ChunkMaterialUniforms};
-use crate::{chunk::ChunkData, heightmap::HeightMapU16};
-     
- use crate::heightmap::HeightMap;
+use crate::chunk::ChunkData;
+use crate::heightmap::{HeightMap,HeightMapU16};
 
 //attach me to camera 
 #[derive(Component,Default)]
