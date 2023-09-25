@@ -158,13 +158,13 @@ impl TerrainData{
  //finalizes loading of height map by looking for image handle and applying it to the height map data 
 pub fn load_height_map_data_from_image(  
     
-    mut terrain_query: Query<(Entity, &TerrainConfig,&mut TerrainData)>, 
+    mut terrain_query: Query<&mut TerrainData, With<TerrainConfig>>,
     asset_server: Res<AssetServer>,  
     mut images: ResMut<Assets<Image>>, 
     
 ){ 
     
-    for (terrain_entity, terrain_config, mut terrain_data) in terrain_query.iter_mut() { 
+    for mut terrain_data in terrain_query.iter_mut() {
         
         
         let height_map_data_is_some = terrain_data.height_map_data.is_some(); 
@@ -260,13 +260,13 @@ pub fn build_alpha_mask_image( height_map_image: &Image ) -> Image {
 
 //consider building a custom loader for this , not  Image 
 pub fn load_terrain_texture_from_image( 
-    mut terrain_query: Query<(Entity, &TerrainConfig,&mut TerrainData)>, 
+    mut terrain_query: Query<&mut TerrainData, With<TerrainConfig>>,
     asset_server: Res<AssetServer>,  
     mut images: ResMut<Assets<Image>>  , 
     
     mut materials: ResMut<Assets<TerrainMaterial>>,
 ){
-       for (terrain_entity, terrain_config, mut terrain_data) in terrain_query.iter_mut() { 
+       for mut terrain_data in terrain_query.iter_mut() {
   
            let texture_image_finalized  = terrain_data.texture_image_finalized; 
          

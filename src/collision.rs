@@ -41,13 +41,13 @@ pub fn spawn_chunk_collision_data(
      
     mut chunk_query: Query<(Entity,  &mut Chunk, &Parent), Without< AddedChunkCollisionData>  > ,
     
-    mut terrain_query : Query<(&mut TerrainData,&TerrainConfig, &Transform)> ,
+    mut terrain_query : Query<(&mut TerrainData,&TerrainConfig)> ,
  
 ){ 
                 
            for  ( chunk_entity, chunk_data, parent_terrain_entity  ) in  chunk_query.iter() {  
                     
-                    if let Ok( (  terrain_data, terrain_config, terrain_transform ) ) = terrain_query.get_mut( parent_terrain_entity.get() ){
+                    if let Ok( (terrain_data, terrain_config) ) = terrain_query.get_mut( parent_terrain_entity.get() ){
                            
                             if !terrain_config.attach_collision_data {  continue }
                             
