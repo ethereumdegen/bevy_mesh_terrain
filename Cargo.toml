@@ -1,6 +1,6 @@
 [package]
 name = "bevy_mesh_terrain"
-description = "A simple and ergonomic heightmap terrain plugin for bevy game engine"
+description = "A simple and ergonomic heightmap terrain plugin for Bevy game engine"
 version = "0.3.4"
 edition = "2021"
 authors = [ "ethereumdegen" ]
