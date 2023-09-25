@@ -273,7 +273,7 @@ pub fn load_terrain_texture_from_image(
          //try to load the height map data from the height_map_image_handle 
             if !texture_image_finalized {
                  
-                let mut texture_image:&mut Image = match &terrain_data.texture_image_handle {
+                let texture_image:&mut Image = match &terrain_data.texture_image_handle {
                     Some(texture_image_handle) => {
                         
                         let texture_image_loaded = asset_server.get_load_state( texture_image_handle )  ;

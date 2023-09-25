@@ -38,11 +38,8 @@ pub struct AddedChunkCollisionData { }
   
 pub fn spawn_chunk_collision_data(
     mut commands: Commands, 
-     
-    mut chunk_query: Query<(Entity,  &mut Chunk, &Parent), Without< AddedChunkCollisionData>  > ,
-    
+    chunk_query: Query<(Entity,  &mut Chunk, &Parent), Without<AddedChunkCollisionData>>,
     mut terrain_query : Query<(&mut TerrainData,&TerrainConfig)> ,
- 
 ){ 
                 
            for  ( chunk_entity, chunk_data, parent_terrain_entity  ) in  chunk_query.iter() {  

@@ -218,7 +218,7 @@ pub fn destroy_terrain_chunks(
     };
         
     
-    for (chunk_entity_id, mut chunk_data, parent_terrain_entity) in chunk_query.iter_mut() { 
+    for (chunk_entity_id, chunk_data, parent_terrain_entity) in chunk_query.iter_mut() { 
         
         let chunk_id = chunk_data.chunk_id; 
         
@@ -433,7 +433,7 @@ pub fn activate_terrain_chunks(
 
 pub fn activate_chunk_at_coords( 
     chunk_coords: ChunkCoords,
-    mut terrain_data: &mut TerrainData,
+    terrain_data: &mut TerrainData,
     terrain_config: &TerrainConfig,
     lod_level: u8
 ) {
