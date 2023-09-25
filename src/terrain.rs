@@ -1,11 +1,12 @@
+use bevy::prelude::*;
+use bevy::asset::LoadState;
 use bevy::render::render_resource::{SamplerDescriptor, AddressMode, FilterMode, TextureFormat};
 use bevy::render::texture::ImageSampler;
-use bevy::{   prelude::*, utils::HashMap, render::render_resource::Texture, asset::LoadState};
+use bevy::utils::HashMap;
 
 use crate::terrain_material::{TerrainMaterial, ChunkMaterialUniforms};
-use crate::{chunk::ChunkData, heightmap::HeightMapU16};
-     
- use crate::heightmap::HeightMap;
+use crate::chunk::ChunkData;
+use crate::heightmap::{HeightMap,HeightMapU16};
 
 //attach me to camera 
 #[derive(Component,Default)]
@@ -157,13 +158,13 @@ impl TerrainData{
  //finalizes loading of height map by looking for image handle and applying it to the height map data 
 pub fn load_height_map_data_from_image(  
     
-    mut terrain_query: Query<(Entity, &TerrainConfig,&mut TerrainData)>, 
+    mut terrain_query: Query<&mut TerrainData, With<TerrainConfig>>,
     asset_server: Res<AssetServer>,  
     mut images: ResMut<Assets<Image>>, 
     
 ){ 
     
-    for (terrain_entity, terrain_config, mut terrain_data) in terrain_query.iter_mut() { 
+    for mut terrain_data in terrain_query.iter_mut() {
         
         
         let height_map_data_is_some = terrain_data.height_map_data.is_some(); 
@@ -259,20 +260,20 @@ pub fn build_alpha_mask_image( height_map_image: &Image ) -> Image {
 
 //consider building a custom loader for this , not  Image 
 pub fn load_terrain_texture_from_image( 
-    mut terrain_query: Query<(Entity, &TerrainConfig,&mut TerrainData)>, 
+    mut terrain_query: Query<&mut TerrainData, With<TerrainConfig>>,
     asset_server: Res<AssetServer>,  
     mut images: ResMut<Assets<Image>>  , 
     
     mut materials: ResMut<Assets<TerrainMaterial>>,
 ){
-       for (terrain_entity, terrain_config, mut terrain_data) in terrain_query.iter_mut() { 
+       for mut terrain_data in terrain_query.iter_mut() {
   
            let texture_image_finalized  = terrain_data.texture_image_finalized; 
          
          //try to load the height map data from the height_map_image_handle 
             if !texture_image_finalized {
                  
-                let mut texture_image:&mut Image = match &terrain_data.texture_image_handle {
+                let texture_image:&mut Image = match &terrain_data.texture_image_handle {
                     Some(texture_image_handle) => {
                         
                         let texture_image_loaded = asset_server.get_load_state( texture_image_handle )  ;

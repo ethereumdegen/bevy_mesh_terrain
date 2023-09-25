@@ -1,7 +1,9 @@
 
-use bevy::{prelude::*  };
+use bevy::prelude::*;
 
-use crate::{chunk::{Chunk, ChunkEvent, ChunkCoordinates}, terrain::{TerrainData, TerrainConfig}, heightmap::SubHeightMapU16};
+use crate::chunk::{Chunk, ChunkCoordinates};
+use crate::heightmap::SubHeightMapU16;
+use crate::terrain::{TerrainData, TerrainConfig}; 
 
 /*
 
@@ -36,16 +38,13 @@ pub struct AddedChunkCollisionData { }
   
 pub fn spawn_chunk_collision_data(
     mut commands: Commands, 
-     
-    mut chunk_query: Query<(Entity,  &mut Chunk, &Parent), Without< AddedChunkCollisionData>  > ,
-    
-    mut terrain_query : Query<(&mut TerrainData,&TerrainConfig, &Transform)> ,
- 
+    chunk_query: Query<(Entity,  &mut Chunk, &Parent), Without<AddedChunkCollisionData>>,
+    mut terrain_query : Query<(&mut TerrainData,&TerrainConfig)> ,
 ){ 
                 
            for  ( chunk_entity, chunk_data, parent_terrain_entity  ) in  chunk_query.iter() {  
                     
-                    if let Ok( (  terrain_data, terrain_config, terrain_transform ) ) = terrain_query.get_mut( parent_terrain_entity.get() ){
+                    if let Ok( (terrain_data, terrain_config) ) = terrain_query.get_mut( parent_terrain_entity.get() ){
                            
                             if !terrain_config.attach_collision_data {  continue }
                             

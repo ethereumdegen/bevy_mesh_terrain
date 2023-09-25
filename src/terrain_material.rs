@@ -1,8 +1,6 @@
-use bevy::{ 
-    prelude::*,
-    reflect::{TypeUuid,TypePath},
-    render:: render_resource::*  ,
-};
+use bevy::prelude::*;
+use bevy::reflect::{TypeUuid,TypePath};
+use bevy::render:: render_resource::*;
 
 /*
 

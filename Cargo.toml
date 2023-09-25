@@ -1,15 +1,15 @@
 [package]
 name = "bevy_mesh_terrain"
-description = "A simple and ergonomic heightmap terrain plugin for bevy game engine"
+description = "A simple and ergonomic heightmap terrain plugin for Bevy game engine"
 version = "0.3.4"
 edition = "2021"
-author = "ethereumdegen"
+authors = [ "ethereumdegen" ]
 license = "MIT"
-readme="readme.md"
-repository ="https://github.com/ethereumdegen/bevy_mesh_terrain"
-keywords=["terrain","bevy"]
+readme = "readme.md"
+repository = "https://github.com/ethereumdegen/bevy_mesh_terrain"
+exclude = [ "/assets/", "/examples/" ]
+keywords = [ "terrain" , "bevy" ]
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
 anyhow = "1.0.75"
