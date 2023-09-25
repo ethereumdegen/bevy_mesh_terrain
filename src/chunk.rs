@@ -1,10 +1,10 @@
+use bevy::prelude::*;
+use bevy::tasks::{Task, AsyncComputeTaskPool};
 
-
-use bevy::{   prelude::*, asset::LoadState, tasks::{Task, AsyncComputeTaskPool}};
+use futures_lite::future;
 
 use crate::{terrain::{TerrainConfig, TerrainViewer, TerrainData}, pre_mesh::PreMesh, terrain_material::{TerrainMaterial, ChunkMaterialUniforms}, heightmap::SubHeightMapU16};
 
-use futures_lite::future;
 
 
 #[derive(Event )]

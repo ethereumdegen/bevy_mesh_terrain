@@ -1,5 +1,5 @@
 
-use bevy::{prelude::*  };
+use bevy::prelude::*;
 
 use crate::{chunk::{Chunk, ChunkEvent, ChunkCoordinates}, terrain::{TerrainData, TerrainConfig}, heightmap::SubHeightMapU16};
 

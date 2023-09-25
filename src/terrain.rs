@@ -1,6 +1,8 @@
+use bevy::prelude::*;
+use bevy::asset::LoadState;
 use bevy::render::render_resource::{SamplerDescriptor, AddressMode, FilterMode, TextureFormat};
 use bevy::render::texture::ImageSampler;
-use bevy::{   prelude::*, utils::HashMap, render::render_resource::Texture, asset::LoadState};
+use bevy::utils::HashMap;
 
 use crate::terrain_material::{TerrainMaterial, ChunkMaterialUniforms};
 use crate::{chunk::ChunkData, heightmap::HeightMapU16};
