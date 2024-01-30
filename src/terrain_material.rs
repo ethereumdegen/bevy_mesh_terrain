@@ -70,5 +70,8 @@ impl Material for TerrainMaterial {
  
  impl VisitAssetDependencies for TerrainMaterial {
      
+     fn visit_dependencies(&self, visit: &mut impl FnMut(bevy::asset::UntypedAssetId)) {
+        //what to do here ? 
+    }
      
  }

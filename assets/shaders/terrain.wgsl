@@ -5,7 +5,9 @@
 
 //see bindings in terrain_material.rs 
 
-#import bevy_pbr::mesh_vertex_output MeshVertexOutput
+#import bevy_pbr::forward_io VertexOutput
+ 
+
 
 struct ChunkMaterialUniforms {
     chunk_uv: vec4<f32>,  //start_x, start_y, end_x, end_y   -- used to subselect a region from the splat texture 
@@ -34,7 +36,7 @@ var alpha_mask_sampler: sampler;
 
 @fragment
 fn fragment(
-    mesh: MeshVertexOutput,
+    mesh: VertexOutput,
 ) -> @location(0) vec4<f32> {
     
    
