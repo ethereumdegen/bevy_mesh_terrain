@@ -10,8 +10,9 @@
 
 
 struct ChunkMaterialUniforms {
+    color_texture_expansion_factor: f32 ,
     chunk_uv: vec4<f32>,  //start_x, start_y, end_x, end_y   -- used to subselect a region from the splat texture 
-    color_texture_expansion_factor: f32 
+    
 };
 
 @group(1) @binding(0)
@@ -40,7 +41,9 @@ fn fragment(
 ) -> @location(0) vec4<f32> {
     
    
-    let tiled_uv = material.color_texture_expansion_factor*mesh.uv;
+   // let tiled_uv = material.color_texture_expansion_factor*mesh.uv;  //cannot get this binding to work !? 
+    let tiled_uv = 4.0*mesh.uv;
+    
     
     // seems to be working !! yay ! makes our splat texture encompass all of the chunks 
     let splat_uv = material.chunk_uv.xy + mesh.uv * (material.chunk_uv.zw - material.chunk_uv.xy);
@@ -65,9 +68,9 @@ fn fragment(
     let splat_value_g_variant = max( 0.0 , splat_values.g - 0.5 ) * 2.0;
     let splat_value_b_variant = max( 0.0 , splat_values.b - 0.5 ) * 2.0;
     
-    let splat_value_r_base = max(0.0, splat_values.r - splat_value_r_variant) * 2.0;
-    let splat_value_g_base = max(0.0, splat_values.g - splat_value_g_variant) * 2.0;
-    let splat_value_b_base = max(0.0, splat_values.b - splat_value_b_variant) * 2.0;
+    let splat_value_r_base = max(0.0, splat_values.r - (splat_value_r_variant * 2.0)) * 2.0;
+    let splat_value_g_base = max(0.0, splat_values.g - (splat_value_g_variant * 2.0)) * 2.0;
+    let splat_value_b_base = max(0.0, splat_values.b - (splat_value_b_variant * 2.0)) * 2.0;
     
      let splat_max =   max ( max ( max(splat_value_r_base, splat_value_r_variant ) , max ( splat_value_g_base , splat_value_g_variant) ) , max( max ( splat_value_b_base , splat_value_b_variant) , splat_values.a ) ) ;
     let base_blend_factor = 1.0 - splat_max;

@@ -20,8 +20,9 @@ https://github.com/bevyengine/bevy/blob/main/assets/shaders/custom_material.wgsl
 
 #[derive( Clone, ShaderType)]
 pub struct ChunkMaterialUniforms {
+    pub color_texture_expansion_factor: f32 ,
     pub chunk_uv: Vec4 ,  //start_x, start_y, end_x, end_y   -- used to subselect a region from the splat texture 
-    pub color_texture_expansion_factor: f32 
+    
 } 
 
 

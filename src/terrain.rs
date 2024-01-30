@@ -314,7 +314,7 @@ pub fn load_terrain_texture_from_image(
                    terrain_data.terrain_material_handle = Some(  materials.add(
                         TerrainMaterial {
                                 uniforms: ChunkMaterialUniforms{
-                                     color_texture_expansion_factor: 16.0,
+                                     color_texture_expansion_factor: 4.0,   //makes it look less tiley when LOWER  
                                      chunk_uv: Vec4::new( 0.0,1.0,0.0,1.0 ),
                                 },
                                

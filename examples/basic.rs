@@ -31,7 +31,7 @@ fn setup(
 ) {
     
     
-    let array_texture: Handle<Image> = asset_server.load("terrain/textures/array_texture.png");
+    let array_texture: Handle<Image> = asset_server.load("terrain/textures/array_texture_lg_2.png");
     let height_map: Handle<Image> = asset_server.load("terrain/source/height.png"); 
     let splat_texture: Handle<Image> = asset_server.load("terrain/textures/splat_texture.png");
      
