@@ -1,11 +1,9 @@
 use bevy::prelude::Mesh;
 use bevy::render::mesh::Indices;
-
-use crate::heightmap::{HeightMapU16, SubHeightMapU16};
-
-use bevy::prelude::*;
-
 use bevy::render::render_resource::PrimitiveTopology::TriangleList; 
+
+use crate::heightmap::SubHeightMapU16;
+
 
 pub struct PreMesh {
     positions: Vec<[f32; 3]>,
