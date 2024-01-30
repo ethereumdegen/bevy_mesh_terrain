@@ -46,7 +46,7 @@ fn setup(
     .insert(
         TerrainData::default()
         .add_height_map_image(   height_map  ) 
-        .add_array_texture_image(array_texture, 4) 
+        .add_array_texture_image(array_texture, 8) 
         .add_splat_texture_image( splat_texture )
     ); 
     

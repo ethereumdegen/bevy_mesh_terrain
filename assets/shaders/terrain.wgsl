@@ -46,20 +46,25 @@ fn fragment(
     let splat_values = textureSample(splat_map_texture, splat_map_sampler, splat_uv );
     let alpha_mask_value = textureSample(alpha_mask_texture, alpha_mask_sampler, splat_uv );
 
-    let color_from_texture_0 = textureSample(base_color_texture, base_color_sampler, tiled_uv, 0);
-    let color_from_texture_1 = textureSample(base_color_texture, base_color_sampler, tiled_uv, 1);
-    let color_from_texture_2 = textureSample(base_color_texture, base_color_sampler, tiled_uv, 2);
-    let color_from_texture_3 = textureSample(base_color_texture, base_color_sampler, tiled_uv, 3);
+    let color_from_base_texture = textureSample(base_color_texture, base_color_sampler, tiled_uv, 0);
+    let color_from_texture_0 = textureSample(base_color_texture, base_color_sampler, tiled_uv, 1);
+    let color_from_texture_1 = textureSample(base_color_texture, base_color_sampler, tiled_uv, 2);
+    let color_from_texture_2 = textureSample(base_color_texture, base_color_sampler, tiled_uv, 3);
+    let color_from_texture_3 = textureSample(base_color_texture, base_color_sampler, tiled_uv, 4);
 
-    let pre_mask_color = color_from_texture_0 * splat_values.r +
-                      color_from_texture_1 * splat_values.g +
-                      color_from_texture_2 * splat_values.b +
-                      color_from_texture_3 * splat_values.a;
+ 
+    
+    let splat_max =  max ( max(splat_values.r , splat_values.g ) , max ( splat_values.b , splat_values.a) );
+    let base_blend_factor = 1.0 - splat_max;
 
-    // If hole_mask_value is 0.0, make the fragment transparent, otherwise keep original final_color
-    
-    
-    let final_color = vec4(pre_mask_color.rgb,   alpha_mask_value.r ); 
+    let blended_color = color_from_base_texture * base_blend_factor +
+                        color_from_texture_0 * splat_values.r +
+                        color_from_texture_1 * splat_values.g +
+                        color_from_texture_2 * splat_values.b +
+                        color_from_texture_3 * splat_values.a;
+
+    let final_color = vec4(blended_color.rgb, alpha_mask_value.r);
+      
     
     return final_color;
     
