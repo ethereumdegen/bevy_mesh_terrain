@@ -19,7 +19,8 @@ NOTE: Make SURE you copy the terrain.wsgl shader into your assets directory prop
  In this way, it works similarly to a voxel chunking system ( a la minecraft) except using heightfields (2d) instead of voxels (3d). 
  
 
- ![terrain1](https://github.com/ethereumdegen/bevy_mesh_terrain/assets/6249263/cc4ed950-dd54-430f-a40e-dc1df76d303f)
+![image](https://github.com/ethereumdegen/bevy_mesh_terrain/assets/6249263/d43e21c6-d533-4195-94ab-fb40d78f404c)
+
 
 
   
