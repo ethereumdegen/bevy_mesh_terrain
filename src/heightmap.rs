@@ -1,13 +1,12 @@
+use bevy::prelude::*;
+use bevy::render::render_resource::TextureFormat;
 
+use thiserror::Error;
 
-/*
+ /*
 https://github.com/norman784/gaiku/blob/master/crates/gaiku_baker_heightmap/src/lib.rs
 */
 
-use bevy::{prelude::*, render::render_resource::TextureFormat};
-use thiserror::Error;
-
- 
 
 #[derive(Error,Debug)]
 pub enum HeightMapError{

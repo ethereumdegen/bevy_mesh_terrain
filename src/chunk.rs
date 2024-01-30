@@ -1,10 +1,13 @@
-
-
-use bevy::{   prelude::*, asset::LoadState, tasks::{Task, AsyncComputeTaskPool}};
-
-use crate::{terrain::{TerrainConfig, TerrainViewer, TerrainData}, pre_mesh::PreMesh, terrain_material::{TerrainMaterial, ChunkMaterialUniforms}, heightmap::SubHeightMapU16};
+use bevy::prelude::*;
+use bevy::tasks::{Task, AsyncComputeTaskPool};
 
 use futures_lite::future;
+
+use crate::heightmap::SubHeightMapU16;
+use crate::pre_mesh::PreMesh;
+use crate::terrain::{TerrainConfig, TerrainViewer, TerrainData};
+use crate::terrain_material::{TerrainMaterial, ChunkMaterialUniforms};
+
 
 
 #[derive(Event )]
@@ -25,29 +28,25 @@ pub struct NeedToDespawnChunk {
 pub struct Chunk {
     pub chunk_id: u32, //same as chunk index   
     pub chunk_bounds: [[usize;2]; 2 ],
-    pub built: bool ,
+    pub built: bool,
     pub lod_level: u8
     
 } 
    
  
 pub struct ChunkData {
-    is_active: bool,
-    
-    needs_rebuild: bool, 
-    
+    _is_active: bool,
+    _needs_rebuild: bool, 
     spawned_mesh_entity: Option<Entity> ,
-    
     chunk_state: ChunkState ,
-    
     lod_level: u8 //lod level of 0 is maximum quality.  1 is less, 2 is much less, 3 is very decimated 
 }
 
 #[derive(Eq,PartialEq)]
 enum ChunkState{
-    FULLY_BUILT,
-    BUILDING,   
-    PENDING 
+    FullyBuilt,
+    Building,   
+    Pending 
 }
 
 
@@ -214,11 +213,12 @@ pub fn destroy_terrain_chunks(
         
     let viewer_location:Vec3 = match viewer {
         Ok(view) => { view.translation() },
-        Err(e) => Vec3::new(0.0,0.0,0.0)
+        // FIX: probably should log a warning if there are multiple (or no) viewers, rather than just setting to the origin
+        Err(_e) => Vec3::new(0.0,0.0,0.0)
     };
         
     
-    for (chunk_entity_id, mut chunk_data, parent_terrain_entity) in chunk_query.iter_mut() { 
+    for (chunk_entity_id, chunk_data, parent_terrain_entity) in chunk_query.iter_mut() { 
         
         let chunk_id = chunk_data.chunk_id; 
         
@@ -287,12 +287,10 @@ pub fn destroy_terrain_chunks(
 // should NOT be paralleled 
 
 pub fn despawn_terrain_chunks( 
-   
-
     mut commands: Commands, 
-    mut chunk_query: Query<(Entity, &mut Chunk, &NeedToDespawnChunk) > ,
+    mut chunk_query: Query<Entity, With<NeedToDespawnChunk>>
 ){
-    for (chunk_entity_id, mut chunk_data, parent_terrain_entity) in chunk_query.iter_mut() {
+    for chunk_entity_id in chunk_query.iter_mut() {
         
         commands.entity( chunk_entity_id  ).despawn();  
         
@@ -304,7 +302,6 @@ pub fn despawn_terrain_chunks(
 Dont need this to run each frame... 
 */
 pub fn activate_terrain_chunks(
-   mut  commands:  Commands, 
    mut terrain_query: Query<(&TerrainConfig,&mut TerrainData,&GlobalTransform)>,
     
    terrain_viewer: Query<&GlobalTransform, With<TerrainViewer>> 
@@ -314,7 +311,8 @@ pub fn activate_terrain_chunks(
         
     let viewer_location:Vec3 = match viewer {
         Ok(view) => { view.translation() },
-        Err(e) => Vec3::new(0.0,0.0,0.0)
+        // FIX: probably should log a warning if there are multiple (or no) viewers, rather than just setting to the origin
+        Err(_e) => Vec3::new(0.0,0.0,0.0)
     };
         
     for (terrain_config,mut terrain_data,terrain_transform) in terrain_query.iter_mut() { 
@@ -411,7 +409,6 @@ pub fn activate_terrain_chunks(
                             && chunk_coords_z >=0 && chunk_coords_z < chunk_rows as i32  {
                                 //then this is a valid coordinate location 
                                 activate_chunk_at_coords( 
-                                    &mut commands,
                                     chunk_coords,  
                                     &mut terrain_data,
                                     &terrain_config,
@@ -435,9 +432,8 @@ pub fn activate_terrain_chunks(
 
 
 pub fn activate_chunk_at_coords( 
-    mut commands: &mut Commands, 
     chunk_coords: ChunkCoords,
-    mut terrain_data: &mut TerrainData,
+    terrain_data: &mut TerrainData,
     terrain_config: &TerrainConfig,
     lod_level: u8
 ) {
@@ -449,15 +445,16 @@ pub fn activate_chunk_at_coords(
     let chunk_exists = terrain_data.chunks.contains_key( &chunk_index );
     
     let mut need_to_spawn = false;
-    let mut need_to_despawn: Option<Entity>  = None; 
+    // work in progress
+    let mut _need_to_despawn: Option<Entity>  = None; 
     
-    
+
     if chunk_exists { 
          
        let chunk_data = terrain_data.chunks.get(&chunk_index).unwrap(); 
          
         // do not rebuild chunks until they are already fully built 
-        if chunk_data.chunk_state ==  ChunkState::FULLY_BUILT {
+        if chunk_data.chunk_state ==  ChunkState::FullyBuilt {
             
             let existing_lod = chunk_data.lod_level; 
             if lod_level != existing_lod && chunk_data.spawned_mesh_entity.is_some(){
@@ -484,11 +481,11 @@ pub fn activate_chunk_at_coords(
          terrain_data.chunks.insert(  
             chunk_index  , 
             ChunkData {
-               is_active: true, //useless for now 
-               chunk_state: ChunkState::PENDING,
+               _is_active: true, //useless for now 
+               _needs_rebuild: true ,  //useless for now 
                spawned_mesh_entity: None,
-               needs_rebuild: true ,  //useless for now 
-               lod_level 
+               chunk_state: ChunkState::Pending,
+               lod_level
             });
             
     } 
@@ -506,14 +503,6 @@ pub type TerrainPbrBundle = MaterialMeshBundle<TerrainMaterial>;
 pub fn build_active_terrain_chunks(
     mut commands: Commands, 
     mut terrain_query: Query<(Entity, &TerrainConfig,&mut TerrainData)>,
-    
-    
-    mut meshes: ResMut<Assets<Mesh>>,
-    mut materials: ResMut<Assets<StandardMaterial>>,
-    
-    mut terrain_materials: ResMut<Assets<TerrainMaterial>>,
-    
-   
 ){
     
     
@@ -543,16 +532,14 @@ pub fn build_active_terrain_chunks(
               
       //  let array_texture =  terrain_data.get_array_texture_image().clone();
       //  let splat_texture =  terrain_data.get_splat_texture_image().clone();
-              
-        let terrain_material_handle = terrain_material_handle_option.as_ref().unwrap();
-         
+                       
          let thread_pool = AsyncComputeTaskPool::get();
         
         let terrain_data_chunks = &mut terrain_data.chunks; 
         for (chunk_id , chunk_data) in terrain_data_chunks.iter_mut(){
             
-            if chunk_data.chunk_state == ChunkState::PENDING {
-                chunk_data.chunk_state = ChunkState::BUILDING;
+            if chunk_data.chunk_state == ChunkState::Pending {
+                chunk_data.chunk_state = ChunkState::Building;
                 
               let chunk_rows = terrain_config.chunk_rows;
               let terrain_dimensions = terrain_config.terrain_dimensions;
@@ -639,7 +626,7 @@ pub fn finish_chunk_build_tasks(
     mut chunk_build_tasks: Query<(Entity, &mut MeshBuilderTask)>,
     
     mut meshes: ResMut<Assets<Mesh>>,
-    mut terrain_query: Query<(  &TerrainConfig,&mut TerrainData)>,
+    mut terrain_query: Query<&mut TerrainData,With<TerrainConfig>>,
     mut terrain_materials: ResMut<Assets<TerrainMaterial>>,
     
      mut chunk_events: EventWriter<ChunkEvent> ,
@@ -663,7 +650,7 @@ pub fn finish_chunk_build_tasks(
             //careful w this unwrap
             if terrain_query.get_mut(terrain_entity_id).is_ok() == false {continue;}
             
-            let (terrain_config, mut terrain_data) = terrain_query.get_mut(terrain_entity_id).unwrap(); 
+            let mut terrain_data = terrain_query.get_mut(terrain_entity_id).unwrap(); 
                
              
              
@@ -722,7 +709,7 @@ pub fn finish_chunk_build_tasks(
               let mut terrain_entity_commands  = commands.get_entity(terrain_entity_id).unwrap();
               terrain_entity_commands.add_child(    child_mesh  );
             
-               chunk_data.chunk_state = ChunkState::FULLY_BUILT; 
+               chunk_data.chunk_state = ChunkState::FullyBuilt; 
                
                //need to do this in a safer way!!! 
                if let Some(old_mesh_entity) =  chunk_data.spawned_mesh_entity { 

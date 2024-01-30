@@ -1,6 +1,7 @@
  
 
-use bevy::{prelude::*, utils::HashMap, input::mouse::MouseMotion};
+use bevy::prelude::*;
+use bevy::input::mouse::MouseMotion;
 use bevy_mesh_terrain::{TerrainMeshPlugin, terrain::{TerrainConfig, TerrainData, TerrainViewer}};
 
 
@@ -85,7 +86,7 @@ fn update_camera_look(
     
     
 ){
-    let MOUSE_SENSITIVITY = 2.0;
+    const MOUSE_SENSITIVITY: f32 = 2.0;
      
      if !mouse_input.pressed(MouseButton::Left) {
         return;
@@ -122,7 +123,7 @@ fn update_camera_move(
     
     
 ){
-      let MOVE_SPEED = 10.0; // You can adjust this value as needed
+      const MOVE_SPEED: f32 = 10.0; // You can adjust this value as needed
      
      
      
