@@ -53,17 +53,39 @@ fn fragment(
     let color_from_texture_1 = textureSample(base_color_texture, base_color_sampler, tiled_uv, 2);
     let color_from_texture_2 = textureSample(base_color_texture, base_color_sampler, tiled_uv, 3);
     let color_from_texture_3 = textureSample(base_color_texture, base_color_sampler, tiled_uv, 4);
+    
+    let color_from_texture_4 = textureSample(base_color_texture, base_color_sampler, tiled_uv, 5);
+    let color_from_texture_5 = textureSample(base_color_texture, base_color_sampler, tiled_uv, 6);
+    let color_from_texture_6 = textureSample(base_color_texture, base_color_sampler, tiled_uv, 7);
 
  
     
-    let splat_max =  max ( max(splat_values.r , splat_values.g ) , max ( splat_values.b , splat_values.a) );
+   // play with this more .. maybe invert the variants math 
+    let splat_value_r_variant = max( 0.0 , splat_values.r - 0.5 ) * 2.0;
+    let splat_value_g_variant = max( 0.0 , splat_values.g - 0.5 ) * 2.0;
+    let splat_value_b_variant = max( 0.0 , splat_values.b - 0.5 ) * 2.0;
+    
+    let splat_value_r_base = max(0.0, splat_values.r - splat_value_r_variant) * 2.0;
+    let splat_value_g_base = max(0.0, splat_values.g - splat_value_g_variant) * 2.0;
+    let splat_value_b_base = max(0.0, splat_values.b - splat_value_b_variant) * 2.0;
+    
+     let splat_max =   max ( max ( max(splat_value_r_base, splat_value_r_variant ) , max ( splat_value_g_base , splat_value_g_variant) ) , max( max ( splat_value_b_base , splat_value_b_variant) , splat_values.a ) ) ;
     let base_blend_factor = 1.0 - splat_max;
+      
+    
 
-    let blended_color = color_from_base_texture * base_blend_factor +
-                        color_from_texture_0 * splat_values.r +
-                        color_from_texture_1 * splat_values.g +
-                        color_from_texture_2 * splat_values.b +
-                        color_from_texture_3 * splat_values.a;
+    let blended_color = color_from_base_texture * 0.0 +
+                        color_from_texture_0 * splat_value_r_base +
+                        color_from_texture_1 * splat_value_r_variant +
+                        
+                        color_from_texture_2 * splat_value_g_base +                        
+                        color_from_texture_3 * splat_value_g_variant +
+                        
+                        color_from_texture_4 * splat_value_b_base +
+                        color_from_texture_5 * splat_value_b_variant +
+                                               
+                        
+                        color_from_texture_6 * splat_values.a;
 
     let final_color = vec4(blended_color.rgb, alpha_mask_value.r);
       
