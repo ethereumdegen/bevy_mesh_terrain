@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 use bevy::asset::LoadState;
-use bevy::render::render_resource::{SamplerDescriptor, AddressMode, FilterMode, TextureFormat};
-use bevy::render::texture::ImageSampler;
+use bevy::render::render_resource::{SamplerDescriptor, AddressMode, FilterMode, TextureFormat, TextureDescriptor};
+use bevy::render::texture::{ImageSampler, ImageSamplerDescriptor, ImageAddressMode, ImageFilterMode};
 use bevy::utils::HashMap;
 
 use crate::terrain_material::{TerrainMaterial, ChunkMaterialUniforms};
@@ -178,7 +178,7 @@ pub fn load_height_map_data_from_image(
                         
                         let height_map_loaded = asset_server.get_load_state( height_map_handle )  ;
                     
-                        if height_map_loaded != LoadState::Loaded  {
+                        if height_map_loaded != Some(LoadState::Loaded)  {
                             println!("height map not yet loaded");
                             continue;
                         }  
@@ -278,7 +278,7 @@ pub fn load_terrain_texture_from_image(
                         
                         let texture_image_loaded = asset_server.get_load_state( texture_image_handle )  ;
                     
-                        if texture_image_loaded != LoadState::Loaded  {
+                        if texture_image_loaded != Some(LoadState::Loaded)  {
                             println!("terrain texture not yet loaded");
                             continue;
                         }  
@@ -289,14 +289,15 @@ pub fn load_terrain_texture_from_image(
                 };
                 
                 
-                   texture_image.sampler_descriptor = ImageSampler::Descriptor(SamplerDescriptor {
+                   //https://github.com/bevyengine/bevy/pull/10254
+                   texture_image.sampler = ImageSampler::Descriptor(ImageSamplerDescriptor {
                         label: None,
-                        address_mode_u: AddressMode::Repeat,
-                        address_mode_v: AddressMode::Repeat,
-                        address_mode_w: AddressMode::Repeat,
-                        mag_filter: FilterMode::Linear,
-                        min_filter: FilterMode::Linear,
-                        mipmap_filter: FilterMode::Linear,
+                        address_mode_u: ImageAddressMode::Repeat,
+                        address_mode_v: ImageAddressMode::Repeat,
+                        address_mode_w: ImageAddressMode::Repeat,
+                        mag_filter: ImageFilterMode::Linear,
+                        min_filter: ImageFilterMode::Linear,
+                        mipmap_filter: ImageFilterMode::Linear,
                         ..default()
                     });
                 

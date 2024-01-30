@@ -1,3 +1,4 @@
+use bevy::asset::VisitAssetDependencies;
 use bevy::prelude::*;
 use bevy::reflect::{TypeUuid,TypePath};
 use bevy::render:: render_resource::*;
@@ -61,3 +62,13 @@ impl Material for TerrainMaterial {
     }
 }
  
+ 
+ impl Asset for TerrainMaterial {
+     
+     
+ }
+ 
+ impl VisitAssetDependencies for TerrainMaterial {
+     
+     
+ }
