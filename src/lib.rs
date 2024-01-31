@@ -5,7 +5,7 @@ use std::time::Duration;
 
 use chunk::{activate_terrain_chunks, destroy_terrain_chunks, despawn_terrain_chunks, build_active_terrain_chunks, finish_chunk_build_tasks, ChunkEvent};
 use collision::spawn_chunk_collision_data;
-use terrain::{load_height_map_data_from_image, load_terrain_texture_from_image};
+use terrain::{load_height_map_data_from_image, load_terrain_texture_from_image, TerrainData};
 use terrain_material::TerrainMaterial;
  
      
@@ -54,4 +54,34 @@ impl Plugin for TerrainMeshPlugin {
 
          
     }
+    
+}
+
+impl TerrainMeshPlugin {
+    
+    
+    pub fn get_height_texture_data( 
+         terrain_data_query: Query< &TerrainData >,
+         
+         entity_id: Entity,
+         chunk_index: u32 
+         
+        ) -> Vec<Vec<u16>> {
+        
+          if let Ok(terrain_data)  = terrain_data_query.get(entity_id) {
+              
+              println!("returning height texture data...");
+              //terrain_data.
+          }
+          
+          
+          
+        vec![]
+    }
+    
+    pub fn set_height_texture_data( &self, chunk_index: u32, data: Vec<Vec<u16>>  ){
+        
+        
+    }
+    
 }

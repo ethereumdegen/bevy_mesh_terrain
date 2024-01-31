@@ -65,7 +65,7 @@ pub struct BuiltChunkMeshData {
     mesh:Mesh,
     chunk_uv: Vec4,
     
-     lod_level: u8  
+    lod_level: u8  
     
 }
 
@@ -503,8 +503,7 @@ pub type TerrainPbrBundle = MaterialMeshBundle<TerrainMaterial>;
 pub fn build_active_terrain_chunks(
     mut commands: Commands, 
     mut terrain_query: Query<(Entity, &TerrainConfig,&mut TerrainData)>,
-){
-    
+){ 
     
     for (terrain_entity, terrain_config, mut terrain_data) in terrain_query.iter_mut() { 
         
@@ -683,6 +682,8 @@ pub fn finish_chunk_build_tasks(
                
            //   let sample_material_handle = materials.add(Color::rgb(0.3, 0.5, 0.3).into());
              
+              println!("spawn terrain mesh");
+              
               let child_mesh =  commands.spawn(
                      TerrainPbrBundle {
                         mesh: terrain_mesh_handle,
