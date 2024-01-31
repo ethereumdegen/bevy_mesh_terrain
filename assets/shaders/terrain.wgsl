@@ -33,8 +33,7 @@ var base_color_sampler: sampler;
 @group(1) @binding(4)
 var splat_map_sampler: sampler;
 
-//works similar to splat mask 
-//CAN GET RID OF THIS 
+//works similar to splat mask  -- we use a separate tex for this for NOW to make collision mesh building far easier (only need height map and not splat)
 @group(1) @binding(5)
 var alpha_mask_texture: texture_2d<f32>; 
 @group(1) @binding(6)
@@ -58,7 +57,7 @@ fn fragment(
     let splat_uv = material.chunk_uv.xy + mesh.uv * (material.chunk_uv.zw - material.chunk_uv.xy);
     
     let splat_values = textureSample(splat_map_texture, splat_map_sampler, splat_uv );
-  //  let alpha_mask_value = textureSample(alpha_mask_texture, alpha_mask_sampler, splat_uv );  //comes from height map atm but COULD come from splat map now 
+    let alpha_mask_value = textureSample(alpha_mask_texture, alpha_mask_sampler, splat_uv );  //comes from height map atm but COULD come from splat map now 
     
        //comes from the  control map .. float -> integer 
     let terrain_layer_index_0 = i32( splat_values.r * 255.0 );     ///* 255.0
@@ -76,7 +75,7 @@ fn fragment(
     let blended_color = color_from_texture_0 * (1.0 - blend_amount) +
                         color_from_texture_1 * (blend_amount)  ;
 
-    let final_color = vec4(blended_color.rgb, splat_values.a);
+    let final_color = vec4(blended_color.rgb, alpha_mask_value.r);
       
     
     return final_color;
