@@ -7,7 +7,8 @@ use chunk::{activate_terrain_chunks, destroy_terrain_chunks, despawn_terrain_chu
 use collision::spawn_chunk_collision_data;
 use terrain::{load_height_map_data_from_image, load_terrain_texture_from_image};
 use terrain_material::TerrainMaterial;
- 
+
+use edit::EditTerrainEvent;
      
      
 pub mod terrain;
@@ -16,8 +17,7 @@ pub mod heightmap;
 pub mod pre_mesh;
 pub mod collision; 
 pub mod terrain_material;
-
-
+pub mod edit;
 
 pub struct TerrainMeshPlugin {
     task_update_rate: Duration
@@ -38,6 +38,7 @@ impl Plugin for TerrainMeshPlugin {
         app.add_plugins( MaterialPlugin::<TerrainMaterial>::default() );
         
         app.add_event::<ChunkEvent>();
+        app.add_event::<EditTerrainEvent>();
         
         app.add_systems(Update, activate_terrain_chunks .run_if(on_timer(self.task_update_rate) )   );
         app.add_systems(Update, destroy_terrain_chunks .run_if(on_timer(self.task_update_rate) )   );
