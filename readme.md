@@ -43,10 +43,10 @@ NOTE: Make SURE you copy the terrain.wsgl shader into your assets directory prop
 The source of height ! This is a grayscale image in R16 format and if values are totally dead black then the shader will actually make alpha == 1 right there so you can blow holes in the terrain for caves and such (youll prob want to put rock doodads there to make it look nice!)
 
 *Color/Diffuse Texture Array*
-This is the source of the actual terrain textures. In this configuration, there are only 4 different types you get in order to improve performance of the shader and gpu memory . So for example, grass, dirt, snow, and sand. You can edit that file of course for different looks. These pop through based on the splat map..
+This is the source of the actual terrain textures. Up to 256 textures can be loaded in and painted with the splat map. So for example, grass, dirt, snow, and sand. You can edit that file of course for different looks. 
 
 *Splat Map Texture*
-This is an RGBA texture where the intensity of each channel controls the alpha of each of the Color Array Textures. So for example if the R channel is white and the rest black, the entire terrain will be grass. This is what you would typically edit in a 'terrain editor' to paint your grass in one area, dirt in another area, snow on mountains, etc.
+This is an RGBA control map texture for the diffuse texture array using a special data protocol. This is what you edit in a 'terrain editor' to paint your grass in one area, dirt in another area, snow on mountains, etc.
 
 
 ## Splat Map Texture Protocol

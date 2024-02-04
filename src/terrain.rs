@@ -88,6 +88,14 @@ impl TerrainConfig {
     }
 }
 
+#[derive(Default,PartialEq, Eq)]
+pub enum TerrainImageDataLoadStatus { //us this for texture image and splat image and alpha mask .. ? 
+    #[default]
+    NotLoaded,
+    Loaded,
+    NeedsReload    
+}
+
 #[derive(Component,Default)]
 pub struct TerrainData {
       //  pub terrain_origin: Vec3 // should be a component of an entity 
@@ -98,7 +106,8 @@ pub struct TerrainData {
   
     
     //could be a massive image like 4k 
-    height_map_image_handle: Option<Handle<Image>>, 
+    pub height_map_image_handle: Option<Handle<Image>>, 
+    pub height_map_image_data_load_status: TerrainImageDataLoadStatus,
     
     //need to add asset handles here for the heightmap image and texture image !!! 
     
@@ -109,7 +118,7 @@ pub struct TerrainData {
     
     texture_image_handle: Option<Handle<Image>>,
     texture_image_sections: u32, 
-    texture_image_finalized: bool,  //need this for now bc of the weird way we have to load an array texture w polling and stuff...
+    texture_image_finalized: bool,  //need this for now bc of the weird way we have to load an array texture w polling and stuff... GET RID of me ???replace w enum ? 
     
     splat_image_handle: Option<Handle<Image>>,
     
@@ -167,10 +176,12 @@ pub fn load_height_map_data_from_image(
     for mut terrain_data in terrain_query.iter_mut() {
         
         
-        let height_map_data_is_some = terrain_data.height_map_data.is_some(); 
+      //  let height_map_data_is_some = terrain_data.height_map_data.is_some(); 
+         
+         if terrain_data.height_map_image_data_load_status != TerrainImageDataLoadStatus::Loaded {
          
          //try to load the height map data from the height_map_image_handle 
-         if !height_map_data_is_some {
+       //  if !height_map_data_is_some {
                 
                 //try to get the loaded height map image from its handle via the asset server - must exist and be loaded 
                 let height_map_image:&Image = match &terrain_data.height_map_image_handle {
@@ -187,9 +198,12 @@ pub fn load_height_map_data_from_image(
                     }
                     None => {continue} 
                 };
-                
+                    
+                    //maybe we can do this in a thread since it is quite cpu intense ? 
                 let loaded_heightmap_data_result =  HeightMapU16::load_from_image( height_map_image) ;
                    
+                      println!("built heightmapu16 ");
+                      
                 match loaded_heightmap_data_result {
                     Ok( loaded_heightmap_data ) => {
                        
@@ -210,7 +224,8 @@ pub fn load_height_map_data_from_image(
             
                
                 //we can let go of the height map image handle now that we loaded our heightmap data from it 
-                terrain_data.height_map_image_handle = None;
+                //terrain_data.height_map_image_handle = None;
+                terrain_data.height_map_image_data_load_status = TerrainImageDataLoadStatus::Loaded;
          } 
          
         
