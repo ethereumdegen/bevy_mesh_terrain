@@ -8,8 +8,9 @@ use collision::spawn_chunk_collision_data;
 use terrain::{load_height_map_data_from_image, load_terrain_texture_from_image};
 use terrain_material::TerrainMaterial;
 
-use edit::EditTerrainEvent;
-     
+use edit::{EditTerrainEvent,apply_tool_edits};
+ 
+
      
 pub mod terrain;
 pub mod chunk;
@@ -52,6 +53,8 @@ impl Plugin for TerrainMeshPlugin {
         
         app.add_systems(Update, load_height_map_data_from_image  ) ;
         app.add_systems(Update, load_terrain_texture_from_image  ) ;
+
+        app.add_systems(Update, apply_tool_edits ) ; //put this in a sub plugin ?
 
          
     }

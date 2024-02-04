@@ -5,6 +5,9 @@ use bevy::ecs::entity::Entity;
 use bevy::ecs::event::Event;
 use bevy::prelude::EventReader;
 
+use bevy::asset::AssetServer;
+
+
 #[derive(Debug)]
 pub enum EditingTool {
 
@@ -22,7 +25,28 @@ pub struct EditTerrainEvent {
 
 
 
+pub fn apply_tool_edits(
+    mut asset_server: AssetServer,
 
+    mut ev_reader: EventReader<EditTerrainEvent>,
+) {
+    for ev in ev_reader.read() {
+        eprintln!("-- {:?} -- terrain edit event!", &ev.tool);
+
+
+        match &ev.tool {
+            EditingTool::SetHeightMap(height,radius) => {
+                // this should edit the height map  as it is inside of Asset<> memory... i think .. 
+
+
+            }
+        }
+
+
+    }
+}
+
+/*
 pub fn debug_tool_edits(
     mut ev_reader: EventReader<EditTerrainEvent>,
 ) {
@@ -30,3 +54,4 @@ pub fn debug_tool_edits(
         eprintln!("-- {:?} -- terrain edit event!", ev.tool);
     }
 }
+*/
