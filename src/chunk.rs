@@ -65,7 +65,7 @@ pub struct BuiltChunkMeshData {
     mesh:Mesh,
     chunk_uv: Vec4,
     
-     lod_level: u8  
+    lod_level: u8  
     
 }
 
