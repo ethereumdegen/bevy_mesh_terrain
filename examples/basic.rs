@@ -2,7 +2,7 @@
 
 use bevy::prelude::*;
 use bevy::input::mouse::MouseMotion;
-use bevy_mesh_terrain::{TerrainMeshPlugin, terrain::{TerrainConfig, TerrainData, TerrainViewer}};
+use bevy_mesh_terrain::{TerrainMeshPlugin, terrain::{TerrainData, TerrainViewer}, terrain_config::TerrainConfig};
 
 
 
@@ -39,9 +39,9 @@ fn setup(
 ) {
     
     
-    let array_texture: Handle<Image> = asset_server.load("terrain/textures/array_texture_lg_2.png");
-    let height_map: Handle<Image> = asset_server.load("terrain/source/height.png"); 
-    let splat_texture: Handle<Image> = asset_server.load("terrain/textures/splat_texture.png");
+  //  let array_texture: Handle<Image> = asset_server.load("terrain/textures/array_texture_lg_2.png");
+  //  let height_map: Handle<Image> = asset_server.load("terrain/source/height.png"); 
+  //  let splat_texture: Handle<Image> = asset_server.load("terrain/textures/splat_texture.png");
      
     
     //should pass loaded images in , not the handles .  
@@ -50,11 +50,11 @@ fn setup(
     commands.spawn(VisibilityBundle::default() ) 
     .insert( TransformBundle::default() )
     .insert(
-        TerrainConfig::load_from_file("default_terrain/terrain_config.ron").unwrap()
+        TerrainConfig::load_from_file("assets/default_terrain/terrain_config.ron").unwrap()
         //.set_render_distance( 1500.0 )
         )
     .insert(
-        TerrainData::default()
+        TerrainData::new() 
       //  .add_height_map_image(   height_map  ) 
       //  .add_array_texture_image(array_texture, 8) 
       //  .add_splat_texture_image( splat_texture )

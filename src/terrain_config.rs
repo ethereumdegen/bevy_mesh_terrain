@@ -29,7 +29,12 @@ pub struct TerrainConfig {
     pub height_scale: f32,
 
     
-    pub attach_collision_data: bool 
+    pub attach_collision_data: bool ,
+    
+    
+    pub diffuse_folder_path: String,
+    pub height_folder_path: String,
+    pub splat_folder_path: String 
 }
 
 impl Default for TerrainConfig {
@@ -45,7 +50,11 @@ impl Default for TerrainConfig {
             
              height_scale: 0.004,  //for building the mesh 
             
-            attach_collision_data: true 
+            attach_collision_data: true ,
+            
+            diffuse_folder_path: "diffuse".into(),
+            height_folder_path: "height".into(),
+            splat_folder_path: "splat".into(),
         }
     }
     

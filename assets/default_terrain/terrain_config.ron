@@ -8,6 +8,8 @@ TerrainConfig(
     height_scale: 0.004,
     attach_collision_data: true,
     // Assuming the addition of fields for paths to the height and splat folders
-    height_folder_path: "path/to/height/folder", // String
-    splat_folder_path: "path/to/splat/folder", // String
+    height_folder_path: "diffuse", // String
+    splat_folder_path: "splat", // String
+     diffuse_folder_path: "height" // String
+     
 )

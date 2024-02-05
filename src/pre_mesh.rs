@@ -73,7 +73,7 @@ impl PreMesh {
         
           
      
-         let height_data = sub_heightmap.0;
+         let height_data = &sub_heightmap.0;
           let start_bound:Vec<usize> = vec![0,0];
           
           let width = texture_dimensions[0];

@@ -1,12 +1,13 @@
 use bevy::prelude::*;
 use bevy::time::common_conditions::on_timer;
 use chunk::ChunkEvent;
+use terrain::initialize_terrain;
 
 use std::time::Duration;
 
 //use chunk::{activate_terrain_chunks, destroy_terrain_chunks, despawn_terrain_chunks, build_active_terrain_chunks, finish_chunk_build_tasks, ChunkEvent};
 use collision::spawn_chunk_collision_data;
-use terrain::{load_height_map_data_from_image, load_terrain_texture_from_image};
+ 
 use terrain_material::TerrainMaterial;
 
 use edit::{EditTerrainEvent,apply_tool_edits};
@@ -43,7 +44,7 @@ impl Plugin for TerrainMeshPlugin {
         app.add_event::<ChunkEvent>();
         app.add_event::<EditTerrainEvent>();
         
-        
+        app.add_systems(Update, initialize_terrain.run_if(on_timer(self.task_update_rate) )   );
         
         
         /*

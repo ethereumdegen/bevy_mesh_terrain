@@ -5,7 +5,7 @@ use bevy::render::texture::{ImageSampler, ImageSamplerDescriptor, ImageAddressMo
 use bevy::utils::HashMap;
 
 use crate::terrain_material::{TerrainMaterial, ChunkMaterialUniforms};
-use crate::chunk::ChunkData;
+use crate::chunk::{ChunkData, Chunk};
 use crate::heightmap::{HeightMap,HeightMapU16};
 
 use crate::terrain_config::TerrainConfig;
@@ -40,13 +40,22 @@ pub enum TerrainImageDataLoadStatus { //us this for texture image and splat imag
     NeedsReload    
 }
 
+#[derive(Default,PartialEq, Eq)]
+pub enum TerrainDataStatus { //us this for texture image and splat image and alpha mask .. ? 
+    #[default]
+    NotLoaded,
+    Loaded
+       
+}
+
+
+
 #[derive(Component,Default)]
 pub struct TerrainData {
-      //  pub terrain_origin: Vec3 // should be a component of an entity 
-    //chunk_index -> chunk data 
-    //chunk index is   chunk_col * 64  + chunk_row   IF chunk_rows is 64 
-    //this only tracks loaded and active chunks and these are all entities 
-    pub chunks: HashMap<u32,ChunkData>, 
+       
+    pub chunks: HashMap<u32,ChunkData>,  //why is this necessary  ?? 
+    
+    pub terrain_data_status: TerrainDataStatus,
   
     
     //could be a massive image like 4k 
@@ -71,6 +80,59 @@ pub struct TerrainData {
     pub terrain_material_handle: Option<Handle<TerrainMaterial> >
 }
  
+ impl TerrainData{
+     
+     pub fn new( ) -> Self{
+         
+         let terrain_data = TerrainData::default();
+         
+         
+         //spawn the chunks as default lil entities 
+         
+         
+         
+         
+         terrain_data
+     }
+}
+ 
+ pub fn initialize_terrain(  
+      mut commands: Commands,
+    mut terrain_query: Query<(Entity, &mut TerrainData, &TerrainConfig) >,
+   
+    
+){ 
+    
+    for (terrain_entity,mut terrain_data, terrain_config) in terrain_query.iter_mut() {
+        
+        
+        if terrain_data.terrain_data_status == TerrainDataStatus::NotLoaded {
+            
+            let max_chunks = terrain_config.chunk_rows *  terrain_config.chunk_rows ;
+            
+            for chunk_id in 0 .. max_chunks {
+                let chunk_entity =  commands.spawn(
+                    Chunk::new(chunk_id)
+                ).id();
+                
+                
+                let mut terrain_entity_commands  = commands.get_entity(terrain_entity).unwrap();
+             
+                terrain_entity_commands.add_child(chunk_entity);
+                
+            }
+            
+                   
+            
+            
+            terrain_data.terrain_data_status = TerrainDataStatus::Loaded
+        }
+        
+    }
+        
+}
+ 
+ /*
 impl TerrainData{
     
     pub fn add_height_map_image( mut self, handle: Handle<Image> ) -> Self {
@@ -107,6 +169,12 @@ impl TerrainData{
     }
     
 }
+ */
+ 
+ 
+  
+ 
+ /*
  
  //finalizes loading of height map by looking for image handle and applying it to the height map data 
 pub fn load_height_map_data_from_image(  
@@ -290,3 +358,5 @@ pub fn load_terrain_texture_from_image(
             }
        }   
 }
+
+*/
