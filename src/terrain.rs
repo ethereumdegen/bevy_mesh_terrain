@@ -8,6 +8,21 @@ use crate::terrain_material::{TerrainMaterial, ChunkMaterialUniforms};
 use crate::chunk::ChunkData;
 use crate::heightmap::{HeightMap,HeightMapU16};
 
+use crate::terrain_config::TerrainConfig;
+
+
+/*
+
+
+Chunks should be more persistent
+
+each chunk should have its own heightmap and splat map !!!  these are their own files too. 
+
+
+
+*/
+
+
 //attach me to camera 
 #[derive(Component,Default)]
 pub struct TerrainViewer {
@@ -16,77 +31,6 @@ pub struct TerrainViewer {
  
 
 
-#[derive(Component)]
-pub struct TerrainConfig { 
-    pub terrain_dimensions: Vec2,  
-     
-    pub chunk_rows: u32,
-    
-    pub render_distance: f32, 
-    pub lod_distance: f32 ,
-    
-    pub lod_level_offset: u8 , 
-
-    pub height_scale: f32,
-
-    
-    pub attach_collision_data: bool 
-}
-
-impl Default for TerrainConfig {
-    fn default() -> Self {
-        Self {
-           // chunk_width: 64.0 ,
-            terrain_dimensions: Vec2::new(1024.0,1024.0), //this should match the heightmap dimensions... consider removing this var or changing how it fundamentally works . 
-            chunk_rows: 16 ,   //making this too high produces too many materials which causes lag.  Too low and we cant LOD properly . 16 seems good . 
-            render_distance: 2000.0, 
-            lod_distance: 1000.0 ,
-
-            lod_level_offset: 0, 
-            
-             height_scale: 0.004,  //for building the mesh 
-            
-            attach_collision_data: true 
-        }
-    }
-}
-
-impl TerrainConfig {
-    
-     pub fn set_render_distance(mut self, distance: f32 ) -> Self {
-         
-         self.render_distance = distance;
-         self 
-     }
-     
-     pub fn set_lod_distance(mut self, distance: f32 ) -> Self {
-         
-         self.lod_distance = distance;
-         self 
-     }
-    
-     pub fn get_chunk_dimensions(&self ) -> Vec2 {
-        let chunk_dimension_x = self.terrain_dimensions.x / self.chunk_rows as f32;
-        let chunk_dimension_z = self.terrain_dimensions.y / self.chunk_rows as f32;
-         
-        
-        Vec2::new(chunk_dimension_x, chunk_dimension_z) 
-        
-    }  
-    
-    pub fn get_max_render_distance(&self) -> f32{
-        return self.render_distance  ; 
-    }
-    
-    pub fn get_chunk_render_distance(&self) -> u32{
-        return self.render_distance as u32 / self.chunk_rows; 
-    }
-     
-     
-     pub fn get_chunk_lod_distance(&self) -> f32{
-        return self.lod_distance  ; 
-    }
-}
 
 #[derive(Default,PartialEq, Eq)]
 pub enum TerrainImageDataLoadStatus { //us this for texture image and splat image and alpha mask .. ? 
@@ -106,13 +50,13 @@ pub struct TerrainData {
   
     
     //could be a massive image like 4k 
-    pub height_map_image_handle: Option<Handle<Image>>, 
-    pub height_map_image_data_load_status: TerrainImageDataLoadStatus,
+   // pub height_map_image_handle: Option<Handle<Image>>, 
+   // pub height_map_image_data_load_status: TerrainImageDataLoadStatus,
     
     //need to add asset handles here for the heightmap image and texture image !!! 
     
      
-    pub height_map_data: Option<HeightMapU16>,
+   // pub height_map_data: Option<HeightMapU16>,
     
     
     
@@ -120,7 +64,7 @@ pub struct TerrainData {
     texture_image_sections: u32, 
     texture_image_finalized: bool,  //need this for now bc of the weird way we have to load an array texture w polling and stuff... GET RID of me ???replace w enum ? 
     
-    splat_image_handle: Option<Handle<Image>>,
+   // splat_image_handle: Option<Handle<Image>>,
     
     alpha_mask_image_handle: Option<Handle<Image>>, //built from the height map 
    

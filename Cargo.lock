@@ -751,6 +751,8 @@ dependencies = [
  "bevy",
  "futures-lite 1.13.0",
  "image",
+ "ron",
+ "serde",
  "thiserror",
 ]
 

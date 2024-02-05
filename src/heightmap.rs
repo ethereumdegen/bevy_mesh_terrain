@@ -17,22 +17,18 @@ pub enum HeightMapError{
 
 pub type HeightMapU16 = Vec<Vec<u16>>;
 
+ 
 
-pub struct SubHeightMapU16 {
-    
-    pub height_data: Vec<Vec<u16>>,
-    pub start_bound: [ usize; 2 ],
-    pub end_bound: [ usize; 2 ],
-    pub bounds_pct:  [ [f32 ; 2]  ;2 ]
-    
-}
+pub struct SubHeightMapU16 (pub Vec<Vec<u16>>);
 
 impl SubHeightMapU16 {
     
     pub fn from_heightmap_u16( 
          heightmap: &HeightMapU16,
+             start_bound: [ usize; 2 ],
+          end_bound: [ usize; 2 ],
          bounds_pct: [ [f32 ; 2]  ;2 ],
-     ) -> Self {
+     ) -> SubHeightMapU16 {
            
        
          
@@ -69,14 +65,12 @@ impl SubHeightMapU16 {
             height_data.push(row);
         }
         
-        Self {
+        
             
-            height_data,
-            start_bound,
-            end_bound ,
-            bounds_pct
+        SubHeightMapU16(height_data)
             
-        }
+            
+        
         
         
     }

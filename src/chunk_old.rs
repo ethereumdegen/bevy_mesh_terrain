@@ -1,29 +1,32 @@
 use bevy::prelude::*;
 use bevy::tasks::{Task, AsyncComputeTaskPool};
 
-use bevy::utils::HashMap;
 use futures_lite::future;
 
-use crate::heightmap::{SubHeightMapU16, HeightMapU16};
+use crate::heightmap::SubHeightMapU16;
 use crate::pre_mesh::PreMesh;
-use crate::terrain::{ TerrainViewer, TerrainData, TerrainImageDataLoadStatus};
+use crate::terrain::{TerrainConfig, TerrainViewer, TerrainData};
 use crate::terrain_material::{TerrainMaterial, ChunkMaterialUniforms};
 
 
 
-#[derive(Eq,PartialEq)]
-enum ChunkState{
-    FullyBuilt,
-    Building,   
-    Pending 
-}
 
+
+/*
 
 #[derive(Event )]
 pub enum ChunkEvent {
     ChunkEntitySpawned(Entity)
 } 
+   
+ 
+   
 
+#[derive(Component,Default)]
+pub struct NeedToDespawnChunk {
+   
+} 
+   
 
 #[derive(Component,Default)]
 pub struct Chunk {
@@ -33,41 +36,42 @@ pub struct Chunk {
     pub lod_level: u8
     
 } 
-
-
-#[derive(Component)]
+   
+ 
 pub struct ChunkData {
+    _is_active: bool,
+    _needs_rebuild: bool, 
     spawned_mesh_entity: Option<Entity> ,
     chunk_state: ChunkState ,
-    lod_level: u8, 
-  
-    
-    //could be a massive image like 4k 
-    pub height_map_image_handle: Option<Handle<Image>>, 
-    pub height_map_image_data_load_status: TerrainImageDataLoadStatus,
-    
-    //need to add asset handles here for the heightmap image and texture image !!! 
-    
-     
-    pub height_map_data: Option<HeightMapU16>,
-    
-    
-    
- //   texture_image_handle: Option<Handle<Image>>,
- //   texture_image_sections: u32, 
- //   texture_image_finalized: bool,  //need this for now bc of the weird way we have to load an array texture w polling and stuff... GET RID of me ???replace w enum ? 
-    
-    splat_image_handle: Option<Handle<Image>>,
-    
-    alpha_mask_image_handle: Option<Handle<Image>>, //built from the height map 
-   
-    pub terrain_material_handle: Option<Handle<TerrainMaterial> >
+    lod_level: u8 //lod level of 0 is maximum quality.  1 is less, 2 is much less, 3 is very decimated 
+}
+
+#[derive(Eq,PartialEq)]
+enum ChunkState{
+    FullyBuilt,
+    Building,   
+    Pending 
 }
 
 
-   
- 
- 
+
+#[derive(Component)]
+pub struct MeshBuilderTask(Task<BuiltChunkMeshData>);
+
+
+pub struct BuiltChunkMeshData {
+    terrain_entity_id: Entity, 
+    chunk_bounds: [[usize;2]; 2 ],
+    
+    chunk_id: u32,
+    chunk_location_offset:Vec3, 
+    
+    mesh:Mesh,
+    chunk_uv: Vec4,
+    
+     lod_level: u8  
+    
+}
 
 
 pub trait ChunkCoordinates {
@@ -198,57 +202,6 @@ fn calculate_chunk_coords( from_location: Vec3, terrain_origin: Vec3, terrain_di
     
 }
   
-  
-  
-/*
-
-On initialization of terrain entity, the chunk entities should be spawned and they should just remain there forever !!! 
-
-*/
-
-/*
-
-
-   
-
-#[derive(Component,Default)]
-pub struct NeedToDespawnChunk {
-   
-} 
-   
-   
- 
-pub struct ChunkData {
-    _is_active: bool,
-    _needs_rebuild: bool, 
-    spawned_mesh_entity: Option<Entity> ,
-    chunk_state: ChunkState ,
-    lod_level: u8 //lod level of 0 is maximum quality.  1 is less, 2 is much less, 3 is very decimated 
-}
-
-
-
-
-
-#[derive(Component)]
-pub struct MeshBuilderTask(Task<BuiltChunkMeshData>);
-
-
-pub struct BuiltChunkMeshData {
-    terrain_entity_id: Entity, 
-    chunk_bounds: [[usize;2]; 2 ],
-    
-    chunk_id: u32,
-    chunk_location_offset:Vec3, 
-    
-    mesh:Mesh,
-    chunk_uv: Vec4,
-    
-     lod_level: u8  
-    
-}
-
-
    
   
   
@@ -780,6 +733,7 @@ pub fn finish_chunk_build_tasks(
         }
     }
 }
+
 
 
 

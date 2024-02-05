@@ -7,6 +7,14 @@ use bevy_mesh_terrain::{TerrainMeshPlugin, terrain::{TerrainConfig, TerrainData,
 
 
 
+#[derive(Resource)]
+pub struct TextureLoaderResource {
+    
+    
+    
+}
+
+
 
 fn main() {
     App::new()
@@ -36,19 +44,20 @@ fn setup(
     let splat_texture: Handle<Image> = asset_server.load("terrain/textures/splat_texture.png");
      
     
+    //should pass loaded images in , not the handles .  
     
    
     commands.spawn(VisibilityBundle::default() ) 
     .insert( TransformBundle::default() )
     .insert(
-        TerrainConfig::default()
-        .set_render_distance( 1500.0 )
+        TerrainConfig::load_from_file("default_terrain/terrain_config.ron").unwrap()
+        //.set_render_distance( 1500.0 )
         )
     .insert(
         TerrainData::default()
-        .add_height_map_image(   height_map  ) 
-        .add_array_texture_image(array_texture, 8) 
-        .add_splat_texture_image( splat_texture )
+      //  .add_height_map_image(   height_map  ) 
+      //  .add_array_texture_image(array_texture, 8) 
+      //  .add_splat_texture_image( splat_texture )
     ); 
     
      
