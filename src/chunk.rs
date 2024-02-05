@@ -47,11 +47,10 @@ pub struct ChunkData {
     pub height_map_image_data_load_status: TerrainImageDataLoadStatus,
     
     //need to add asset handles here for the heightmap image and texture image !!! 
-    
+     
      
     pub height_map_data: Option<HeightMapU16>,
-    
-    
+   
     
  //   texture_image_handle: Option<Handle<Image>>,
  //   texture_image_sections: u32, 
@@ -783,4 +782,4 @@ pub fn finish_chunk_build_tasks(
 
 
 
-*/
+*
