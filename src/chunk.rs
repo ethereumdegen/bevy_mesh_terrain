@@ -266,21 +266,31 @@ fn calculate_chunk_coords( from_location: Vec3, terrain_origin: Vec3, terrain_di
       
         asset_server: Res<AssetServer> ,
         
-      mut chunk_query : Query<( Entity, &Chunk,  &Parent  ), Without<ChunkData> > 
+      mut chunk_query : Query<( Entity, &Chunk,  &Parent  ), Without<ChunkData> > ,
+      
+      terrain_query: Query<(&TerrainConfig,& TerrainData)>,
   ) {
        
         for (chunk_entity, chunk,  terrain_entity  ) in chunk_query.iter_mut() { 
             
-       
+             
+        let terrain_entity_id = terrain_entity.get();   
+        if terrain_query.get (terrain_entity_id).is_ok() == false {continue;println!("warn terrain ent ")}
+        let (terrain_config,terrain_data)  = terrain_query.get( terrain_entity_id ).unwrap();
+          
             
             
             let chunk_id = 1; //chunk.chunk_id;
             
-            let height_texture_path = format!("default_terrain/height/{}.png" , chunk_id); 
+             //default_terrain/diffuse
+            let height_texture_folder_path = &terrain_config .height_folder_path;
+            let height_texture_path = format!("{}/{}.png" , height_texture_folder_path, chunk_id); 
+            println!("height_texture_path {}",height_texture_path);
             let height_map_image_handle: Handle<Image> = asset_server.load(height_texture_path);
             
-            
-            let splat_texture_path = format!("default_terrain/splat/{}.png" , chunk_id); 
+            //default_terrain/splat
+            let splat_texture_folder_path = &terrain_config .splat_folder_path;
+            let splat_texture_path = format!("{}/{}.png" , splat_texture_folder_path, chunk_id); 
             let splat_image_handle: Handle<Image> = asset_server.load(splat_texture_path);
             
             

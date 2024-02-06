@@ -32,31 +32,20 @@ fn main() {
 
 /// set up a simple 3D scene
 fn setup(
-    mut commands: Commands,
-    
-   
+    mut commands: Commands, 
     asset_server: Res<AssetServer> 
 ) {
     
-    
-  //  let array_texture: Handle<Image> = asset_server.load("terrain/textures/array_texture_lg_2.png");
-  //  let height_map: Handle<Image> = asset_server.load("terrain/source/height.png"); 
-  //  let splat_texture: Handle<Image> = asset_server.load("terrain/textures/splat_texture.png");
      
     
-    //should pass loaded images in , not the handles .  
+    //should pass loaded images in , not the handles .  ? 
     
-    commands.spawn(VisibilityBundle::default() ) 
-    .insert( TransformBundle::default() )
+    commands.spawn(SpatialBundle::default() )  
     .insert(
-        TerrainConfig::load_from_file("assets/default_terrain/terrain_config.ron").unwrap()
-        //.set_render_distance( 1500.0 )
+        TerrainConfig::load_from_file("assets/default_terrain/terrain_config.ron").unwrap() 
         ) 
     .insert(
-        TerrainData::new() 
-      //  .add_height_map_image(   height_map  ) 
-      //  .add_array_texture_image(array_texture, 8) 
-      //  .add_splat_texture_image( splat_texture )
+        TerrainData::new()  
     ); 
     
      
@@ -79,12 +68,10 @@ fn setup(
         transform: Transform::from_xyz(20.0, 162.5, 20.0).looking_at(Vec3::new(900.0,0.0,900.0), Vec3::Y),
         ..default()
     })
-    .insert(TerrainViewer::default());
-    
+    .insert(TerrainViewer::default()); 
    
 }
-
-
+ 
  
  
 fn update_camera_look(
@@ -103,7 +90,7 @@ fn update_camera_look(
       
       // Accumulate mouse delta
     let mut delta: Vec2 = Vec2::ZERO;
-    for event in event_reader.iter() {
+    for event in event_reader.read() {
         delta += event.delta;
     }
 
@@ -133,9 +120,7 @@ fn update_camera_move(
 ){
       const MOVE_SPEED: f32 = 10.0; // You can adjust this value as needed
      
-     
-     
-  
+      
     // Apply to each camera with the CameraTag
     for (mut transform, _) in query.iter_mut() {
        

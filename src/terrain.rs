@@ -190,10 +190,13 @@ pub fn load_terrain_texture_from_image(
     mut materials: ResMut<Assets<TerrainMaterial>>,
 ){
        for (mut terrain_data,terrain_config) in terrain_query.iter_mut() {
-  
+        
+       
          
           if terrain_data.texture_image_handle.is_none() {
-              let tex_image = asset_server.load("default_terrain/diffuse/array_texture.png");
+                let array_texture_path = &terrain_config.diffuse_folder_path; 
+                
+              let tex_image = asset_server.load( array_texture_path );
               terrain_data.texture_image_handle = Some(tex_image);
               
           }
@@ -245,117 +248,4 @@ pub fn load_terrain_texture_from_image(
             }
        }   
 }
-  
- 
- /*
- 
- //finalizes loading of height map by looking for image handle and applying it to the height map data 
-pub fn load_height_map_data_from_image(  
-    
-    mut terrain_query: Query<&mut TerrainData, With<TerrainConfig>>,
-    asset_server: Res<AssetServer>,  
-    mut images: ResMut<Assets<Image>>, 
-    
-){ 
-    
-    for mut terrain_data in terrain_query.iter_mut() {
-        
-        
-      //  let height_map_data_is_some = terrain_data.height_map_data.is_some(); 
-         
-         if terrain_data.height_map_image_data_load_status != TerrainImageDataLoadStatus::Loaded {
-         
-         //try to load the height map data from the height_map_image_handle 
-       //  if !height_map_data_is_some {
-                
-                //try to get the loaded height map image from its handle via the asset server - must exist and be loaded 
-                let height_map_image:&Image = match &terrain_data.height_map_image_handle {
-                    Some(height_map_handle) => {
-                        
-                        let height_map_loaded = asset_server.get_load_state( height_map_handle )  ;
-                    
-                        if height_map_loaded != Some(LoadState::Loaded)  {
-                            println!("height map not yet loaded");
-                            continue;
-                        }  
-                        
-                        images.get(height_map_handle).unwrap()
-                    }
-                    None => {continue} 
-                };
-                    
-                    //maybe we can do this in a thread since it is quite cpu intense ? 
-                let loaded_heightmap_data_result =  HeightMapU16::load_from_image( height_map_image) ;
-                   
-                      println!("built heightmapu16 ");
-                      
-                match loaded_heightmap_data_result {
-                    Ok( loaded_heightmap_data ) => {
-                       
-                           //take out of box 
-                            terrain_data.height_map_data = Some( *loaded_heightmap_data ); 
-                 
-                    },
-                    Err(e) => {
-                        
-                        println!("{}",e);
-                    }
-                    
-                }
-                
-                let alpha_mask_image:Image = build_alpha_mask_image( height_map_image );
-                terrain_data.alpha_mask_image_handle = Some(images.add(  alpha_mask_image   ));
-                   
-            
-               
-                //we can let go of the height map image handle now that we loaded our heightmap data from it 
-                //terrain_data.height_map_image_handle = None;
-                terrain_data.height_map_image_data_load_status = TerrainImageDataLoadStatus::Loaded;
-         } 
-         
-        
-        
-    }
-}
-
-
-pub fn build_alpha_mask_image( height_map_image: &Image ) -> Image {
-    
-     
-    
-    let width = height_map_image.size().x as usize;
-    let height = height_map_image.size().y as usize;
-    
-    const THRESHOLD: u16 = (0.05 * 65535.0) as u16;
-    
-    // With the format being R16Uint, each pixel is represented by 2 bytes
-    let mut modified_data = Vec::with_capacity(height * width * 2);  // 2 bytes per pixel
-    
-    for y in 0..height {
-        for x in 0..width {
-            let index = 2 * (y * width + x); // 2 because of R16Uint
-            let height_value = u16::from_le_bytes([height_map_image.data[index], height_map_image.data[index + 1]]);
-            
-            let pixel_value:f32 = if height_value > THRESHOLD {
-                1.0
-            } else {
-                0.0
-            };
-            modified_data.extend_from_slice(&pixel_value.to_le_bytes());
-        }
-    }
-
-    // Assuming Image has a method from_data for creating an instance from raw data
-  
-    
-    Image::new(
-        height_map_image.texture_descriptor.size, 
-        height_map_image.texture_descriptor.dimension, 
-        modified_data,
-        TextureFormat::R32Float)
-    
    
-}
-
-
-*/

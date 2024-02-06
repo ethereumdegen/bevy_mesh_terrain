@@ -6,12 +6,11 @@ TerrainConfig(
     lod_distance: 1000.0,
     lod_level_offset: 0,
     height_scale: 0.0004,
-    attach_collision_data: true,
-    
-    texture_image_sections: 8,
-    // Assuming the addition of fields for paths to the height and splat folders
-    height_folder_path: "diffuse", // String
-    splat_folder_path: "splat", // String
-     diffuse_folder_path: "height" // String
+    attach_collision_data: true, 
+   
      
+     height_folder_path: "default_terrain/height", // String
+     splat_folder_path: "default_terrain/splat", // String
+     diffuse_folder_path: "default_terrain/diffuse/array_texture.png", // String
+      texture_image_sections: 8
 )
