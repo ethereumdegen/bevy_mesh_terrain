@@ -15,7 +15,7 @@ use std::fs::File;
 use std::io::Read;
 
 
-#[derive(Component,Deserialize)]
+#[derive(Component,  Deserialize )]
 pub struct TerrainConfig { 
     pub terrain_dimensions: Vec2,  
      
@@ -31,7 +31,7 @@ pub struct TerrainConfig {
     
     pub attach_collision_data: bool ,
     
-    
+    pub texture_image_sections: u32,
     pub diffuse_folder_path: String,
     pub height_folder_path: String,
     pub splat_folder_path: String 
@@ -51,6 +51,7 @@ impl Default for TerrainConfig {
              height_scale: 0.004,  //for building the mesh 
             
             attach_collision_data: true ,
+            texture_image_sections: 8,
             
             diffuse_folder_path: "diffuse".into(),
             height_folder_path: "height".into(),

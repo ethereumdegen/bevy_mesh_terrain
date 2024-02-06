@@ -46,13 +46,12 @@ fn setup(
     
     //should pass loaded images in , not the handles .  
     
-   
     commands.spawn(VisibilityBundle::default() ) 
     .insert( TransformBundle::default() )
     .insert(
         TerrainConfig::load_from_file("assets/default_terrain/terrain_config.ron").unwrap()
         //.set_render_distance( 1500.0 )
-        )
+        ) 
     .insert(
         TerrainData::new() 
       //  .add_height_map_image(   height_map  ) 

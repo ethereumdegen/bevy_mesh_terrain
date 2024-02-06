@@ -54,6 +54,7 @@ pub enum TerrainDataStatus { //us this for texture image and splat image and alp
 pub struct TerrainData {
        
  //   pub chunks: HashMap<u32,ChunkData>,  //why is this necessary  ?? 
+   // pub terrain_config: TerrainConfig,
     
     pub terrain_data_status: TerrainDataStatus,
   
@@ -70,25 +71,26 @@ pub struct TerrainData {
     
     
     texture_image_handle: Option<Handle<Image>>,
-    texture_image_sections: u32, 
+  //  texture_image_sections: u32, 
     texture_image_finalized: bool,  //need this for now bc of the weird way we have to load an array texture w polling and stuff... GET RID of me ???replace w enum ? 
     
    // splat_image_handle: Option<Handle<Image>>,
     
-    alpha_mask_image_handle: Option<Handle<Image>>, //built from the height map 
+  //  alpha_mask_image_handle: Option<Handle<Image>>, //built from the height map 
    
-    pub terrain_material_handle: Option<Handle<TerrainMaterial> >
+   // pub terrain_material_handle: Option<Handle<TerrainMaterial> >  //move this to chunks !! 
 }
  
  impl TerrainData{
      
-     pub fn new( ) -> Self{
+     pub fn new(  ) -> Self{
          
          let terrain_data = TerrainData::default();
          
          
-         //spawn the chunks as default lil entities 
-         
+      //  terrain_data.texture_image_handle = Some(handle.clone()); //strong clone 
+        
+        
          
          
          
@@ -98,32 +100,34 @@ pub struct TerrainData {
  
  pub fn initialize_terrain(  
       mut commands: Commands,
-      mut terrain_query: Query<(Entity, &mut TerrainData, &TerrainConfig) >,
+      mut terrain_query: Query<(Entity, &mut TerrainData , &TerrainConfig) >,
    
     
 ){ 
     
-    for (terrain_entity,mut terrain_data, terrain_config) in terrain_query.iter_mut() {
+    for (terrain_entity,mut terrain_data , terrain_config ) in terrain_query.iter_mut() {
         
         
         if terrain_data.terrain_data_status == TerrainDataStatus::NotLoaded {
+            
+            
             
             let max_chunks = terrain_config.chunk_rows *  terrain_config.chunk_rows ;
             
             for chunk_id in 0 .. max_chunks {
                 
-                let chunk_coords  = [ chunk_id / terrain_config.chunk_rows ,  chunk_id  % terrain_config.chunk_rows]; 
-                let chunk_dimensions = terrain_config.get_chunk_dimensions();
-                
+            
+                        
+                        
                 let chunk_entity =  commands.spawn(
                     Chunk::new(chunk_id)
                 ).insert( 
-                    Transform::from_xyz(
-                        chunk_coords.x() as f32 * chunk_dimensions.x, 
-                        0.0, 
-                        chunk_coords.x() as f32 *  chunk_dimensions.y  ) 
-                    )
-                .insert( Visibility::Hidden )
+                    VisibilityBundle {
+                   
+                    visibility: Visibility::Hidden,
+                    
+                    ..Default::default()
+                 } ) 
                 .id();
                 
                 
@@ -185,6 +189,88 @@ impl TerrainData{
 
  
  
+
+//consider building a custom loader for this , not  Image 
+pub fn load_terrain_texture_from_image( 
+    mut terrain_query: Query<( &mut TerrainData, &TerrainConfig ) >,
+    asset_server: Res<AssetServer>,  
+    mut images: ResMut<Assets<Image>>  , 
+    
+    mut materials: ResMut<Assets<TerrainMaterial>>,
+){
+       for (mut terrain_data,terrain_config) in terrain_query.iter_mut() {
+  
+         
+          if terrain_data.texture_image_handle.is_none() {
+              let tex_image = asset_server.load("default_terrain/diffuse/array_texture.png");
+              terrain_data.texture_image_handle = Some(tex_image);
+              
+          }
+         
+         
+         
+         
+         //try to load the height map data from the height_map_image_handle 
+            if !terrain_data.texture_image_finalized {
+                 
+                let texture_image:&mut Image = match &terrain_data.texture_image_handle {
+                    Some(texture_image_handle) => {
+                        
+                        let texture_image_loaded = asset_server.get_load_state( texture_image_handle )  ;
+                    
+                        if texture_image_loaded != Some(LoadState::Loaded)  {
+                            println!("terrain texture not yet loaded");
+                            continue;
+                        }  
+                        
+                        images.get_mut(texture_image_handle).unwrap()
+                    }
+                    None => {continue} 
+                };
+                
+                
+                   //https://github.com/bevyengine/bevy/pull/10254
+                   texture_image.sampler = ImageSampler::Descriptor(ImageSamplerDescriptor {
+                        label: None,
+                        address_mode_u: ImageAddressMode::Repeat,
+                        address_mode_v: ImageAddressMode::Repeat,
+                        address_mode_w: ImageAddressMode::Repeat,
+                        mag_filter: ImageFilterMode::Linear,
+                        min_filter: ImageFilterMode::Linear,
+                        mipmap_filter: ImageFilterMode::Linear,
+                        ..default()
+                    });
+                
+                    // Create a new array texture asset from the loaded texture.
+                    let array_layers = terrain_config.texture_image_sections;
+                    
+                    if  array_layers > 1 {
+                         texture_image.reinterpret_stacked_2d_as_array(array_layers);
+                    }
+                   
+                   terrain_data. texture_image_finalized = true; 
+                   
+                   /*
+                   terrain_data.terrain_material_handle = Some(  materials.add(
+                        TerrainMaterial {
+                                uniforms: ChunkMaterialUniforms{
+                                     color_texture_expansion_factor: 4.0,   //makes it look less tiley when LOWER  
+                                     chunk_uv: Vec4::new( 0.0,1.0,0.0,1.0 ),
+                                },
+                               
+                                array_texture:  terrain_data.texture_image_handle.clone(),
+                                splat_texture:  terrain_data.splat_image_handle.clone(),
+                                alpha_mask_texture: terrain_data.alpha_mask_image_handle.clone() 
+                            }
+                    ) ); 
+                    
+                    
+                    */
+                 
+                
+            }
+       }   
+}
   
  
  /*
@@ -297,79 +383,5 @@ pub fn build_alpha_mask_image( height_map_image: &Image ) -> Image {
    
 }
 
-
-//consider building a custom loader for this , not  Image 
-pub fn load_terrain_texture_from_image( 
-    mut terrain_query: Query<&mut TerrainData, With<TerrainConfig>>,
-    asset_server: Res<AssetServer>,  
-    mut images: ResMut<Assets<Image>>  , 
-    
-    mut materials: ResMut<Assets<TerrainMaterial>>,
-){
-       for mut terrain_data in terrain_query.iter_mut() {
-  
-           let texture_image_finalized  = terrain_data.texture_image_finalized; 
-         
-         //try to load the height map data from the height_map_image_handle 
-            if !texture_image_finalized {
-                 
-                let texture_image:&mut Image = match &terrain_data.texture_image_handle {
-                    Some(texture_image_handle) => {
-                        
-                        let texture_image_loaded = asset_server.get_load_state( texture_image_handle )  ;
-                    
-                        if texture_image_loaded != Some(LoadState::Loaded)  {
-                            println!("terrain texture not yet loaded");
-                            continue;
-                        }  
-                        
-                        images.get_mut(texture_image_handle).unwrap()
-                    }
-                    None => {continue} 
-                };
-                
-                
-                   //https://github.com/bevyengine/bevy/pull/10254
-                   texture_image.sampler = ImageSampler::Descriptor(ImageSamplerDescriptor {
-                        label: None,
-                        address_mode_u: ImageAddressMode::Repeat,
-                        address_mode_v: ImageAddressMode::Repeat,
-                        address_mode_w: ImageAddressMode::Repeat,
-                        mag_filter: ImageFilterMode::Linear,
-                        min_filter: ImageFilterMode::Linear,
-                        mipmap_filter: ImageFilterMode::Linear,
-                        ..default()
-                    });
-                
-                    // Create a new array texture asset from the loaded texture.
-                    let array_layers = terrain_data.texture_image_sections;
-                    
-                    if  array_layers > 1 {
-                         texture_image.reinterpret_stacked_2d_as_array(array_layers);
-                    }
-                   
-                   terrain_data. texture_image_finalized = true; 
-                   
-                   
-                   terrain_data.terrain_material_handle = Some(  materials.add(
-                        TerrainMaterial {
-                                uniforms: ChunkMaterialUniforms{
-                                     color_texture_expansion_factor: 4.0,   //makes it look less tiley when LOWER  
-                                     chunk_uv: Vec4::new( 0.0,1.0,0.0,1.0 ),
-                                },
-                               
-                                array_texture:  terrain_data.texture_image_handle.clone(),
-                                splat_texture:  terrain_data.splat_image_handle.clone(),
-                                alpha_mask_texture: terrain_data.alpha_mask_image_handle.clone() 
-                            }
-                    ) ); 
-                    
-                    
-                    
-                 
-                
-            }
-       }   
-}
 
 */

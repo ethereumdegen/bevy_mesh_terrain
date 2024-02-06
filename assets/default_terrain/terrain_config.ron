@@ -7,6 +7,8 @@ TerrainConfig(
     lod_level_offset: 0,
     height_scale: 0.004,
     attach_collision_data: true,
+    
+    texture_image_sections: 8,
     // Assuming the addition of fields for paths to the height and splat folders
     height_folder_path: "diffuse", // String
     splat_folder_path: "splat", // String

@@ -1,10 +1,12 @@
+use bevy::asset::LoadState;
 use bevy::prelude::*;
+use bevy::render::render_resource::TextureFormat;
 use bevy::tasks::{Task, AsyncComputeTaskPool};
 
 use bevy::utils::HashMap;
 use futures_lite::future;
 
-use crate::heightmap::{SubHeightMapU16, HeightMapU16};
+use crate::heightmap::{SubHeightMapU16, HeightMapU16, HeightMap};
 use crate::pre_mesh::PreMesh;
 use crate::terrain::{ TerrainViewer, TerrainData, TerrainImageDataLoadStatus};
 use crate::terrain_config::TerrainConfig;
@@ -80,7 +82,7 @@ pub struct ChunkData {
     
     alpha_mask_image_handle: Option<Handle<Image>>, //built from the height map 
    
-  //  pub terrain_material_handle: Option<Handle<TerrainMaterial> >
+    pub material_handle: Option<Handle<TerrainMaterial> >
 }
 
 
@@ -111,7 +113,7 @@ pub struct MeshBuilderTask(Task<BuiltChunkMeshData>);
 
 
 pub struct BuiltChunkMeshData {
-  //  terrain_entity_id: Entity, 
+     chunk_entity_id: Entity, 
   //  chunk_bounds: [[usize;2]; 2 ],
     
    // chunk_id: u32,
@@ -261,40 +263,193 @@ fn calculate_chunk_coords( from_location: Vec3, terrain_origin: Vec3, terrain_di
   
   pub fn initialize_chunk_data( 
       mut commands: Commands,
-      mut chunk_query : Query<( Entity, &Chunk,  &Parent,  &GlobalTransform ), Without<ChunkData> > 
-  ) {
       
-        for (chunk_entity, chunk,  terrain_entity,  chunk_transform ) in chunk_query.iter_mut() { 
+        asset_server: Res<AssetServer> ,
+        
+      mut chunk_query : Query<( Entity, &Chunk,  &Parent  ), Without<ChunkData> > 
+  ) {
+       
+        for (chunk_entity, chunk,  terrain_entity  ) in chunk_query.iter_mut() { 
+            
+       
             
             
+            let chunk_id = 1; //chunk.chunk_id;
+            
+            let height_texture_path = format!("default_terrain/height/{}.png" , chunk_id); 
+            let height_map_image_handle: Handle<Image> = asset_server.load(height_texture_path);
             
             
-            
+            let splat_texture_path = format!("default_terrain/splat/{}.png" , chunk_id); 
+            let splat_image_handle: Handle<Image> = asset_server.load(splat_texture_path);
             
             
             let chunk_data_component = ChunkData {
                 chunk_state: ChunkState::Init,
                 lod_level: 0,   // hmm might cause issues .. 
                 
-                height_map_image_handle: ,
-                height_map_data: None,
+                height_map_image_handle : Some(height_map_image_handle) ,
+                height_map_data: None,   //make this its own component ? 
                 height_map_image_data_load_status: TerrainImageDataLoadStatus::NotLoaded,
                 
-                splat_image_handle: None,
-                alpha_mask_image_handle: None 
-            
-                
-                
+                splat_image_handle: Some(splat_image_handle),
+                alpha_mask_image_handle: None ,  //gets set later 
+                material_handle: None//gets set later   
             };
-            
+               
             commands.get_entity( chunk_entity ).unwrap().insert(  chunk_data_component  );
                 
         }
       
       
-  }
+}
       
-      
+pub fn build_chunk_height_data(
+  // mut commands: Commands,
+   
+  // mut terrain_query: Query<(&TerrainConfig,& TerrainData)>,
+    
+    asset_server: Res<AssetServer>,  
+    mut images: ResMut<Assets<Image>>, 
+    
+   mut chunk_query : Query<( Entity, &Chunk,&mut ChunkData, &Parent  ) >,
+){
+    
+     for (chunk_entity, chunk,mut chunk_data, terrain_entity ) in chunk_query.iter_mut() { 
+         
+        if chunk_data.height_map_image_data_load_status == TerrainImageDataLoadStatus::NotLoaded {
+             
+                
+                
+                let height_map_image:&Image = match  &chunk_data.height_map_image_handle {
+                    Some(height_map_handle) => {
+                        
+                        let height_map_loaded = asset_server.get_load_state( height_map_handle )  ;
+                    
+                        if height_map_loaded != Some(LoadState::Loaded)  {
+                            println!("height map not yet loaded");
+                            continue;
+                        }  
+                        
+                        images.get(height_map_handle).unwrap()
+                    }
+                    None => {continue} 
+                };
+                    
+                    //maybe we can do this in a thread since it is quite cpu intense ? 
+                let loaded_heightmap_data_result =  HeightMapU16::load_from_image( height_map_image) ;
+                   
+                      println!("built heightmapu16 ");  //this is working !! !
+                      
+                match loaded_heightmap_data_result {
+                    Ok( loaded_heightmap_data ) => {
+                       
+                           //take out of box 
+                            chunk_data.height_map_data = Some( *loaded_heightmap_data ); 
+                 
+                    },
+                    Err(e) => {
+                        
+                        println!("{}",e);
+                    }
+                    
+                }
+                
+                let alpha_mask_image:Image = build_alpha_mask_image( height_map_image );
+                chunk_data.alpha_mask_image_handle = Some(images.add(  alpha_mask_image   ));
+                   
+            
+               
+                //we can let go of the height map image handle now that we loaded our heightmap data from it 
+                //terrain_data.height_map_image_handle = None;
+                chunk_data.height_map_image_data_load_status = TerrainImageDataLoadStatus::Loaded;
+                 
+            
+        }
+        
+     }
+}
+
+
+
+pub fn build_alpha_mask_image( height_map_image: &Image ) -> Image {
+     
+    
+    let width = height_map_image.size().x as usize;
+    let height = height_map_image.size().y as usize;
+    
+    const THRESHOLD: u16 = (0.05 * 65535.0) as u16;
+    
+    // With the format being R16Uint, each pixel is represented by 2 bytes
+    let mut modified_data = Vec::with_capacity(height * width * 2);  // 2 bytes per pixel
+    
+    for y in 0..height {
+        for x in 0..width {
+            let index = 2 * (y * width + x); // 2 because of R16Uint
+            let height_value = u16::from_le_bytes([height_map_image.data[index], height_map_image.data[index + 1]]);
+            
+            let pixel_value:f32 = if height_value > THRESHOLD {
+                1.0
+            } else {
+                0.0
+            };
+            modified_data.extend_from_slice(&pixel_value.to_le_bytes());
+        }
+    }
+
+    // Assuming Image has a method from_data for creating an instance from raw data
+  
+    
+    Image::new(
+        height_map_image.texture_descriptor.size, 
+        height_map_image.texture_descriptor.dimension, 
+        modified_data,
+        TextureFormat::R32Float)
+    
+   
+}
+
+
+
+
+//consider building a custom loader for this , not  Image 
+/*
+pub fn build_chunk_material( 
+    mut chunk_query: Query<( &Chunk, &mut ChunkData, &Parent ) >,
+       terrain_query: Query<(&TerrainConfig,& TerrainData)>,
+     
+    asset_server: Res<AssetServer>,  
+    mut images: ResMut<Assets<Image>>  , 
+    
+    mut materials: ResMut<Assets<TerrainMaterial>>,
+){
+    
+     for (  chunk,mut chunk_data, terrain_entity ) in chunk_query.iter_mut() { 
+            
+            if chunk_data.material_handle.is_some(){continue;} 
+            
+          let terrain_entity_id = terrain_entity.get();   
+        if terrain_query.get(terrain_entity_id).is_ok() == false {continue;}
+        let (terrain_config,terrain_data)  = terrain_query.get( terrain_entity_id ).unwrap();
+                
+                    
+                    
+            chunk_data.material_handle = Some(  materials.add(
+                        TerrainMaterial {
+                                uniforms: ChunkMaterialUniforms{
+                                     color_texture_expansion_factor: 4.0,   //makes it look less tiley when LOWER  
+                                     chunk_uv: Vec4::new( 0.0,1.0,0.0,1.0 ),
+                                },
+                               
+                                array_texture:  terrain_data.texture_image_handle.clone(),
+                                splat_texture:  chunk_data.splat_image_handle.clone(),
+                                alpha_mask_texture: chunk_data.alpha_mask_image_handle.clone() 
+                            }
+                    ) ); 
+                    
+        
+    }
+}*/
 /*
 
 On initialization of terrain entity, the chunk entities should be spawned and they should just remain there forever !!! 
@@ -303,19 +458,19 @@ On initialization of terrain entity, the chunk entities should be spawned and th
  //this may lag.. 
 pub fn build_chunk_meshes(
    mut commands: Commands,
-   mut terrain_query: Query<(&TerrainConfig,& TerrainData)>,
+     terrain_query: Query<(&TerrainConfig,& TerrainData)>,
     
-   mut chunk_query : Query<( Entity, &Chunk,&mut ChunkData, &Parent,  &GlobalTransform, &Visibility ) >,
+   mut chunk_query : Query<( Entity, &Chunk,&mut ChunkData, &Parent  ) >,
 ){
     
-     for (chunk_entity, chunk,mut chunk_data, terrain_entity,  chunk_transform, mut chunk_visibility) in chunk_query.iter_mut() { 
+     for (chunk_entity, chunk,mut chunk_data, terrain_entity ) in chunk_query.iter_mut() { 
          
         if chunk_data.chunk_state == ChunkState::Init {
              
              
              
         let terrain_entity_id = terrain_entity.get();   
-        if terrain_query.get_mut(terrain_entity_id).is_ok() == false {continue;}
+        if terrain_query.get (terrain_entity_id).is_ok() == false {continue;}
         let (terrain_config,terrain_data)  = terrain_query.get( terrain_entity_id ).unwrap();
                 
                 
@@ -330,13 +485,25 @@ pub fn build_chunk_meshes(
             println!("chunk is missing height map data .");
             continue; 
         }
+        if  chunk_data.alpha_mask_image_handle.is_none() {
+            println!("chunk is missing alpha_mask_image_handle .");
+            continue; 
+        }
               
-        let terrain_material_handle_option = &terrain_data.terrain_material_handle.clone() ; 
+              if  chunk_data.splat_image_handle.is_none() {
+            println!("chunk is missing splat_image_handle .");
+            continue; 
+        }
+              
+              
+              
+              //we are getting stuck here ! 
+     /*   let terrain_material_handle_option = &terrain_data.terrain_material_handle.clone() ; 
               
         if terrain_material_handle_option.is_none() {
             println!("no terrain material yet.. ");
             continue; 
-        }
+        }*/
               
       //  let array_texture =  terrain_data.get_array_texture_image().clone();
       //  let splat_texture =  terrain_data.get_splat_texture_image().clone();
@@ -392,7 +559,7 @@ pub fn build_chunk_meshes(
                     );
                     
                     
-                    
+                    println!("build premesh 1 ");
                     let mesh = PreMesh::from_heightmap_subsection( 
                          &sub_heightmap, 
                          
@@ -403,7 +570,10 @@ pub fn build_chunk_meshes(
                         [terrain_dimensions.x, terrain_dimensions.y]
                     ).build(); 
                     
+                            println!("build premesh 2 ");
+                            
                      BuiltChunkMeshData {
+                         chunk_entity_id: chunk_entity.clone(), 
                          //chunk_id: chunk_id_clone,
                         // chunk_bounds: [sub_heightmap.start_bound,sub_heightmap.end_bound],
                          
@@ -417,10 +587,10 @@ pub fn build_chunk_meshes(
                 });
 
                 // Spawn new entity and add our new task as a component
-              //  let mesh_builder = commands.spawn(MeshBuilderTask(task));
+                commands.spawn(MeshBuilderTask(task));
                 
                 //add the mesh builder component to the chunk entity 
-                commands.get_entity( chunk_entity ).unwrap().insert(  MeshBuilderTask(task)  );
+               // commands.get_entity( chunk_entity ).unwrap().insert(  MeshBuilderTask(task)  );
                 
            // }                
         } 
@@ -443,22 +613,29 @@ pub fn build_chunk_meshes(
  
 pub fn finish_chunk_build_tasks(
     mut commands: Commands,
-    mut chunk_build_tasks: Query<(Entity, &Chunk, &mut ChunkData, &Parent, &mut MeshBuilderTask)>,
+    mut chunk_build_tasks: Query<(Entity,  &mut MeshBuilderTask)>,  //&Chunk, &mut ChunkData, &Parent,
+    
+    mut chunk_query: Query<(Entity, &Chunk, &mut ChunkData, &Parent)>,  //&Chunk, &mut ChunkData, &Parent,
     
     mut meshes: ResMut<Assets<Mesh>>,
      
-    mut terrain_query: Query<&mut TerrainData,With<TerrainConfig>>,
+      terrain_query: Query<(&TerrainData,&TerrainConfig)>,
     mut terrain_materials: ResMut<Assets<TerrainMaterial>>,
     
     mut chunk_events: EventWriter<ChunkEvent> ,
 ) {
     
+    //chunk, mut chunk_data,  terrain_entity,
     
-    
-    for (entity,chunk, mut chunk_data,  terrain_entity, mut task) in &mut chunk_build_tasks {
+    for (entity, mut task) in &mut chunk_build_tasks {
+        println!("for chunk build task 1");
         if let Some(built_chunk_mesh_data) = future::block_on(future::poll_once(&mut task.0)) {
             // Add our new PbrBundle of components to our tagged entity
-          
+                 println!("for chunk build task 2");
+            let chunk_entity_id = built_chunk_mesh_data.chunk_entity_id;
+            
+            if chunk_query.get_mut(chunk_entity_id).is_ok() == false {continue;}
+             let (chunk_entity, chunk,mut chunk_data,terrain_entity) = chunk_query.get_mut(chunk_entity_id).unwrap(); 
            
             let terrain_entity_id = terrain_entity.get();
                
@@ -469,12 +646,13 @@ pub fn finish_chunk_build_tasks(
          //   let chunk_location_offset = built_chunk_mesh_data.chunk_location_offset;
             
             //careful w this unwrap
-           if terrain_query.get_mut(terrain_entity_id).is_ok() == false {continue;}
+           if terrain_query.get(terrain_entity_id).is_ok() == false {continue;}
             
-            let mut terrain_data = terrain_query.get_mut(terrain_entity_id).unwrap(); 
+            let (terrain_data,terrain_config) = terrain_query.get (terrain_entity_id).unwrap(); 
                
              
-             
+             //need to load these for sure !!! 
+             println!("  finish_chunk_build_tasks  ");
              let array_texture =  terrain_data.get_array_texture_image().clone();
              
              let splat_texture =  chunk_data.get_splat_texture_image().clone();
@@ -503,16 +681,22 @@ pub fn finish_chunk_build_tasks(
          
               let terrain_mesh_handle = meshes.add( mesh );
                 
-             
+                
+                
+            let chunk_coords  = [ chunk_id / terrain_config.chunk_rows ,  chunk_id  % terrain_config.chunk_rows]; 
+            let chunk_dimensions = terrain_config.get_chunk_dimensions();
+                 
+             //since this has a transform, it will override any existing transform on the entity i believe 
               let child_mesh =  commands.spawn(
                      TerrainPbrBundle {
                         mesh: terrain_mesh_handle,
                         material: chunk_terrain_material ,
-                      /*  transform: Transform::from_xyz( 
+                        transform: Transform::from_xyz( 
+                            chunk_coords.x() as f32 * chunk_dimensions.x,
                             0.0,
-                            0.0,
-                            0.0 
-                            ) ,  */
+                            chunk_coords.y() as f32 * chunk_dimensions.y 
+                          
+                            ) ,  
                         ..default()
                         } 
                     )
@@ -538,8 +722,8 @@ pub fn finish_chunk_build_tasks(
            
 
             // Task is complete, so remove task component from entity
-            commands.entity(entity).remove::<MeshBuilderTask>();
-
+          //  commands.entity(entity).remove::<MeshBuilderTask>();
+           commands.entity(entity).despawn();
          
         }
     }
@@ -548,9 +732,9 @@ pub fn finish_chunk_build_tasks(
  
  
 pub fn update_chunk_visibility(
-   mut terrain_query: Query<(&TerrainConfig,& TerrainData)>,
+     terrain_query: Query<(&TerrainConfig,& TerrainData)>,
     
-   mut chunk_query: Query<( &Chunk,&mut ChunkData, &Parent,  &GlobalTransform, &Visibility ) >,
+   mut chunk_query: Query<( &Chunk,&mut ChunkData, &Parent,  &GlobalTransform, &mut Visibility ) >,   //only will find chunks that have the meshmaterial on them 
     
    terrain_viewer: Query<&GlobalTransform, With<TerrainViewer>> 
 ){
@@ -626,11 +810,11 @@ pub fn update_chunk_visibility(
                         };
                                  
                                   
-                        chunk_visibility = match should_be_visible {
-                            true => &Visibility::Visible ,
-                            false => &Visibility::Hidden   
+                        *chunk_visibility = match should_be_visible {
+                            true =>  Visibility::Visible ,
+                            false =>  Visibility::Hidden   
                         } ;         
-                        println!(" set chunk vis   {:?}",  chunk_visibility ) ;
+                     //   println!(" set chunk vis   {:?}",  chunk_visibility ) ;
                         
                          
          
