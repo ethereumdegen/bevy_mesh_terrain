@@ -458,7 +458,7 @@ pub fn build_chunk_meshes(
 
     mut chunk_query: Query<(Entity, &Chunk, &mut ChunkData, &Parent, &Visibility)>,
     
-    mut chunk_height_maps: ResMut<ChunkHeightMapResource>,
+     chunk_height_maps: ResMut<ChunkHeightMapResource>,
    // mut chunk_data_query: Query<( &mut ChunkData )>,
 ) {
     for (chunk_entity, chunk, mut chunk_data, terrain_entity, visibility) in chunk_query.iter_mut()
