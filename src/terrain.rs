@@ -5,7 +5,7 @@ use bevy::render::texture::{ImageSampler, ImageSamplerDescriptor, ImageAddressMo
 use bevy::utils::HashMap;
 
 use crate::terrain_material::{TerrainMaterial, ChunkMaterialUniforms};
-use crate::chunk::{ChunkData, Chunk, ChunkCoordinates};
+use crate::chunk::{ChunkData, Chunk, ChunkCoordinates, ChunkCoords};
 use crate::heightmap::{HeightMap,HeightMapU16};
 
 use crate::terrain_config::TerrainConfig;
@@ -116,14 +116,24 @@ pub struct TerrainData {
             
             for chunk_id in 0 .. max_chunks {
                 
+              
+                 let chunk_coords  = ChunkCoords::from_chunk_id(chunk_id, terrain_config.chunk_rows);// [ chunk_id / terrain_config.chunk_rows ,  chunk_id  % terrain_config.chunk_rows]; 
+                 let chunk_dimensions = terrain_config.get_chunk_dimensions();
+                 
             
                         
                         
                 let chunk_entity =  commands.spawn(
                     Chunk::new(chunk_id)
                 ).insert( 
-                    VisibilityBundle {
-                   
+                    SpatialBundle {
+                        
+                        transform: Transform::from_xyz( 
+                            chunk_coords.x() as f32 * chunk_dimensions.x,
+                            0.0,
+                            chunk_coords.y() as f32 * chunk_dimensions.y 
+                          
+                            ),
                     visibility: Visibility::Hidden,
                     
                     ..Default::default()
@@ -156,10 +166,7 @@ impl TerrainData{
         &self.texture_image_handle 
     }
      /*
-    pub fn add_height_map_image( mut self, handle: Handle<Image> ) -> Self {
-        self.height_map_image_handle = Some(handle.clone()); //strong clone 
-        self 
-    }
+   
     
     pub fn add_array_texture_image(mut self, handle: Handle<Image>, sections: u32  )-> Self{
         self.texture_image_handle = Some(handle.clone()); //strong clone 
@@ -167,23 +174,7 @@ impl TerrainData{
         self 
     }
     
-    pub fn add_splat_texture_image(mut self, handle: Handle<Image>   )-> Self{
-        self.splat_image_handle = Some(handle.clone()); //strong clone 
-        self 
-       
-    }
-    
-    
-    
-    pub fn get_splat_texture_image(&self) -> &Option<Handle<Image>> {
-        
-        &self.splat_image_handle 
-    }
-    
-    pub fn get_alpha_mask_texture_image(&self) -> &Option<Handle<Image>> {
-        
-        &self.alpha_mask_image_handle 
-    }
+     
      */
 }
 
@@ -206,9 +197,7 @@ pub fn load_terrain_texture_from_image(
               terrain_data.texture_image_handle = Some(tex_image);
               
           }
-         
-         
-         
+          
          
          //try to load the height map data from the height_map_image_handle 
             if !terrain_data.texture_image_finalized {
@@ -250,22 +239,7 @@ pub fn load_terrain_texture_from_image(
                    
                    terrain_data. texture_image_finalized = true; 
                    
-                   /*
-                   terrain_data.terrain_material_handle = Some(  materials.add(
-                        TerrainMaterial {
-                                uniforms: ChunkMaterialUniforms{
-                                     color_texture_expansion_factor: 4.0,   //makes it look less tiley when LOWER  
-                                     chunk_uv: Vec4::new( 0.0,1.0,0.0,1.0 ),
-                                },
-                               
-                                array_texture:  terrain_data.texture_image_handle.clone(),
-                                splat_texture:  terrain_data.splat_image_handle.clone(),
-                                alpha_mask_texture: terrain_data.alpha_mask_image_handle.clone() 
-                            }
-                    ) ); 
-                    
-                    
-                    */
+                   
                  
                 
             }

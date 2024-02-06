@@ -1,6 +1,6 @@
  
 
-1. consider making the height and splat textures bigger like 256x256 each maybe so chunks can be larger , and have fewer chunks  ? like 8x8 ? 
+1. consider allowing for WAY WAY larger dimension map   - but only do calculations on chunks that are 'close' so dynamic computing of them EFFICIENTLY with separate small textures 
 
 2. add full editing (in memory) for height [and splat later] with re-saving ability . 
 

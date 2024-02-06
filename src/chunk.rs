@@ -147,7 +147,7 @@ pub trait ChunkCoordinates {
 }
 
 
-type ChunkCoords =  [u32; 2 ] ; 
+pub type ChunkCoords =  [u32; 2 ] ; 
 
 impl ChunkCoordinates for  ChunkCoords {
     
@@ -458,12 +458,12 @@ On initialization of terrain entity, the chunk entities should be spawned and th
  //this may lag.. 
 pub fn build_chunk_meshes(
    mut commands: Commands,
-     terrain_query: Query<(&TerrainConfig,& TerrainData)>,
+   terrain_query: Query<(&TerrainConfig,& TerrainData)>,
     
-   mut chunk_query : Query<( Entity, &Chunk,&mut ChunkData, &Parent  ) >,
+   mut chunk_query : Query<( Entity, &Chunk,&mut ChunkData, &Parent, &Visibility  ) >,
 ){
     
-     for (chunk_entity, chunk,mut chunk_data, terrain_entity ) in chunk_query.iter_mut() { 
+     for (chunk_entity, chunk,mut chunk_data, terrain_entity , visibility) in chunk_query.iter_mut() { 
          
         if chunk_data.chunk_state == ChunkState::Init {
              
@@ -485,24 +485,32 @@ pub fn build_chunk_meshes(
             println!("chunk is missing height map data .");
             continue; 
         }
+        
         if  chunk_data.alpha_mask_image_handle.is_none() {
             println!("chunk is missing alpha_mask_image_handle .");
             continue; 
         }
               
-              if  chunk_data.splat_image_handle.is_none() {
+        if  chunk_data.splat_image_handle.is_none() {
             println!("chunk is missing splat_image_handle .");
             continue; 
         }
               
-              
+        if visibility != Visibility::Visible {
+            
+            //do not do the intensive calculations to build a chunk mesh until it is 'visible' -- this speeds up initial map loading 
+           continue;  
+        }
              
+             
+             
+             chunk_data.chunk_state = ChunkState::Building;
+           
                        
             let thread_pool = AsyncComputeTaskPool::get();
         
        
-              chunk_data.chunk_state = ChunkState::Building;
-           
+              
                 
               let chunk_rows = terrain_config.chunk_rows;
               let terrain_dimensions = terrain_config.terrain_dimensions;
@@ -676,25 +684,28 @@ pub fn finish_chunk_build_tasks(
                 
                 
                 
-            let chunk_coords  = [ chunk_id / terrain_config.chunk_rows ,  chunk_id  % terrain_config.chunk_rows]; 
+            let chunk_coords  = ChunkCoords::from_chunk_id(chunk_id, terrain_config.chunk_rows);// [ chunk_id / terrain_config.chunk_rows ,  chunk_id  % terrain_config.chunk_rows]; 
             let chunk_dimensions = terrain_config.get_chunk_dimensions();
                  
             
-             
-            
-              let mut chunk_entity_commands  = commands.get_entity(chunk_entity_id).unwrap();
-              chunk_entity_commands.insert(  TerrainPbrBundle {
+             let mesh_bundle = commands.spawn( 
+                 TerrainPbrBundle {
                         mesh: terrain_mesh_handle,
                         material: chunk_terrain_material ,
                         transform: Transform::from_xyz( 
-                            chunk_coords.x() as f32 * chunk_dimensions.x,
                             0.0,
-                            chunk_coords.y() as f32 * chunk_dimensions.y 
+                            0.0,
+                            0.0 
                           
                             ),
                       //  visibility: Visibility::Hidden
                         ..default()
-                        }   );
+                        }  
+                        
+              ).id();
+            
+              let mut chunk_entity_commands  = commands.get_entity(chunk_entity_id).unwrap();
+              chunk_entity_commands.add_child ( mesh_bundle );
             
               chunk_data.chunk_state = ChunkState::FullyBuilt; 
                
