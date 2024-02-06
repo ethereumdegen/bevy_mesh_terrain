@@ -5,7 +5,7 @@ use bevy::render::texture::{ImageSampler, ImageSamplerDescriptor, ImageAddressMo
 use bevy::utils::HashMap;
 
 use crate::terrain_material::{TerrainMaterial, ChunkMaterialUniforms};
-use crate::chunk::{ChunkData, Chunk};
+use crate::chunk::{ChunkData, Chunk, ChunkCoordinates};
 use crate::heightmap::{HeightMap,HeightMapU16};
 
 use crate::terrain_config::TerrainConfig;
@@ -111,9 +111,20 @@ pub struct TerrainData {
             let max_chunks = terrain_config.chunk_rows *  terrain_config.chunk_rows ;
             
             for chunk_id in 0 .. max_chunks {
+                
+                let chunk_coords  = [ chunk_id / terrain_config.chunk_rows ,  chunk_id  % terrain_config.chunk_rows]; 
+                let chunk_dimensions = terrain_config.get_chunk_dimensions();
+                
                 let chunk_entity =  commands.spawn(
                     Chunk::new(chunk_id)
-                ).id();
+                ).insert( 
+                    Transform::from_xyz(
+                        chunk_coords.x() as f32 * chunk_dimensions.x, 
+                        0.0, 
+                        chunk_coords.x() as f32 *  chunk_dimensions.y  ) 
+                    )
+                .insert( Visibility::Hidden )
+                .id();
                 
                 
                 let mut terrain_entity_commands  = commands.get_entity(terrain_entity).unwrap();

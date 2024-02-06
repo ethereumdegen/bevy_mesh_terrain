@@ -1,6 +1,6 @@
 use bevy::prelude::*;
 use bevy::time::common_conditions::on_timer;
-use chunk::ChunkEvent;
+use chunk::{ChunkEvent, update_chunk_visibility, build_chunk_meshes };
 use terrain::initialize_terrain;
 
 use std::time::Duration;
@@ -45,6 +45,8 @@ impl Plugin for TerrainMeshPlugin {
         app.add_event::<EditTerrainEvent>();
         
         app.add_systems(Update, initialize_terrain.run_if(on_timer(self.task_update_rate) )   );
+         app.add_systems(Update, build_chunk_meshes.run_if(on_timer(self.task_update_rate) )   );
+         app.add_systems(Update, update_chunk_visibility.run_if(on_timer(self.task_update_rate) )   );
         
         
         /*
