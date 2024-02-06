@@ -84,7 +84,25 @@ pub struct ChunkData {
 }
 
 
+impl ChunkData {
+    
+    
+    
+    pub fn get_splat_texture_image(&self) -> &Option<Handle<Image>> {
+        
+        &self.splat_image_handle 
+    }
+    
+    pub fn get_alpha_mask_texture_image(&self) -> &Option<Handle<Image>> {
+        
+        &self.alpha_mask_image_handle 
+    }
+    
+    
+}
    
+ 
+pub type TerrainPbrBundle = MaterialMeshBundle<TerrainMaterial>;
  
  
 
@@ -93,11 +111,11 @@ pub struct MeshBuilderTask(Task<BuiltChunkMeshData>);
 
 
 pub struct BuiltChunkMeshData {
-    terrain_entity_id: Entity, 
-    chunk_bounds: [[usize;2]; 2 ],
+  //  terrain_entity_id: Entity, 
+  //  chunk_bounds: [[usize;2]; 2 ],
     
-    chunk_id: u32,
-    chunk_location_offset:Vec3, 
+   // chunk_id: u32,
+   // chunk_location_offset:Vec3, 
     
     mesh:Mesh,
     chunk_uv: Vec4,
@@ -246,27 +264,30 @@ On initialization of terrain entity, the chunk entities should be spawned and th
  
  //this may lag.. 
 pub fn build_chunk_meshes(
-    commands: Commands,
+   mut commands: Commands,
    mut terrain_query: Query<(&TerrainConfig,& TerrainData)>,
     
-   mut chunk_query : Query<( &Chunk,&mut ChunkData, &Parent,  &GlobalTransform, &Visibility ) >,
+   mut chunk_query : Query<( Entity, &Chunk,&mut ChunkData, &Parent,  &GlobalTransform, &Visibility ) >,
 ){
     
-     for (chunk,mut chunk_data, parent_entity,  chunk_transform, mut chunk_visibility) in chunk_query.iter_mut() { 
+     for (chunk_entity, chunk,mut chunk_data, terrain_entity,  chunk_transform, mut chunk_visibility) in chunk_query.iter_mut() { 
          
-         if chunk_data.chunk_state == ChunkState::Init {
+        if chunk_data.chunk_state == ChunkState::Init {
+             
+       let terrain_entity_id = terrain_entity.get();   
+       if terrain_query.get_mut(terrain_entity_id).is_ok() == false {continue;}
+       let (terrain_config,terrain_data)  = terrain_query.get( terrain_entity_id ).unwrap();
              
              
-         
-        let Ok((terrain_config,terrain_data)) = terrain_query.get( parent_entity.get() );
              
              
-             
-             
-         let height_map_image:&Image = images.get(height_map_handle).unwrap(); 
-        let height_map_data =  &terrain_data.height_map_data .clone();
+     //   let height_map_image:&Image = images.get(height_map_handle).unwrap(); 
+        
+        
+        let height_map_data =  &chunk_data.height_map_data .clone();
               
         if height_map_data.is_none() {
+            println!("chunk is missing height map data .");
             continue; 
         }
               
@@ -291,7 +312,7 @@ pub fn build_chunk_meshes(
               let height_scale = terrain_config.height_scale;
                 
                //build the meshes !!!
-              let chunk_coords = ChunkCoords::from_chunk_id(chunk_id.clone(), chunk_rows);
+              let chunk_coords = ChunkCoords::from_chunk_id(chunk.chunk_id.clone(), chunk_rows);
               let chunk_dimensions = terrain_config.get_chunk_dimensions(  );
                   
               let chunk_location_offset:Vec3 = chunk_coords.get_location_offset( chunk_dimensions ) ; 
@@ -314,7 +335,7 @@ pub fn build_chunk_meshes(
                                     height_map_subsection_pct[1][0],
                                     height_map_subsection_pct[1][1] );
                                     
-               let chunk_id_clone = chunk_id.clone();
+               let chunk_id_clone = chunk.chunk_id.clone();
                
                let task = thread_pool.spawn(async move {
                     
@@ -326,7 +347,7 @@ pub fn build_chunk_meshes(
                     */ 
                     
                     let sub_heightmap = SubHeightMapU16::from_heightmap_u16(
-                        &height_map_data_cloned,
+                        &height_map_data_cloned, 
                         height_map_subsection_pct
                     );
                     
@@ -343,12 +364,12 @@ pub fn build_chunk_meshes(
                     ).build(); 
                     
                      BuiltChunkMeshData {
-                         chunk_id: chunk_id_clone,
-                         chunk_bounds: [sub_heightmap.start_bound,sub_heightmap.end_bound],
+                         //chunk_id: chunk_id_clone,
+                        // chunk_bounds: [sub_heightmap.start_bound,sub_heightmap.end_bound],
                          
-                         chunk_location_offset: chunk_location_offset.clone(),
+                        // chunk_location_offset: chunk_location_offset.clone(),
                          
-                         terrain_entity_id: terrain_entity.clone(),
+                         //terrain_entity_id: terrain_entity.get().clone(),
                          mesh,
                          chunk_uv,
                          lod_level 
@@ -356,20 +377,19 @@ pub fn build_chunk_meshes(
                 });
 
                 // Spawn new entity and add our new task as a component
-                commands.spawn(MeshBuilderTask(task));
+              //  let mesh_builder = commands.spawn(MeshBuilderTask(task));
+                
+                //add the mesh builder component to the chunk entity 
+                commands.get_entity( chunk_entity ).unwrap().insert(  MeshBuilderTask(task)  );
                 
            // }                
         } 
-             
-             
-             
               
              
              
              
              
-             
-         } 
+    } 
          
        
     
@@ -378,50 +398,52 @@ pub fn build_chunk_meshes(
  
  
  
- 
+
  
  
 pub fn finish_chunk_build_tasks(
     mut commands: Commands,
-    mut chunk_build_tasks: Query<(Entity, &mut MeshBuilderTask)>,
+    mut chunk_build_tasks: Query<(Entity, &Chunk, &mut ChunkData, &Parent, &mut MeshBuilderTask)>,
     
     mut meshes: ResMut<Assets<Mesh>>,
+     
     mut terrain_query: Query<&mut TerrainData,With<TerrainConfig>>,
     mut terrain_materials: ResMut<Assets<TerrainMaterial>>,
     
-     mut chunk_events: EventWriter<ChunkEvent> ,
+    mut chunk_events: EventWriter<ChunkEvent> ,
 ) {
     
     
     
-    for (entity, mut task) in &mut chunk_build_tasks {
+    for (entity,chunk, mut chunk_data,  terrain_entity, mut task) in &mut chunk_build_tasks {
         if let Some(built_chunk_mesh_data) = future::block_on(future::poll_once(&mut task.0)) {
             // Add our new PbrBundle of components to our tagged entity
           
            
-            let terrain_entity_id = built_chunk_mesh_data.terrain_entity_id;
+            let terrain_entity_id = terrain_entity.get();
                
             let chunk_uv = built_chunk_mesh_data.chunk_uv;
             let mesh = built_chunk_mesh_data.mesh; 
             
-            let chunk_id = built_chunk_mesh_data.chunk_id;
-            let chunk_location_offset = built_chunk_mesh_data.chunk_location_offset;
+            let chunk_id = chunk.chunk_id;
+         //   let chunk_location_offset = built_chunk_mesh_data.chunk_location_offset;
             
             //careful w this unwrap
-            if terrain_query.get_mut(terrain_entity_id).is_ok() == false {continue;}
+           if terrain_query.get_mut(terrain_entity_id).is_ok() == false {continue;}
             
             let mut terrain_data = terrain_query.get_mut(terrain_entity_id).unwrap(); 
                
              
              
              let array_texture =  terrain_data.get_array_texture_image().clone();
-             let splat_texture =  terrain_data.get_splat_texture_image().clone();
-             let alpha_mask_texture =  terrain_data.get_alpha_mask_texture_image().clone();
+             
+             let splat_texture =  chunk_data.get_splat_texture_image().clone();
+             let alpha_mask_texture =  chunk_data.get_alpha_mask_texture_image().clone();
                                         
                                         
-             if terrain_data.chunks.get_mut( &chunk_id ).is_some() == false {continue;}      
+            // if terrain_data.chunks.get_mut( &chunk_id ).is_some() == false {continue;}      
                //careful w unwrap!!! 
-             let chunk_data = &mut terrain_data.chunks.get_mut( &chunk_id ).unwrap();
+            // let chunk_data = &mut terrain_data.chunks.get_mut( &chunk_id ).unwrap();
                                         
             let chunk_terrain_material:Handle<TerrainMaterial>  =  terrain_materials.add(
                     TerrainMaterial {
@@ -446,11 +468,11 @@ pub fn finish_chunk_build_tasks(
                      TerrainPbrBundle {
                         mesh: terrain_mesh_handle,
                         material: chunk_terrain_material ,
-                        transform: Transform::from_xyz( 
+                      /*  transform: Transform::from_xyz( 
                             0.0,
                             0.0,
                             0.0 
-                            ) ,
+                            ) ,  */
                         ..default()
                         } 
                     )
@@ -488,7 +510,7 @@ pub fn finish_chunk_build_tasks(
 pub fn update_chunk_visibility(
    mut terrain_query: Query<(&TerrainConfig,& TerrainData)>,
     
-   mut chunk_query : Query<( &Chunk,&mut ChunkData, &Parent,  &GlobalTransform, &Visibility ) >,
+   mut chunk_query: Query<( &Chunk,&mut ChunkData, &Parent,  &GlobalTransform, &Visibility ) >,
     
    terrain_viewer: Query<&GlobalTransform, With<TerrainViewer>> 
 ){
@@ -557,18 +579,18 @@ pub fn update_chunk_visibility(
                       
                         chunk_data.lod_level = lod_level;
                         
-                           let max_render_distance = terrain_config.get_max_render_distance() ;  
+                        let max_render_distance = terrain_config.get_max_render_distance() ;  
                
-                            let should_be_visible = match distance_to_chunk {
-                                dist  => dist <= max_render_distance 
-                            };
+                        let should_be_visible = match distance_to_chunk {
+                            dist  => dist <= max_render_distance 
+                        };
                                  
                                   
-                           chunk_visibility = match should_be_visible {
+                        chunk_visibility = match should_be_visible {
                             true => &Visibility::Visible ,
                             false => &Visibility::Hidden   
-                           } ;         
-                          println!(" set chunk vis   {:?}",  chunk_visibility ) ;
+                        } ;         
+                        println!(" set chunk vis   {:?}",  chunk_visibility ) ;
                         
                          
          

@@ -25,8 +25,8 @@ impl SubHeightMapU16 {
     
     pub fn from_heightmap_u16( 
          heightmap: &HeightMapU16,
-             start_bound: [ usize; 2 ],
-          end_bound: [ usize; 2 ],
+        // start_bound: [ usize; 2 ],
+       //  end_bound: [ usize; 2 ],
          bounds_pct: [ [f32 ; 2]  ;2 ],
      ) -> SubHeightMapU16 {
            

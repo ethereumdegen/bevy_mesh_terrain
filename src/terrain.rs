@@ -53,7 +53,7 @@ pub enum TerrainDataStatus { //us this for texture image and splat image and alp
 #[derive(Component,Default)]
 pub struct TerrainData {
        
-    pub chunks: HashMap<u32,ChunkData>,  //why is this necessary  ?? 
+ //   pub chunks: HashMap<u32,ChunkData>,  //why is this necessary  ?? 
     
     pub terrain_data_status: TerrainDataStatus,
   
@@ -143,9 +143,15 @@ pub struct TerrainData {
         
 }
  
- /*
+
 impl TerrainData{
     
+    
+    pub fn get_array_texture_image(&self) -> &Option<Handle<Image>> {
+        
+        &self.texture_image_handle 
+    }
+     /*
     pub fn add_height_map_image( mut self, handle: Handle<Image> ) -> Self {
         self.height_map_image_handle = Some(handle.clone()); //strong clone 
         self 
@@ -164,10 +170,6 @@ impl TerrainData{
     }
     
     
-    pub fn get_array_texture_image(&self) -> &Option<Handle<Image>> {
-        
-        &self.texture_image_handle 
-    }
     
     pub fn get_splat_texture_image(&self) -> &Option<Handle<Image>> {
         
@@ -178,9 +180,9 @@ impl TerrainData{
         
         &self.alpha_mask_image_handle 
     }
-    
+     */
 }
- */
+
  
  
   
