@@ -496,17 +496,7 @@ pub fn build_chunk_meshes(
         }
               
               
-              
-              //we are getting stuck here ! 
-     /*   let terrain_material_handle_option = &terrain_data.terrain_material_handle.clone() ; 
-              
-        if terrain_material_handle_option.is_none() {
-            println!("no terrain material yet.. ");
-            continue; 
-        }*/
-              
-      //  let array_texture =  terrain_data.get_array_texture_image().clone();
-      //  let splat_texture =  terrain_data.get_splat_texture_image().clone();
+             
                        
             let thread_pool = AsyncComputeTaskPool::get();
         
@@ -519,12 +509,15 @@ pub fn build_chunk_meshes(
               let height_scale = terrain_config.height_scale;
                 
                //build the meshes !!!
-              let chunk_coords = ChunkCoords::from_chunk_id(chunk.chunk_id.clone(), chunk_rows);
-              let chunk_dimensions = terrain_config.get_chunk_dimensions(  );
+          //    let chunk_coords = ChunkCoords::from_chunk_id(chunk.chunk_id.clone(), chunk_rows);
+          //    let chunk_dimensions = terrain_config.get_chunk_dimensions(  );
                   
-              let chunk_location_offset:Vec3 = chunk_coords.get_location_offset( chunk_dimensions ) ; 
+           //   let chunk_location_offset:Vec3 = chunk_coords.get_location_offset( chunk_dimensions ) ; 
                
-              let height_map_subsection_pct = chunk_coords.get_heightmap_subsection_bounds_pct(chunk_rows);
+             // let height_map_subsection_pct = chunk_coords.get_heightmap_subsection_bounds_pct(chunk_rows);
+               
+               let height_map_subsection_pct =  [[0.0,0.0],[1.0,1.0]]; //we use this now since each height map represents its entire chunks topology
+               
                //sample me and build triangle data !! 
                
                // might use lots of RAM ? idk ..
