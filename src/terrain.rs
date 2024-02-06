@@ -48,7 +48,7 @@ pub enum TerrainDataStatus {
 
 #[derive(Component, Default)]
 pub struct TerrainData {
-    //   pub chunks: HashMap<u32,ChunkData>,  //why is this necessary  ??
+   // pub chunk_entity_lookup: HashMap<u32,Entity>,  //why is this necessary  ??
     // pub terrain_config: TerrainConfig,
     pub terrain_data_status: TerrainDataStatus,
 
@@ -92,9 +92,10 @@ pub fn initialize_terrain(
                         ..Default::default()
                     })
                     .id();
-
+        
                 let mut terrain_entity_commands = commands.get_entity(terrain_entity).unwrap();
-
+                
+                //terrain_data.chunk_entity_lookup.insert(chunk_id,chunk_entity.clone());
                 terrain_entity_commands.add_child(chunk_entity);
             }
 

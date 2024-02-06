@@ -1,6 +1,6 @@
 use bevy::prelude::*;
 
-use crate::chunk::{Chunk, ChunkCoordinates, ChunkData};
+use crate::chunk::{Chunk, ChunkCoordinates, ChunkData, ChunkHeightMapResource};
 use crate::heightmap::HeightMapU16;
 use crate::terrain::TerrainData;
 use crate::terrain_config::TerrainConfig;
@@ -33,6 +33,8 @@ pub struct AddedChunkCollisionData {}
 pub fn spawn_chunk_collision_data(
     mut commands: Commands,
     chunk_query: Query<(Entity, &mut Chunk, &ChunkData), Without<AddedChunkCollisionData>>,
+    
+     mut chunk_height_maps: ResMut<ChunkHeightMapResource>,
     //   mut terrain_query : Query<(&mut TerrainData,&TerrainConfig)> ,
 ) {
     for (chunk_entity, chunk, chunk_data) in chunk_query.iter() {
@@ -49,13 +51,13 @@ pub fn spawn_chunk_collision_data(
 
         //   let height_map_subsection_pct = chunk_coords.get_heightmap_subsection_bounds_pct(chunk_rows);
 
-        let height_map_data = &chunk_data.height_map_data.clone();
+        let height_map_data =   chunk_height_maps.chunk_height_maps.get(&chunk.chunk_id)   ;//&chunk_data.height_map_data.clone();
 
         if height_map_data.is_none() {
             continue;
         }
-
-        let height_map_data_cloned = height_map_data.as_ref().unwrap().clone();
+       let height_map_data_cloned = (& height_map_data.as_ref().unwrap().0).clone();
+        //let height_map_data_cloned = height_map_data.as_ref().unwrap().clone().0;
 
         /*  let sub_heightmap = SubHeightMapU16::from_heightmap_u16(
                 &height_map_data_cloned,
@@ -65,7 +67,7 @@ pub fn spawn_chunk_collision_data(
         if let Some(mut entity_commands) = commands.get_entity(chunk_entity) {
             entity_commands
                 .insert(ChunkCollisionData {
-                    heightmap: height_map_data_cloned,
+                    heightmap: height_map_data_cloned ,
                 })
                 .insert(AddedChunkCollisionData {});
         }

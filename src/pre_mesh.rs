@@ -65,42 +65,61 @@ impl PreMesh {
         let step_size = 1 << lod_level; // doubles the step for each LOD level using bit shifting
 
         let height_data = &sub_heightmap.0;
-        let start_bound: Vec<usize> = vec![0, 0];
+      //  let start_bound: Vec<usize> = vec![0, 0];
 
-        let width = texture_dimensions[0];
-        let height = texture_dimensions[1];
+     //   let width = texture_dimensions[0]  ;
+     //   let height = texture_dimensions[1]  ;
 
         // let bounds_pct = sub_heightmap.bounds_pct;
 
         let bounds_pct: [[f32; 2]; 2] = [[0.0, 0.0], [1.0, 1.0]]; //1.0 is the max right ?
 
-        let sub_heightmap_width = height_data.len();
-        let sub_heightmap_height = height_data[0].len();
+        let sub_heightmap_width = height_data.len() ;
+        let sub_heightmap_height = height_data[0].len() ;
+        
+        let tex_dim_x = texture_dimensions.get(0).unwrap().clone();        
+        let tex_dim_y = texture_dimensions.get(1).unwrap().clone();
+        
+        
+        let width_scale = 1.0 ;
 
-        for x in (0..sub_heightmap_width).step_by(step_size) {
-            for y in (0..sub_heightmap_height).step_by(step_size) {
-                let fx = (x) as f32;
-                let fz = (y) as f32;
-
-                //cant sample so we just continue
-                if x + start_bound[0] + step_size >= width as usize {
-                    continue;
-                }
-                if y + start_bound[1] + step_size >= height as usize {
-                    continue;
-                }
-
+        //there is a weird bug where there are gaps in betweeen each chunk ... 
+        for x in (0..tex_dim_x as usize).step_by(step_size) {
+            for y in (0..tex_dim_y as usize).step_by(step_size) {
+                let fx = (x) as f32 * width_scale;
+                let fz = (y) as f32 * width_scale ;
+    
+                
+                 let mut sample_allowed = true;
+                //cant sample so we just continue       
                 if x + step_size >= sub_heightmap_width as usize {
-                    continue;
+                     
+                    sample_allowed = false;
                 }
                 if y + step_size >= sub_heightmap_height as usize {
-                    continue;
+                     
+                   sample_allowed = false;
                 }
-
-                let lb = height_data[x][y] as f32 * height_scale;
+                
+                let (lb,lf,rb,rf) = match sample_allowed {
+                    
+                    true => {
+                        let lb = height_data[x][y] as f32 * height_scale;
+                        let lf = height_data[x][y + step_size] as f32 * height_scale;
+                        let rb = height_data[x + step_size][y] as f32 * height_scale;
+                        let rf = height_data[x + step_size][y + step_size] as f32 * height_scale;
+                        (lb,lf,rb,rf)
+                    },
+                    false => {
+                        (0.0,0.0,0.0,0.0)
+                    }
+                    
+                };
+                
+               /* let lb = height_data[x][y] as f32 * height_scale;
                 let lf = height_data[x][y + step_size] as f32 * height_scale;
                 let rb = height_data[x + step_size][y] as f32 * height_scale;
-                let rf = height_data[x + step_size][y + step_size] as f32 * height_scale;
+                let rf = height_data[x + step_size][y + step_size] as f32 * height_scale;*/
 
                 let uv_lb = compute_uv(fx, fz, bounds_pct, texture_dimensions);
                 let uv_rb = compute_uv(fx + step_size as f32, fz, bounds_pct, texture_dimensions);
