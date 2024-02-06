@@ -246,6 +246,7 @@ On initialization of terrain entity, the chunk entities should be spawned and th
  
  //this may lag.. 
 pub fn build_chunk_meshes(
+    commands: Commands,
    mut terrain_query: Query<(&TerrainConfig,& TerrainData)>,
     
    mut chunk_query : Query<( &Chunk,&mut ChunkData, &Parent,  &GlobalTransform, &Visibility ) >,
@@ -256,10 +257,8 @@ pub fn build_chunk_meshes(
          if chunk_data.chunk_state == ChunkState::Init {
              
              
-             
-             
-             
-             
+         
+        let Ok((terrain_config,terrain_data)) = terrain_query.get( parent_entity.get() );
              
              
              
@@ -281,13 +280,11 @@ pub fn build_chunk_meshes(
       //  let array_texture =  terrain_data.get_array_texture_image().clone();
       //  let splat_texture =  terrain_data.get_splat_texture_image().clone();
                        
-         let thread_pool = AsyncComputeTaskPool::get();
+            let thread_pool = AsyncComputeTaskPool::get();
         
-        let terrain_data_chunks = &mut terrain_data.chunks; 
-        for (chunk_id , chunk_data) in terrain_data_chunks.iter_mut(){
-            
-            if chunk_data.chunk_state == ChunkState::Pending {
-                chunk_data.chunk_state = ChunkState::Building;
+       
+              chunk_data.chunk_state = ChunkState::Building;
+           
                 
               let chunk_rows = terrain_config.chunk_rows;
               let terrain_dimensions = terrain_config.terrain_dimensions;
@@ -361,26 +358,12 @@ pub fn build_chunk_meshes(
                 // Spawn new entity and add our new task as a component
                 commands.spawn(MeshBuilderTask(task));
                 
-            }                
+           // }                
         } 
              
              
              
-             
-             
-             
-             
-             
-             
-             
-             
-             
-             
-             
-             
-             
-             
-             
+              
              
              
              
@@ -388,7 +371,7 @@ pub fn build_chunk_meshes(
              
          } 
          
-     } 
+       
     
 }
  
