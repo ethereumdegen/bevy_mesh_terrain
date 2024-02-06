@@ -98,7 +98,7 @@ pub struct TerrainData {
  
  pub fn initialize_terrain(  
       mut commands: Commands,
-    mut terrain_query: Query<(Entity, &mut TerrainData, &TerrainConfig) >,
+      mut terrain_query: Query<(Entity, &mut TerrainData, &TerrainConfig) >,
    
     
 ){ 
@@ -130,7 +130,7 @@ pub struct TerrainData {
                 let mut terrain_entity_commands  = commands.get_entity(terrain_entity).unwrap();
              
                 terrain_entity_commands.add_child(chunk_entity);
-                
+             
             }
             
                    

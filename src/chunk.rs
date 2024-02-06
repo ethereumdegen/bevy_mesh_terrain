@@ -57,7 +57,7 @@ impl Chunk {
 
 #[derive(Component)]
 pub struct ChunkData {
-    spawned_mesh_entity: Option<Entity> ,
+   // spawned_mesh_entity: Option<Entity> ,
     chunk_state: ChunkState ,
     lod_level: u8, 
   
@@ -80,7 +80,7 @@ pub struct ChunkData {
     
     alpha_mask_image_handle: Option<Handle<Image>>, //built from the height map 
    
-    pub terrain_material_handle: Option<Handle<TerrainMaterial> >
+  //  pub terrain_material_handle: Option<Handle<TerrainMaterial> >
 }
 
 
@@ -257,6 +257,44 @@ fn calculate_chunk_coords( from_location: Vec3, terrain_origin: Vec3, terrain_di
   
   
   
+  
+  
+  pub fn initialize_chunk_data( 
+      mut commands: Commands,
+      mut chunk_query : Query<( Entity, &Chunk,  &Parent,  &GlobalTransform ), Without<ChunkData> > 
+  ) {
+      
+        for (chunk_entity, chunk,  terrain_entity,  chunk_transform ) in chunk_query.iter_mut() { 
+            
+            
+            
+            
+            
+            
+            
+            let chunk_data_component = ChunkData {
+                chunk_state: ChunkState::Init,
+                lod_level: 0,   // hmm might cause issues .. 
+                
+                height_map_image_handle: ,
+                height_map_data: None,
+                height_map_image_data_load_status: TerrainImageDataLoadStatus::NotLoaded,
+                
+                splat_image_handle: None,
+                alpha_mask_image_handle: None 
+            
+                
+                
+            };
+            
+            commands.get_entity( chunk_entity ).unwrap().insert(  chunk_data_component  );
+                
+        }
+      
+      
+  }
+      
+      
 /*
 
 On initialization of terrain entity, the chunk entities should be spawned and they should just remain there forever !!! 
@@ -274,11 +312,13 @@ pub fn build_chunk_meshes(
          
         if chunk_data.chunk_state == ChunkState::Init {
              
-       let terrain_entity_id = terrain_entity.get();   
-       if terrain_query.get_mut(terrain_entity_id).is_ok() == false {continue;}
-       let (terrain_config,terrain_data)  = terrain_query.get( terrain_entity_id ).unwrap();
              
              
+        let terrain_entity_id = terrain_entity.get();   
+        if terrain_query.get_mut(terrain_entity_id).is_ok() == false {continue;}
+        let (terrain_config,terrain_data)  = terrain_query.get( terrain_entity_id ).unwrap();
+                
+                
              
              
      //   let height_map_image:&Image = images.get(height_map_handle).unwrap(); 
@@ -493,8 +533,8 @@ pub fn finish_chunk_build_tasks(
                         );     
                };*/
                
-              chunk_data.spawned_mesh_entity = Some( child_mesh  ) ;
-              chunk_events.send(  ChunkEvent::ChunkEntitySpawned( child_mesh ) );
+           //   chunk_data.spawned_mesh_entity = Some( child_mesh  ) ;
+              chunk_events.send(  ChunkEvent::ChunkEntitySpawned( child_mesh ) );  //what is this used for ? 
            
 
             // Task is complete, so remove task component from entity
