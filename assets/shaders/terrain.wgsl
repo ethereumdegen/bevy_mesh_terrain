@@ -50,7 +50,7 @@ fn fragment(
     
    
    // let tiled_uv = material.color_texture_expansion_factor*mesh.uv;  //cannot get this binding to work !? 
-    let tiled_uv = 32.0*mesh.uv;
+    let tiled_uv = 8.0*mesh.uv;
     
     
     // seems to be working !! yay ! makes our splat texture encompass all of the chunks 

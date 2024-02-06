@@ -256,13 +256,46 @@ pub fn initialize_chunk_data(
     }
 }
 
-pub fn build_chunk_height_data(
+
+
+pub fn reset_chunk_height_data(
+    mut commands: Commands,
     asset_server: Res<AssetServer>,
     mut images: ResMut<Assets<Image>>,
 
-    mut chunk_query: Query<(Entity, &Chunk, &mut ChunkData, &Parent)>,
+    mut chunk_query: Query<(Entity, &Chunk, &mut ChunkData, &Parent, &Children)>,
 ) {
-    for (chunk_entity, chunk, mut chunk_data, terrain_entity) in chunk_query.iter_mut() {
+    
+    for (chunk_entity, chunk, mut chunk_data, terrain_entity, children) in chunk_query.iter_mut() {
+       
+        
+        if chunk_data.height_map_image_data_load_status == TerrainImageDataLoadStatus::NeedsReload {
+             
+            //remove the built mesh 
+            for &child in children.iter() {
+                commands.entity(child).despawn_recursive();
+            }
+            
+            chunk_data.chunk_state = ChunkState::Init; // change me ? 
+            chunk_data.height_map_image_data_load_status = TerrainImageDataLoadStatus::NotLoaded;
+        }
+    }
+}
+
+
+pub fn build_chunk_height_data(
+    mut commands: Commands,
+    asset_server: Res<AssetServer>,
+    mut images: ResMut<Assets<Image>>,
+
+    mut chunk_query: Query<(Entity, &Chunk, &mut ChunkData, &Parent )>,
+) {
+    println!("build_chunk_height_data 1");
+    for (chunk_entity, chunk, mut chunk_data, terrain_entity ) in chunk_query.iter_mut() {
+         println!("build_chunk_height_data 2");
+        
+       
+        
         if chunk_data.height_map_image_data_load_status == TerrainImageDataLoadStatus::NotLoaded {
             let height_map_image: &Image = match &chunk_data.height_map_image_handle {
                 Some(height_map_handle) => {
@@ -347,7 +380,7 @@ pub fn build_chunk_meshes(
     mut chunk_query: Query<(Entity, &Chunk, &mut ChunkData, &Parent, &Visibility)>,
 ) {
     for (chunk_entity, chunk, mut chunk_data, terrain_entity, visibility) in chunk_query.iter_mut()
-    {
+    { 
         if chunk_data.chunk_state == ChunkState::Init {
             let terrain_entity_id = terrain_entity.get();
             if terrain_query.get(terrain_entity_id).is_ok() == false {
@@ -378,8 +411,9 @@ pub fn build_chunk_meshes(
             }
 
             chunk_data.chunk_state = ChunkState::Building;
-
+ 
             let thread_pool = AsyncComputeTaskPool::get();
+            
 
             let chunk_rows = terrain_config.chunk_rows;
             let terrain_dimensions = terrain_config.terrain_dimensions;
@@ -396,7 +430,7 @@ pub fn build_chunk_meshes(
             let lod_level = chunk_data.lod_level;
 
             let chunk_uv = Vec4::new(
-                //tell the shader how to use the splat map for this chunk
+                //tell the shader how to use the height map for this chunk
                 height_map_subsection_pct[0][0],
                 height_map_subsection_pct[0][1],
                 height_map_subsection_pct[1][0],
@@ -406,21 +440,28 @@ pub fn build_chunk_meshes(
             let chunk_id_clone = chunk.chunk_id.clone();
 
             let task = thread_pool.spawn(async move {
+                
                 let sub_heightmap = SubHeightMapU16::from_heightmap_u16(
                     &height_map_data_cloned,
                     height_map_subsection_pct,
                 );
+                
+                
+                let sub_texture_dim = [
+                    terrain_dimensions.x / chunk_rows as f32, 
+                    terrain_dimensions.y / chunk_rows as f32
+                ];
 
-                println!("build premesh 1 ");
+              
                 let mesh = PreMesh::from_heightmap_subsection(
                     &sub_heightmap,
                     height_scale,
                     lod_level,
-                    [terrain_dimensions.x, terrain_dimensions.y],
+                    sub_texture_dim,
                 )
                 .build();
 
-                println!("build premesh 2 ");
+                println!("built premesh   ");
 
                 BuiltChunkMeshData {
                     chunk_entity_id: chunk_entity.clone(),
@@ -451,10 +492,10 @@ pub fn finish_chunk_build_tasks(
     //chunk, mut chunk_data,  terrain_entity,
 
     for (entity, mut task) in &mut chunk_build_tasks {
-        println!("for chunk build task 1");
+       
         if let Some(built_chunk_mesh_data) = future::block_on(future::poll_once(&mut task.0)) {
             // Add our new PbrBundle of components to our tagged entity
-            println!("for chunk build task 2");
+           
             let chunk_entity_id = built_chunk_mesh_data.chunk_entity_id;
 
             if chunk_query.get_mut(chunk_entity_id).is_ok() == false {
@@ -468,9 +509,7 @@ pub fn finish_chunk_build_tasks(
             let chunk_uv = built_chunk_mesh_data.chunk_uv;
             let mesh = built_chunk_mesh_data.mesh;
 
-            let chunk_id = chunk.chunk_id;
-            //   let chunk_location_offset = built_chunk_mesh_data.chunk_location_offset;
-
+           
             //careful w this unwrap
             if terrain_query.get(terrain_entity_id).is_ok() == false {
                 continue;
@@ -478,21 +517,18 @@ pub fn finish_chunk_build_tasks(
 
             let (terrain_data, terrain_config) = terrain_query.get(terrain_entity_id).unwrap();
 
-            //need to load these for sure !!!
+           
             println!("  finish_chunk_build_tasks  ");
             let array_texture = terrain_data.get_array_texture_image().clone();
 
             let splat_texture = chunk_data.get_splat_texture_image().clone();
             let alpha_mask_texture = chunk_data.get_alpha_mask_texture_image().clone();
-
-            // if terrain_data.chunks.get_mut( &chunk_id ).is_some() == false {continue;}
-            //careful w unwrap!!!
-            // let chunk_data = &mut terrain_data.chunks.get_mut( &chunk_id ).unwrap();
+ 
 
             let chunk_terrain_material: Handle<TerrainMaterial> =
                 terrain_materials.add(TerrainMaterial {
                     uniforms: ChunkMaterialUniforms {
-                        color_texture_expansion_factor: 16.0, //why wont this apply to shader properly ?
+                        color_texture_expansion_factor: 32.0, //why wont this apply to shader properly ?
                         chunk_uv,
                     },
 
@@ -502,9 +538,7 @@ pub fn finish_chunk_build_tasks(
                 });
 
             let terrain_mesh_handle = meshes.add(mesh);
-
-            let chunk_coords = ChunkCoords::from_chunk_id(chunk_id, terrain_config.chunk_rows); // [ chunk_id / terrain_config.chunk_rows ,  chunk_id  % terrain_config.chunk_rows];
-            let chunk_dimensions = terrain_config.get_chunk_dimensions();
+ 
 
             let mesh_bundle = commands
                 .spawn(TerrainPbrBundle {
@@ -535,7 +569,7 @@ pub fn update_chunk_visibility(
         &Parent,
         &GlobalTransform,
         &mut Visibility,
-    )>, //only will find chunks that have the meshmaterial on them
+    )>,  
 
     terrain_viewer: Query<&GlobalTransform, With<TerrainViewer>>,
 ) {

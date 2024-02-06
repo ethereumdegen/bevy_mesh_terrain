@@ -47,6 +47,12 @@ impl Plugin for TerrainMeshPlugin {
             Update,
             initialize_chunk_data.run_if(on_timer(self.task_update_rate)),
         );
+        
+        
+         app.add_systems(
+            Update,
+            reset_chunk_height_data.run_if(on_timer(self.task_update_rate)),
+        );
         app.add_systems(
             Update,
             build_chunk_height_data.run_if(on_timer(self.task_update_rate)),
