@@ -1,7 +1,7 @@
 // terrain_config.ron
 TerrainConfig(
-    terrain_dimensions: (1024.0, 1024.0), // Vec2(x, y)
-    chunk_rows: 16,
+    terrain_dimensions: (2048.0, 2048.0), // Vec2(x, y)
+    chunk_rows: 8,
     render_distance: 2000.0,
     lod_distance: 1000.0,
     lod_level_offset: 0,

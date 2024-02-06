@@ -26,7 +26,7 @@ enum ChunkState{
 
 #[derive(Event )]
 pub enum ChunkEvent {
-    ChunkEntitySpawned(Entity)
+  //  ChunkEntitySpawned(Entity)
 } 
 
 
@@ -679,9 +679,11 @@ pub fn finish_chunk_build_tasks(
             let chunk_coords  = [ chunk_id / terrain_config.chunk_rows ,  chunk_id  % terrain_config.chunk_rows]; 
             let chunk_dimensions = terrain_config.get_chunk_dimensions();
                  
-             //since this has a transform, it will override any existing transform on the entity i believe 
-              let child_mesh =  commands.spawn(
-                     TerrainPbrBundle {
+            
+             
+            
+              let mut chunk_entity_commands  = commands.get_entity(chunk_entity_id).unwrap();
+              chunk_entity_commands.insert(  TerrainPbrBundle {
                         mesh: terrain_mesh_handle,
                         material: chunk_terrain_material ,
                         transform: Transform::from_xyz( 
@@ -689,33 +691,14 @@ pub fn finish_chunk_build_tasks(
                             0.0,
                             chunk_coords.y() as f32 * chunk_dimensions.y 
                           
-                            ) ,  
+                            ),
+                      //  visibility: Visibility::Hidden
                         ..default()
-                        } 
-                    )
-                    
-                    .id() ; 
-                    
-             
+                        }   );
             
-              let mut terrain_entity_commands  = commands.get_entity(terrain_entity_id).unwrap();
-              terrain_entity_commands.add_child(    child_mesh  );
+              chunk_data.chunk_state = ChunkState::FullyBuilt; 
+               
             
-               chunk_data.chunk_state = ChunkState::FullyBuilt; 
-               
-               //need to do this in a safer way!!! 
-             /*  if let Some(old_mesh_entity) =  chunk_data.spawned_mesh_entity { 
-                        commands.entity(old_mesh_entity).insert(
-                            NeedToDespawnChunk{}
-                        );     
-               };*/
-               
-           //   chunk_data.spawned_mesh_entity = Some( child_mesh  ) ;
-              chunk_events.send(  ChunkEvent::ChunkEntitySpawned( child_mesh ) );  //what is this used for ? 
-           
-
-            // Task is complete, so remove task component from entity
-          //  commands.entity(entity).remove::<MeshBuilderTask>();
            commands.entity(entity).despawn();
          
         }
@@ -739,50 +722,24 @@ pub fn update_chunk_visibility(
         // FIX: probably should log a warning if there are multiple (or no) viewers, rather than just setting to the origin
         Err(_e) => Vec3::new(0.0,0.0,0.0)
     };
-        
+         
     for (chunk,mut chunk_data, parent_entity,  chunk_transform, mut chunk_visibility) in chunk_query.iter_mut() { 
         
-       // let terrain_origin = terrain_transform.translation();
-        
-       // let terrain_dimensions = terrain_config.terrain_dimensions; 
-        
-      
-        
-       // let chunk_rows = terrain_config.chunk_rows; 
-        
-        
-      /*  let chunk_coords_signed = calculate_chunk_coords ( 
-            viewer_location , 
-            terrain_origin, 
-            terrain_dimensions, 
-            chunk_rows
-          );
-        
-           */
-     
        
          if  let Ok ((terrain_config, terrain_data)) = terrain_query.get(parent_entity.get()) {
               
                 
-              let render_distance_chunks:i32  = terrain_config.get_chunk_render_distance() as i32 ; //make based on render dist 
+            //  let render_distance_chunks:i32  = terrain_config.get_chunk_render_distance() as i32 ; //make based on render dist 
               let lod_level_distance:f32 = terrain_config.get_chunk_lod_distance(); 
               let lod_level_offset:u8 = terrain_config.lod_level_offset;
               
-        
-                // loop through the potential chunks that are around the client to maybe activate them 
-              //  for x_offset in  -1*render_distance_chunks ..render_distance_chunks  {
-               //     for z_offset in  -1*render_distance_chunks  ..render_distance_chunks   {
-                        
-                      
- 
-
-                         
+                    
  
                         //calc chunk world loc and use to calc the lod 
-                        let chunk_world_location = chunk_transform;
+                        let chunk_world_location = chunk_transform.translation();
  
     
-                         let distance_to_chunk:   f32    =  chunk_world_location.translation().distance( viewer_location )   ;
+                         let distance_to_chunk:   f32    =  chunk_world_location.distance( viewer_location )   ;
         
                         let lod_level: u8 = match distance_to_chunk {
                              dist  => {
@@ -798,18 +755,15 @@ pub fn update_chunk_visibility(
                         
                         let max_render_distance = terrain_config.get_max_render_distance() ;  
                
-                        let should_be_visible = match distance_to_chunk {
-                            dist  => dist <= max_render_distance 
-                        };
+                        let should_be_visible =   distance_to_chunk <= max_render_distance  ;
                                  
+                                    
                                   
                         *chunk_visibility = match should_be_visible {
                             true =>  Visibility::Visible ,
                             false =>  Visibility::Hidden   
                         } ;         
-                     //   println!(" set chunk vis   {:?}",  chunk_visibility ) ;
-                        
-                         
+                     
          
       
          } 

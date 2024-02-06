@@ -1,14 +1,19 @@
  
 
-1. My code to rebuild the heightmap seems to work BUT it is revealing an issue -- like the old meshes are not being destroyed or something... 
+1. consider making the height and splat textures bigger like 256x256 each maybe so chunks can be larger , and have fewer chunks  ? like 8x8 ? 
 
+2. add full editing (in memory) for height [and splat later] with re-saving ability . 
 
-
-2. move the heightmap data into the chunk comp 
-  a. instead of rebuilding chunks when getting far and near them,  only rebuild them when they are flagged as needing rebuild. (like from being edited) 
-  b. getting far and close just HIDES and SHOWS them, doesnt rebuild the mesh or texture 
+ 
   
   
   3. lods 
   
   Consider having only 1 LOD levels and retaining them both in memory to minimzie lag 
+  
+  
+  
+  
+  ### BUGS 
+  
+  1. make sure chunks go invisible when far away 
