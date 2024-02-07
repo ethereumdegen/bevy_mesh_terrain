@@ -4,9 +4,8 @@
 
 
 - allow for saving heightmap to image files (maybe with event?)
-- allow for editing the splat map (in memory -- use handle )
-
-- need to update all nearby chunks that brush touches 
+  
+- need to update all nearby chunks that brush touches , not just that one chunk .
 
  
   
