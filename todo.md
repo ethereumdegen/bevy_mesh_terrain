@@ -1,11 +1,9 @@
  
-
-2. add full editing (in memory) for height [and splat later] with re-saving ability . 
-
-
-- allow for saving heightmap to image files (maybe with event?)
+ 
   
-- need to update all nearby chunks that brush touches , not just that one chunk .
+1. need to update all nearby chunks that brush touches , not just that one chunk .
+2. make some way to select and modify brush tools settings (simple gui?? egui ?) 
+
 
  
   

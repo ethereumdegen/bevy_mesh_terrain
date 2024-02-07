@@ -63,13 +63,13 @@ impl SubHeightMapU16 {
     }
 
     pub fn append_x_row(&mut self, row: Vec<u16>) {
-        println!("x_row len {}", row.len());
+      
 
         self.0.push(row);
     }
 
     pub fn append_y_col(&mut self, col: Vec<u16>) {
-        println!("y_col len {}", col.len());
+     
 
         // Check if the number of elements in `col` matches the number of rows in the height data.
         // If not, you may need to handle this discrepancy based on your specific requirements.
