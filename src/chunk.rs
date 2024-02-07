@@ -63,6 +63,10 @@ impl ChunkData {
     pub fn get_splat_texture_image(&self) -> &Option<Handle<Image>> {
         &self.splat_image_handle
     }
+    
+     pub fn set_splat_texture_image(&mut self, tex_handle: Handle<Image>)  {
+        self.splat_image_handle = Some(tex_handle);
+    }
 
     pub fn get_alpha_mask_texture_image(&self) -> &Option<Handle<Image>> {
         &self.alpha_mask_image_handle
@@ -322,9 +326,9 @@ pub fn build_chunk_height_data(
 
     mut chunk_query: Query<(Entity, &Chunk, &mut ChunkData, &Parent )>,
 ) {
-    println!("build_chunk_height_data 1");
+    
     for (chunk_entity, chunk, mut chunk_data, terrain_entity ) in chunk_query.iter_mut() {
-         println!("build_chunk_height_data 2");
+        
          
         
         if chunk_data.height_map_image_data_load_status == TerrainImageDataLoadStatus::NotLoaded {
@@ -341,6 +345,8 @@ pub fn build_chunk_height_data(
                 }
                 None => continue,
             };
+            
+            
 
             //maybe we can do this in a thread since it is quite cpu intense ?
             let loaded_heightmap_data_result = HeightMapU16::load_from_image(height_map_image);
@@ -679,17 +685,21 @@ pub fn finish_chunk_build_tasks(
                 });
 
             let terrain_mesh_handle = meshes.add(mesh);
+            
+           
  
 
             let mesh_bundle = commands
                 .spawn(TerrainPbrBundle {
                     mesh: terrain_mesh_handle,
-                    material: chunk_terrain_material,
+                    material: chunk_terrain_material.clone(),
                     transform: Transform::from_xyz(0.0, 0.0, 0.0),
 
                     ..default()
                 })
                 .id();
+                
+             chunk_data.material_handle = Some(chunk_terrain_material);
 
             let mut chunk_entity_commands = commands.get_entity(chunk_entity_id).unwrap();
             chunk_entity_commands.add_child(mesh_bundle);

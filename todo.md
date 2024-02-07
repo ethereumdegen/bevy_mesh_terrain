@@ -1,8 +1,12 @@
  
 
-1. consider allowing for WAY WAY larger dimension map   - but only do calculations on chunks that are 'close' so dynamic computing of them EFFICIENTLY with separate small textures 
-
 2. add full editing (in memory) for height [and splat later] with re-saving ability . 
+
+
+- allow for saving heightmap to image files (maybe with event?)
+- allow for editing the splat map (in memory -- use handle )
+
+- need to update all nearby chunks that brush touches 
 
  
   
@@ -16,4 +20,5 @@
   
   ### BUGS 
   
-  1. make sure chunks go invisible when far away 
+  1. there is a weird graphic glitch on the terrain shader or normals ... depth buffer ??
+  
