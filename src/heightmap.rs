@@ -98,6 +98,7 @@ impl HeightMap for HeightMapU16 {
         let format = image.texture_descriptor.format;
 
         if format != TextureFormat::R16Uint {
+            println!("heightmap: wrong format {:?}", format);
             return Err(HeightMapError::LoadingError);
         }
 

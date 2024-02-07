@@ -13,7 +13,7 @@ use collision::spawn_chunk_collision_data;
 
 use terrain_material::TerrainMaterial;
 
-use edit::{apply_tool_edits, EditTerrainEvent};
+use edit::{apply_tool_edits, apply_command_events, EditTerrainEvent, TerrainCommandEvent};
 
 pub mod chunk;
 pub mod collision;
@@ -42,6 +42,7 @@ impl Plugin for TerrainMeshPlugin {
 
         //app.add_event::<ChunkEvent>();
         app.add_event::<EditTerrainEvent>();
+        app.add_event::<TerrainCommandEvent>();
         app.insert_resource(ChunkHeightMapResource::default());
 
         app.add_systems(
@@ -78,5 +79,8 @@ impl Plugin for TerrainMeshPlugin {
         app.add_systems(Update, load_terrain_texture_from_image);
 
         app.add_systems(Update, apply_tool_edits); //put this in a sub plugin ?
+        app.add_systems(Update, apply_command_events);
+        
+        
     }
 }

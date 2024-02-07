@@ -12,8 +12,9 @@ use bevy::render::texture::Image;
 
 use bevy::prelude::*;
 
-use crate::chunk::{Chunk, ChunkData, ChunkHeightMapResource};
+use crate::chunk::{Chunk, ChunkData, ChunkHeightMapResource, save_chunk_height_map_to_disk, save_chunk_splat_map_to_disk  };
 use crate::terrain::{TerrainData, TerrainImageDataLoadStatus};
+use crate::terrain_config::TerrainConfig;
 use crate::terrain_material::TerrainMaterial;
 
 #[derive(Debug)]
@@ -32,7 +33,82 @@ pub struct EditTerrainEvent {
 
 #[derive(Event)]
 pub enum TerrainCommandEvent {
-    SaveAllChunks,
+    SaveAllChunks(bool,bool),  //height data, splat data 
+}
+
+
+
+pub fn apply_command_events(
+    mut asset_server: Res<AssetServer>,
+
+    mut chunk_query: Query<(&Chunk, &mut ChunkData, &Parent)>, //chunks parent should have terrain data
+    chunk_mesh_query: Query<(&Parent, &GlobalTransform)>,
+
+    mut images: ResMut<Assets<Image>>,
+    mut terrain_materials: ResMut<Assets<TerrainMaterial>>,
+
+    mut chunk_height_maps: ResMut<ChunkHeightMapResource>,
+
+    
+      terrain_query: Query<(&TerrainData, &TerrainConfig)>,
+      
+    mut ev_reader: EventReader<TerrainCommandEvent>,
+) {
+    
+    
+     for ev in ev_reader.read() {
+         
+         
+        for (chunk,chunk_data,terrain_entity) in chunk_query.iter() {
+             
+            let terrain_entity_id = terrain_entity.get();
+                                
+            if terrain_query.get(terrain_entity_id).is_ok() == false {
+                    continue;
+            }
+
+            let (terrain_data, terrain_config) = terrain_query.get(terrain_entity_id).unwrap();
+ 
+                  
+                match  ev {
+                    TerrainCommandEvent::SaveAllChunks( save_height,save_splat) => {
+                        
+                            if *save_height {
+                                if  let Some(chunk_height_data) = chunk_height_maps.chunk_height_maps.get( &chunk.chunk_id  ) {
+                        
+                                        save_chunk_height_map_to_disk( 
+                                        chunk_height_data,
+                                            format!(  "assets/{}/{}.png", terrain_config.height_folder_path, chunk.chunk_id ) 
+                                        );
+                                    }
+                            }
+                            
+                             if *save_splat {
+                                    if  let Some(splat_image_handle) = chunk_data.get_splat_texture_image() {
+                                        if let Some(splat_image ) = images.get(splat_image_handle)  {
+                                        
+                                        save_chunk_splat_map_to_disk(  
+                                            splat_image,
+                                            format!(  "assets/{}/{}.png", terrain_config.splat_folder_path, chunk.chunk_id ) 
+                                        );
+                                        } 
+                                    }
+                             }
+                        
+                        
+                    }
+                    
+                }  
+                 
+                
+                
+                
+                
+         }  
+     }
+    
+    
+    
 }
 
 pub fn apply_tool_edits(

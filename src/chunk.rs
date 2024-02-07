@@ -1,3 +1,7 @@
+use std::fs::File;
+use std::io::BufWriter;
+use std::path::Path;
+
 use bevy::asset::LoadState;
 use bevy::prelude::*;
 use bevy::render::render_resource::{Extent3d, TextureDimension, TextureFormat};
@@ -5,6 +9,7 @@ use bevy::tasks::{AsyncComputeTaskPool, Task};
 
 use bevy::utils::HashMap;
 use futures_lite::future;
+use image::{GrayImage, Luma, RgbaImage, ImageBuffer};
 
 use crate::heightmap::{HeightMap, HeightMapU16, SubHeightMapU16};
 use crate::pre_mesh::PreMesh;
@@ -65,8 +70,11 @@ impl ChunkData {
 
     pub fn get_alpha_mask_texture_image(&self) -> &Option<Handle<Image>> {
         &self.alpha_mask_image_handle
-    }
+    } 
 }
+
+
+
 
 pub type TerrainPbrBundle = MaterialMeshBundle<TerrainMaterial>;
 
@@ -239,16 +247,20 @@ pub fn initialize_chunk_data(
         }
         let (terrain_config, terrain_data) = terrain_query.get(terrain_entity_id).unwrap();
 
-        let chunk_id = 1; //chunk.chunk_id;
+        let chunk_id = chunk.chunk_id;
 
         //default_terrain/diffuse
         let height_texture_folder_path = &terrain_config.height_folder_path;
         let height_texture_path = format!("{}/{}.png", height_texture_folder_path, chunk_id);
-        let height_map_image_handle: Handle<Image> = asset_server.load(height_texture_path);
+       println!("loading from {}",height_texture_path);
+        
+          let height_map_image_handle: Handle<Image> = asset_server.load(height_texture_path);
 
         //default_terrain/splat
         let splat_texture_folder_path = &terrain_config.splat_folder_path;
         let splat_texture_path = format!("{}/{}.png", splat_texture_folder_path, chunk_id);
+        println!("loading from {}",splat_texture_path);
+        
         let splat_image_handle: Handle<Image> = asset_server.load(splat_texture_path);
 
         let chunk_data_component = ChunkData {
@@ -263,7 +275,7 @@ pub fn initialize_chunk_data(
             alpha_mask_image_handle: None, //gets set later
             material_handle: None,         //gets set later
         };
-
+        
         commands
             .get_entity(chunk_entity)
             .unwrap()
@@ -659,6 +671,7 @@ pub fn finish_chunk_build_tasks(
                 .id();
 
             chunk_data.material_handle = Some(chunk_terrain_material);
+ 
 
             let mut chunk_entity_commands = commands.get_entity(chunk_entity_id).unwrap();
             chunk_entity_commands.add_child(mesh_bundle);
@@ -679,7 +692,7 @@ pub fn update_chunk_visibility(
         &Parent,
         &GlobalTransform,
         &mut Visibility,
-    )>,
+  )>,  
 
     terrain_viewer: Query<&GlobalTransform, With<TerrainViewer>>,
 ) {
@@ -726,6 +739,119 @@ pub fn update_chunk_visibility(
                 true => Visibility::Visible,
                 false => Visibility::Hidden,
             };
+ }
+  
+}
+
+
+
+}
+
+
+
+// other fns
+/*
+pub fn save_chunk_height_map_to_disk(
+   // chunk_id: u32, 
+    // chunk_height_maps:  &ResMut<ChunkHeightMapResource>,
+     
+     chunk_height_data: &SubHeightMapU16,
+    save_file_path: String 
+    ){
+    
+    //let chunk_data = chunk_height_maps.chunk_height_maps.get(&(chunk_id as usize));
+ 
+        
+        let chunk_height_data = chunk_height_data.0.clone();
+        // Determine the dimensions of the height map
+        let width = chunk_height_data.len();
+        let height = if !chunk_height_data.is_empty() { chunk_height_data[0].len() } else { 0 };
+        
+        // Create a new GrayImage (grayscale) of the same dimensions
+        let mut img = GrayImage::new(width as u32, height as u32);
+        
+        // Iterate over each pixel position in the height map and set the pixel value in the image
+        for (x, row) in chunk_height_data.iter().enumerate() {
+            for (y, &value) in row.iter().enumerate() {
+                // Convert the u16 height value to a grayscale value
+                // Note: Luma<u16> is used for 16-bit grayscale images, but saving as Luma<u16> is not directly supported by the `image` crate.
+                // We convert u16 to u8 here for simplicity; adjust as needed for your use case.
+                let value_u8 = (value >> 8) as u8; // Simple conversion, might need adjustment
+                img.put_pixel(x as u32, y as u32, Luma([value_u8]));
+            }
+        }
+        
+        // Save the image to disk at the specified path
+        img.save(&save_file_path).expect("Failed to save chunk height map");
+      
+    
+}
+*/
+
+
+// outputs as R16 grayscale 
+pub fn save_chunk_height_map_to_disk(
+    chunk_height_data: &SubHeightMapU16,  // Adjusted for direct Vec<Vec<u16>> input
+    save_file_path: String,
+) {
+      let chunk_height_data = chunk_height_data.0.clone();
+      
+    // Assuming chunk_height_data is a Vec<Vec<u16>>
+    let height = chunk_height_data.len();
+    let width = chunk_height_data.first().map_or(0, |row| row.len());
+
+    // Prepare the file and writer
+    let path = Path::new(&save_file_path);
+    let file = File::create(path).expect("Failed to create file");
+    let ref mut w = BufWriter::new(file);
+
+    // Set up the encoder. Since PNG is the format that supports 16-bit grayscale natively, we use it here.
+    let mut encoder = png::Encoder::new(w, width as u32, height as u32); // Width and height of image
+    encoder.set_color(png::ColorType::Grayscale);
+    encoder.set_depth(png::BitDepth::Sixteen);
+    let mut writer = encoder.write_header().expect("Failed to write PNG header");
+
+    // Flatten the Vec<Vec<u16>> to a Vec<u8> for the PNG encoder
+    let mut buffer: Vec<u8> = Vec::with_capacity(width * height * 2);
+    for row in chunk_height_data {
+        for  value in row {
+            buffer.extend_from_slice(&value.to_be_bytes()); // Ensure big-endian byte order
         }
     }
+
+    // Write the image data
+    writer.write_image_data(&buffer).expect("Failed to write PNG data");
+}
+
+
+pub fn save_chunk_splat_map_to_disk( 
+   
+      splat_image: & Image ,      
+      save_file_path: String 
+){
+    
+    // Attempt to find the image in the Assets<Image> collection
+    
+        // Assuming the image format is Rgba8, which is common for splat maps
+          let  image_data  = &splat_image.data ;
+            // Create an image buffer from the raw image data
+            let format = splat_image.texture_descriptor.format;
+            let width = splat_image.texture_descriptor.size.width;
+            let height = splat_image.texture_descriptor.size.height;
+
+            // Ensure the format is Rgba8 or adapt this code block for other formats
+            if format == bevy::render::render_resource::TextureFormat::Rgba8Unorm
+                || format == bevy::render::render_resource::TextureFormat::Rgba8UnormSrgb
+            {
+                // The data in Bevy's Image type is stored in a Vec<u8>, so we can use it directly
+                let img: RgbaImage = ImageBuffer::from_raw(width, height, image_data.clone()).expect("Failed to create image buffer");
+
+                // Save the image to the specified file path
+                img.save(&save_file_path).expect("Failed to save splat map");
+            } else {
+                eprintln!("Unsupported image format for saving: {:?}", format);
+            }
+         
+    
+    
 }
