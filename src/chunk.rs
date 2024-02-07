@@ -748,46 +748,7 @@ pub fn update_chunk_visibility(
 }
 
 
-
-// other fns
-/*
-pub fn save_chunk_height_map_to_disk(
-   // chunk_id: u32, 
-    // chunk_height_maps:  &ResMut<ChunkHeightMapResource>,
-     
-     chunk_height_data: &SubHeightMapU16,
-    save_file_path: String 
-    ){
-    
-    //let chunk_data = chunk_height_maps.chunk_height_maps.get(&(chunk_id as usize));
  
-        
-        let chunk_height_data = chunk_height_data.0.clone();
-        // Determine the dimensions of the height map
-        let width = chunk_height_data.len();
-        let height = if !chunk_height_data.is_empty() { chunk_height_data[0].len() } else { 0 };
-        
-        // Create a new GrayImage (grayscale) of the same dimensions
-        let mut img = GrayImage::new(width as u32, height as u32);
-        
-        // Iterate over each pixel position in the height map and set the pixel value in the image
-        for (x, row) in chunk_height_data.iter().enumerate() {
-            for (y, &value) in row.iter().enumerate() {
-                // Convert the u16 height value to a grayscale value
-                // Note: Luma<u16> is used for 16-bit grayscale images, but saving as Luma<u16> is not directly supported by the `image` crate.
-                // We convert u16 to u8 here for simplicity; adjust as needed for your use case.
-                let value_u8 = (value >> 8) as u8; // Simple conversion, might need adjustment
-                img.put_pixel(x as u32, y as u32, Luma([value_u8]));
-            }
-        }
-        
-        // Save the image to disk at the specified path
-        img.save(&save_file_path).expect("Failed to save chunk height map");
-      
-    
-}
-*/
-
 
 // outputs as R16 grayscale 
 pub fn save_chunk_height_map_to_disk(

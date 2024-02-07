@@ -12,7 +12,9 @@ use bevy::render::texture::Image;
 
 use bevy::prelude::*;
 
-use crate::chunk::{Chunk, ChunkData, ChunkHeightMapResource, save_chunk_height_map_to_disk, save_chunk_splat_map_to_disk  };
+use crate::chunk::{Chunk, ChunkData, ChunkHeightMapResource, 
+    save_chunk_height_map_to_disk, save_chunk_splat_map_to_disk,
+     ChunkCoordinates  };
 use crate::terrain::{TerrainData, TerrainImageDataLoadStatus};
 use crate::terrain_config::TerrainConfig;
 use crate::terrain_material::TerrainMaterial;
@@ -114,13 +116,15 @@ pub fn apply_command_events(
 pub fn apply_tool_edits(
     mut asset_server: Res<AssetServer>,
 
-    mut chunk_query: Query<(&Chunk, &mut ChunkData, &Parent)>, //chunks parent should have terrain data
+    mut chunk_query: Query<(Entity, &Chunk, &mut ChunkData, &Parent, &GlobalTransform)>, //chunks parent should have terrain data
     chunk_mesh_query: Query<(&Parent, &GlobalTransform)>,
 
     mut images: ResMut<Assets<Image>>,
     mut terrain_materials: ResMut<Assets<TerrainMaterial>>,
 
     mut chunk_height_maps: ResMut<ChunkHeightMapResource>,
+    
+     terrain_query: Query<(&TerrainData, &TerrainConfig)>,
 
     mut ev_reader: EventReader<EditTerrainEvent>,
 ) {
@@ -130,15 +134,60 @@ pub fn apply_tool_edits(
         let intersected_entity = &ev.entity;
 
         //  if let Some((chunk, mut chunk_data)) = chunk_query.get_mut(intersected_entity.clone()).ok()
-        if let Some((chunk_entity, chunk_transform)) =
+        if let Some((chunk_entity, _)) =
             chunk_mesh_query.get(intersected_entity.clone()).ok()
         {
-            if let Some((chunk, mut chunk_data, terrain_entity)) =
+            
+            
+           let mut chunk_entities_within_range:Vec<Entity> = Vec::new(); 
+            
+            
+            
+            let mut chunk_dimensions =  [256 , 256 ]; //compute me from terrain config
+             if let Some((_, _,   _, terrain_entity, _)) =
                 chunk_query.get_mut(chunk_entity.get().clone()).ok()
             {
-                //   if let Some(mut terrain_data) = terrain_data_query.get_mut(terrain_entity.get().clone()).ok() { //why cant i find this ?
+                if let Some( ( terrain_data,terrain_config )) = terrain_query.get(terrain_entity.get().clone()).ok() {  
+                    
+                             let chunk_rows = terrain_config.chunk_rows;
+                            let terrain_dimensions = terrain_config.terrain_dimensions;
+                            
+                            chunk_dimensions = [
+                            terrain_dimensions.x as u32 / chunk_rows,
+                            terrain_dimensions.y as u32 / chunk_rows,
+                        ];
+                }                
+            }
+            
+            //populate chunk_entities_within_range
+             for  (chunk_entity, _,  _, _, chunk_transform) in  chunk_query.iter( ) 
+            {
+                
+                let tool_coords: &Vec2 = &ev.coordinates;
+                let chunk_transform = chunk_transform.translation();
+                let chunk_transform_vec2: Vec2 =
+                  Vec2::new(chunk_transform.x, chunk_transform.z);
+                
+                let chunk_dimensions_vec: Vec2 = Vec2::new( chunk_dimensions.x() as f32, chunk_dimensions.y() as f32 );
+                let chunk_center_transform =chunk_transform_vec2.add(chunk_dimensions_vec.div(2.0));
 
-                let chunk_dimensions = Vec2::new(256.0, 256.0); //compute me from config
+                let chunk_local_distance = tool_coords.distance(chunk_center_transform);
+                            
+                if  chunk_local_distance < 800.0 {
+                    chunk_entities_within_range.push(chunk_entity);   
+                }
+                
+            }
+            
+            
+            //apply the tool to each chunk in range 
+           for chunk_entity_within_range in chunk_entities_within_range{ 
+         
+            if let Some((chunk_entity, chunk, mut chunk_data, terrain_entity, chunk_transform)) =
+                chunk_query.get_mut(chunk_entity_within_range.clone()).ok()
+            {
+                //   if let Some(mut terrain_data) = terrain_data_query.get_mut(terrain_entity.get().clone()).ok() { //why cant i find this ?
+ 
 
                 match &ev.tool {
                     EditingTool::SetHeightMap(height, radius, save_to_disk) => {
@@ -152,10 +201,7 @@ pub fn apply_tool_edits(
                             let chunk_transform_vec2: Vec2 =
                                 Vec2::new(chunk_transform.x, chunk_transform.z);
 
-                            let chunk_center_transform =
-                                chunk_transform_vec2.add(chunk_dimensions.div(2.0));
-
-                            let chunk_local_distance = tool_coords.distance(chunk_center_transform);
+                           
 
                             let tool_coords_local = tool_coords.add(chunk_transform_vec2.neg());
 
@@ -164,7 +210,7 @@ pub fn apply_tool_edits(
                             let img_data_length = height_map_data.0.len();
                             //println!("trying to edit the height map via its handle :)  {}", max );
 
-                            // let mut idx_array: [usize; 2];
+                            let mut height_changed = false;
 
                             let radius_clone = radius.clone();
                             //fake it for now
@@ -174,12 +220,15 @@ pub fn apply_tool_edits(
 
                                     if tool_coords_local.distance(local_coords) < radius_clone {
                                         height_map_data.0[x][y] = height.clone();
+                                        height_changed = true;
                                     }
                                 }
                             }
-
-                            chunk_data.height_map_image_data_load_status =
-                                TerrainImageDataLoadStatus::NeedsReload;
+                            
+                            if height_changed {
+                                chunk_data.height_map_image_data_load_status =
+                                    TerrainImageDataLoadStatus::NeedsReload;
+                            }
                         }
                     }
 
@@ -194,17 +243,13 @@ pub fn apply_tool_edits(
                                 let chunk_transform_vec2: Vec2 =
                                     Vec2::new(chunk_transform.x, chunk_transform.z);
 
-                                let chunk_center_transform =
-                                    chunk_transform_vec2.add(chunk_dimensions.div(2.0));
-
-                                let chunk_local_distance =
-                                    tool_coords.distance(chunk_center_transform);
-
+                                let chunk_dimensions_vec: Vec2 = Vec2::new( chunk_dimensions.x() as f32, chunk_dimensions.y() as f32 );
+                
                                 let tool_coords_local = tool_coords.add(chunk_transform_vec2.neg());
 
                                 let pixel_pos = Vec2::new(
-                                    tool_coords_local.x / chunk_dimensions.x * img_size.x as f32,
-                                    tool_coords_local.y / chunk_dimensions.y * img_size.y as f32,
+                                    tool_coords_local.x / chunk_dimensions_vec.x * img_size.x as f32,
+                                    tool_coords_local.y / chunk_dimensions_vec.y * img_size.y as f32,
                                 );
                                 let pixel_radius = *radius as f32;
 
@@ -274,6 +319,7 @@ pub fn apply_tool_edits(
                     } // SetSplatMap
                 } //match
             }
+        }
         }
     }
 }
