@@ -5,7 +5,7 @@ use std::path::Path;
 use bevy::asset::LoadState;
 use bevy::prelude::*;
 use bevy::render::render_resource::{Extent3d, TextureDimension, TextureFormat};
-use bevy::tasks::{AsyncComputeTaskPool, Task};
+use bevy::tasks::{ComputeTaskPool, AsyncComputeTaskPool, Task};
 
 use bevy::utils::HashMap;
 use futures_lite::future;
@@ -75,7 +75,6 @@ impl ChunkData {
 
 
 
-
 pub type TerrainPbrBundle = MaterialMeshBundle<TerrainMaterial>;
 
 #[derive(Component)]
@@ -88,6 +87,17 @@ pub struct BuiltChunkMeshData {
     chunk_uv: Vec4,
 
     lod_level: u8,
+}
+
+
+#[derive(Component)]
+pub struct TerrainChunkMesh {
+
+}
+
+#[derive(Component)]
+pub struct CachedHeightmapData{
+    pub heightmap_data: Vec<Vec<u16>>
 }
 
 pub trait ChunkCoordinates {
@@ -460,12 +470,16 @@ pub fn build_chunk_meshes(
 ) {
     for (chunk_entity, chunk, mut chunk_data, terrain_entity, visibility) in chunk_query.iter_mut()
     {
+        
         if chunk_data.chunk_state == ChunkState::Init {
             let terrain_entity_id = terrain_entity.get();
             if terrain_query.get(terrain_entity_id).is_ok() == false {
                 continue;
             }
             let (terrain_config, terrain_data) = terrain_query.get(terrain_entity_id).unwrap();
+
+
+        println!("build chunk mesh 2  ");
 
             let height_map_data = chunk_height_maps.chunk_height_maps.get(&chunk.chunk_id); // &chunk_data.height_map_data.clone();
 
@@ -484,6 +498,7 @@ pub fn build_chunk_meshes(
                 continue;
             }
 
+            println!("build chunk mesh 3  ");
             if visibility != Visibility::Visible {
                 //do not do the intensive calculations to build a chunk mesh until it is 'visible' -- this speeds up initial map loading
                 continue;
@@ -534,6 +549,8 @@ pub fn build_chunk_meshes(
                 terrain_dimensions.y as u32 / chunk_rows,
             ];
 
+            println!("build chunk mesh 4 ");
+
             if let Some(chunk_height_data) = chunk_height_maps
                 .chunk_height_maps
                 .get(&stitch_chunk_id_pos_x)
@@ -542,6 +559,13 @@ pub fn build_chunk_meshes(
                 for i in 0..chunk_dimensions.x() as usize {
                     final_vec.push(chunk_height_data.0[0][i]);
                 }
+                stitch_data_x_row = Some(final_vec);
+            }else{
+                let mut final_vec = Vec::new();
+                for i in 0..chunk_dimensions.x() as usize {
+                    final_vec.push(0);
+                }
+               
                 stitch_data_x_row = Some(final_vec);
             }
 
@@ -553,15 +577,48 @@ pub fn build_chunk_meshes(
                 for i in 0..chunk_dimensions.y() as usize {
                     final_vec.push(chunk_height_data.0[i][0]);
                 }
-                final_vec.push(0); // the corner corner --gotta fix me some how ??
+                  final_vec.push(0); // the corner corner --gotta fix me some how ?? - try to read diag chunk 
+                stitch_data_y_col = Some(final_vec);
+            }else{
+                let mut final_vec = Vec::new();
+                for i in 0..chunk_dimensions.y() as usize {
+                    final_vec.push(0);
+                }
+                final_vec.push(0);  // the corner corner --gotta fix me some how ?? - try to read diag chunk 
+               
                 stitch_data_y_col = Some(final_vec);
             }
 
-            let task = thread_pool.spawn(async move {
-                let mut sub_heightmap = SubHeightMapU16(height_map_data_cloned);
+            //for now, add the unstitched data.. 
+            commands.entity(chunk_entity).insert(
+                CachedHeightmapData {
+                    heightmap_data: height_map_data_cloned.clone()
+                }
+            );  
 
-                stitch_data_x_row.map(|x_row| sub_heightmap.append_x_row(x_row));
-                stitch_data_y_col.map(|y_col| sub_heightmap.append_y_col(y_col));
+                //these three LOC really take no time at all 
+            let mut sub_heightmap = SubHeightMapU16(height_map_data_cloned);
+
+            
+            stitch_data_x_row.map(|x_row| sub_heightmap.append_x_row(x_row));
+            stitch_data_y_col.map(|y_col| sub_heightmap.append_y_col(y_col));
+           
+            /*
+            commands.entity(chunk_entity).insert(
+                CachedHeightmapData {
+                    heightmap_data: sub_heightmap.0.clone()
+                }
+            );  */
+
+            // This is not right for some of the edge chunks -- their 
+
+
+
+
+
+            let task = thread_pool.spawn(async move {
+                println!("trying to build premesh");
+                
 
                 //we add the +1 for stitching data
                 let sub_texture_dim = [
@@ -608,11 +665,12 @@ pub fn finish_chunk_build_tasks(
     mut terrain_materials: ResMut<Assets<TerrainMaterial>>,
 ) {
     //chunk, mut chunk_data,  terrain_entity,
-
+      
     for (entity, mut task) in &mut chunk_build_tasks {
+     
         if let Some(built_chunk_mesh_data) = future::block_on(future::poll_once(&mut task.0)) {
             // Add our new PbrBundle of components to our tagged entity
-
+          
             let chunk_entity_id = built_chunk_mesh_data.chunk_entity_id;
 
             if chunk_query.get_mut(chunk_entity_id).is_ok() == false {
@@ -640,7 +698,7 @@ pub fn finish_chunk_build_tasks(
 
             let (terrain_data, terrain_config) = terrain_query.get(terrain_entity_id).unwrap();
 
-            println!("  finish_chunk_build_tasks  ");
+            
             let array_texture = terrain_data.get_array_texture_image().clone();
 
             let splat_texture = chunk_data.get_splat_texture_image().clone();
@@ -668,6 +726,7 @@ pub fn finish_chunk_build_tasks(
 
                     ..default()
                 })
+                .insert(TerrainChunkMesh{})
                 .id();
 
             chunk_data.material_handle = Some(chunk_terrain_material);
@@ -677,6 +736,8 @@ pub fn finish_chunk_build_tasks(
             chunk_entity_commands.add_child(mesh_bundle);
 
             chunk_data.chunk_state = ChunkState::FullyBuilt;
+
+            println!("chunk fully built ");
 
             commands.entity(entity).despawn();
         }
@@ -734,7 +795,7 @@ pub fn update_chunk_visibility(
             let max_render_distance = terrain_config.get_max_render_distance();
 
             let should_be_visible = distance_to_chunk <= max_render_distance;
-
+           
             *chunk_visibility = match should_be_visible {
                 true => Visibility::Visible,
                 false => Visibility::Hidden,

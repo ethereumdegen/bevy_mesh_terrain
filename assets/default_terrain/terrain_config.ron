@@ -1,16 +1,16 @@
 // terrain_config.ron
 TerrainConfig(
-    terrain_dimensions: (4096.0, 4096.0), // Vec2(x, y)
-    chunk_rows: 16,
-    render_distance: 2000.0,
-    lod_distance: 1000.0,
+    terrain_dimensions: (1024.0, 1024.0), // Vec2(x, y)
+    chunk_rows: 4,
+    render_distance: 1000.0,
+    lod_distance: 500.0,
     lod_level_offset: 0,
     height_scale: 0.0004,
     attach_collision_data: true, 
    
      
-     height_folder_path: "default_terrain/height", // String
-     splat_folder_path: "default_terrain/splat", // String
-     diffuse_folder_path: "default_terrain/diffuse/array_texture.png", // String
-      texture_image_sections: 8
+    height_folder_path: "default_terrain/height", // String
+    splat_folder_path: "default_terrain/splat", // String
+    diffuse_folder_path: "default_terrain/diffuse/array_texture.png", // String
+    texture_image_sections: 8
 )

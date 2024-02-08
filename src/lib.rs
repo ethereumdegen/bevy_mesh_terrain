@@ -25,13 +25,13 @@ pub mod terrain_config;
 pub mod terrain_material;
 
 pub struct TerrainMeshPlugin {
-    task_update_rate: Duration,
+    task_update_rate: Duration 
 }
 
 impl Default for TerrainMeshPlugin {
     fn default() -> Self {
         Self {
-            task_update_rate: Duration::from_millis(250),
+            task_update_rate: Duration::from_millis(250) 
         }
     }
 }
@@ -61,8 +61,7 @@ impl Plugin for TerrainMeshPlugin {
         app.add_systems(
             Update,
             finish_chunk_build_tasks.run_if(on_timer(self.task_update_rate)),
-        );
-
+        ); 
         app.add_systems(
             Update,
             initialize_terrain.run_if(on_timer(self.task_update_rate)),
