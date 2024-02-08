@@ -10,6 +10,13 @@ cargo add bevy_mesh_terrain
 
 NOTE: Make SURE you copy the terrain.wsgl shader into your assets directory properly!  Otherwise your terrain will not render. 
 
+
+### Run example 
+
+```
+cargo run --example basic
+```
+
  
 ### Description 
 
@@ -22,20 +29,8 @@ NOTE: Make SURE you copy the terrain.wsgl shader into your assets directory prop
 ![image](https://github.com/ethereumdegen/bevy_mesh_terrain/assets/6249263/d43e21c6-d533-4195-94ab-fb40d78f404c)
 
 
-
-  
  
  
- ## How it works 
- 
- ( See examples folder )
- 
- 1. You load a heightfield image into bevy asset server (R16 format - single color channel of 16 bits per pixel) 
- 
- 2. Pass this handle into this terrain plugin so that it will generate the heightfield data (Note: you could also set the heightfield data yourself manually)
- 
- 3. The plugin systems automatically spawn 'chunk' entities by sampling the heightfield data.  Chunks are only built and spawned when they are near the TerrainViewer component so attach that to your main camera. 
-
 
 ## Texture Types 
 
@@ -67,8 +62,13 @@ Currently supports bevy 0.12
 
  
 
-### Reference Material 
+### Reference Shader Material 
 see https://github.com/bevyengine/bevy/blob/main/examples/shader/shader_material.rs
+
+
+
+### Editor (WIP)
+https://github.com/ethereumdegen/bevy_mesh_terrain_editor
 
  
  
