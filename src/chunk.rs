@@ -17,6 +17,8 @@ use crate::terrain::{TerrainData, TerrainImageDataLoadStatus, TerrainViewer};
 use crate::terrain_config::TerrainConfig;
 use crate::terrain_material::{ChunkMaterialUniforms, TerrainMaterial};
 
+use std::fs;
+
 #[derive(Default, Eq, PartialEq)]
 enum ChunkState {
     #[default]
@@ -874,6 +876,21 @@ pub fn save_chunk_splat_map_to_disk(
                 eprintln!("Unsupported image format for saving: {:?}", format);
             }
          
+    
+    
+}
+
+
+pub fn save_chunk_collision_data_to_disk(
+    serialized_collision_data: String,
+    save_file_path: String    
+){
+     
+    
+      match fs::write(save_file_path, serialized_collision_data) {
+        Ok(_) => println!("Successfully saved collision data to file."),
+        Err(e) => println!("Failed to save to file: {}", e),
+    }
     
     
 }

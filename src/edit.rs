@@ -14,10 +14,19 @@ use bevy::prelude::*;
 
 use crate::chunk::{Chunk, ChunkData, ChunkHeightMapResource, 
     save_chunk_height_map_to_disk, save_chunk_splat_map_to_disk,
-     ChunkCoordinates  };
+     save_chunk_collision_data_to_disk,  ChunkCoordinates  };
 use crate::terrain::{TerrainData, TerrainImageDataLoadStatus};
 use crate::terrain_config::TerrainConfig;
 use crate::terrain_material::TerrainMaterial;
+
+use bevy_xpbd_3d::prelude::Collider;
+
+use anyhow::{Result,Context};
+use crate::chunk::TerrainChunkMesh;
+
+use serde::{Serialize, Deserialize};
+use serde_json;
+
 
 #[derive(Debug)]
 pub enum EditingTool {
@@ -35,16 +44,17 @@ pub struct EditTerrainEvent {
 
 #[derive(Event)]
 pub enum TerrainCommandEvent {
-    SaveAllChunks(bool,bool),  //height data, splat data 
+    SaveAllChunks(bool,bool,bool),  //height data, splat data, collision data 
+    
 }
 
 
 
 pub fn apply_command_events(
-    mut asset_server: Res<AssetServer>,
+    asset_server: Res<AssetServer>,
 
     mut chunk_query: Query<(&Chunk, &mut ChunkData, &Parent)>, //chunks parent should have terrain data
-    chunk_mesh_query: Query<(&Parent, &GlobalTransform)>,
+    
 
     mut images: ResMut<Assets<Image>>,
     mut terrain_materials: ResMut<Assets<TerrainMaterial>>,
@@ -54,8 +64,11 @@ pub fn apply_command_events(
     
       terrain_query: Query<(&TerrainData, &TerrainConfig)>,
       
+    chunk_mesh_query: Query<(Entity, &Handle<Mesh>, &GlobalTransform), With<TerrainChunkMesh>>,
+     meshes: Res<Assets<Mesh>>,
+      
     mut ev_reader: EventReader<TerrainCommandEvent>,
-) {
+)  {
     
     
      for ev in ev_reader.read() {
@@ -73,7 +86,7 @@ pub fn apply_command_events(
  
                   
                 match  ev {
-                    TerrainCommandEvent::SaveAllChunks( save_height,save_splat) => {
+                    TerrainCommandEvent::SaveAllChunks( save_height,save_splat, save_collision) => {
                         
                             if *save_height {
                                 if  let Some(chunk_height_data) = chunk_height_maps.chunk_height_maps.get( &chunk.chunk_id  ) {
@@ -85,7 +98,7 @@ pub fn apply_command_events(
                                     }
                             }
                             
-                             if *save_splat {
+                            if *save_splat {
                                     if  let Some(splat_image_handle) = chunk_data.get_splat_texture_image() {
                                         if let Some(splat_image ) = images.get(splat_image_handle)  {
                                         
@@ -96,9 +109,28 @@ pub fn apply_command_events(
                                         } 
                                     }
                              }
+                             
+                             if *save_collision {
+                                  println!("Generating and saving collision data.. please wait..");
+                                  for (entity, mesh_handle,  mesh_transform) in chunk_mesh_query.iter(){
+                                          let mesh = meshes.get(mesh_handle).expect("No mesh found for terrain chunk") ;
+                                          let collider = Collider::trimesh_from_mesh(&mesh).expect("Failed to create collider from mesh") ; 
+                                        
+                                          let collider_data_serialized = serde_json::to_string(&collider).unwrap();
+                                            
+                                             save_chunk_collision_data_to_disk(  
+                                                collider_data_serialized,
+                                                format!(  "assets/{}/{}.col", terrain_config.collider_data_folder_path, chunk.chunk_id ) 
+                                            );
+                                   }
+                                  
+                                   println!("saved terrain collider data  " ); 
+                             }
                         
                         
                     }
+                    
+                    
                     
                 }  
                  
@@ -107,10 +139,12 @@ pub fn apply_command_events(
                 
                 
          }  
+         
+       
      }
     
     
-    
+   //  Ok(()) 
 }
 
 pub fn apply_tool_edits(

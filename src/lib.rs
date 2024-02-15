@@ -9,20 +9,21 @@ use terrain::{initialize_terrain, load_terrain_texture_from_image};
 use std::time::Duration;
 
 //use chunk::{activate_terrain_chunks, destroy_terrain_chunks, despawn_terrain_chunks, build_active_terrain_chunks, finish_chunk_build_tasks, ChunkEvent};
-use collision::spawn_chunk_collision_data;
+//use collision::spawn_chunk_collision_data;
 
 use terrain_material::TerrainMaterial;
 
 use edit::{apply_tool_edits, apply_command_events, EditTerrainEvent, TerrainCommandEvent};
 
 pub mod chunk;
-pub mod collision;
+//pub mod collision;
 pub mod edit;
 pub mod heightmap;
 pub mod pre_mesh;
 pub mod terrain;
 pub mod terrain_config;
 pub mod terrain_material;
+pub mod terrain_loading_state;
 
 pub struct TerrainMeshPlugin {
     task_update_rate: Duration 
@@ -39,6 +40,8 @@ impl Default for TerrainMeshPlugin {
 impl Plugin for TerrainMeshPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugins(MaterialPlugin::<TerrainMaterial>::default());
+        
+        app.add_state::<terrain_loading_state::TerrainLoadingState>();
 
         //app.add_event::<ChunkEvent>();
         app.add_event::<EditTerrainEvent>();

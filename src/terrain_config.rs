@@ -32,6 +32,7 @@ pub struct TerrainConfig {
     pub diffuse_folder_path: String,
     pub height_folder_path: String,
     pub splat_folder_path: String,
+    pub collider_data_folder_path: String,
 }
 
 impl Default for TerrainConfig {
@@ -53,6 +54,7 @@ impl Default for TerrainConfig {
             diffuse_folder_path: "diffuse".into(),
             height_folder_path: "height".into(),
             splat_folder_path: "splat".into(),
+            collider_data_folder_path: "collider".into(),
         }
     }
 }
