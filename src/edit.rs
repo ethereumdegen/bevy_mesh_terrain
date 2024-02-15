@@ -53,7 +53,7 @@ pub enum TerrainCommandEvent {
 pub fn apply_command_events(
     asset_server: Res<AssetServer>,
 
-    mut chunk_query: Query<(&Chunk, &mut ChunkData, &Parent)>, //chunks parent should have terrain data
+    mut chunk_query: Query<(&Chunk, &mut ChunkData, &Parent, &Children)>, //chunks parent should have terrain data
     
 
     mut images: ResMut<Assets<Image>>,
@@ -62,9 +62,9 @@ pub fn apply_command_events(
     mut chunk_height_maps: ResMut<ChunkHeightMapResource>,
 
     
-      terrain_query: Query<(&TerrainData, &TerrainConfig)>,
+     terrain_query: Query<(&TerrainData, &TerrainConfig)>,
       
-    chunk_mesh_query: Query<(Entity, &Handle<Mesh>, &GlobalTransform), With<TerrainChunkMesh>>,
+     chunk_mesh_query: Query<(Entity, &Handle<Mesh>, &GlobalTransform ), With<TerrainChunkMesh>>,
      meshes: Res<Assets<Mesh>>,
       
     mut ev_reader: EventReader<TerrainCommandEvent>,
@@ -74,9 +74,9 @@ pub fn apply_command_events(
      for ev in ev_reader.read() {
          
          
-        for (chunk,chunk_data,terrain_entity) in chunk_query.iter() {
+        for (chunk, chunk_data , parent_terrain_entity, chunk_children) in chunk_query.iter() {
              
-            let terrain_entity_id = terrain_entity.get();
+            let terrain_entity_id = parent_terrain_entity.get();
                                 
             if terrain_query.get(terrain_entity_id).is_ok() == false {
                     continue;
@@ -112,20 +112,24 @@ pub fn apply_command_events(
                              
                              if *save_collision {
                                   println!("Generating and saving collision data.. please wait..");
-                                  for (entity, mesh_handle,  mesh_transform) in chunk_mesh_query.iter(){
-                                          let mesh = meshes.get(mesh_handle).expect("No mesh found for terrain chunk") ;
-                                          let collider = Collider::trimesh_from_mesh(&mesh).expect("Failed to create collider from mesh") ; 
-                                        
-                                          let collider_data_serialized = serde_json::to_string(&collider).unwrap();
+                                for chunk_child in chunk_children { 
+                                
+                                    if let Ok((entity, mesh_handle,  mesh_transform)) = chunk_mesh_query.get(chunk_child.clone()){
+                                            let mesh = meshes.get(mesh_handle).expect("No mesh found for terrain chunk") ;
+                                            let collider = Collider::trimesh_from_mesh(&mesh).expect("Failed to create collider from mesh") ; 
                                             
-                                             save_chunk_collision_data_to_disk(  
-                                                collider_data_serialized,
-                                                format!(  "assets/{}/{}.col", terrain_config.collider_data_folder_path, chunk.chunk_id ) 
-                                            );
-                                   }
-                                  
-                                   println!("saved terrain collider data  " ); 
-                             }
+                                            let collider_data_serialized = serde_json::to_string(&collider).unwrap();
+                                                
+                                                save_chunk_collision_data_to_disk(  
+                                                    collider_data_serialized,
+                                                    format!(  "assets/{}/{}.col", terrain_config.collider_data_folder_path, chunk.chunk_id ) 
+                                                );
+                                                continue;
+                                        }
+                                    
+                                    println!("saved terrain collider data  " ); 
+                                    }
+                              }
                         
                         
                     }
