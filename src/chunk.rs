@@ -882,7 +882,7 @@ pub fn save_chunk_splat_map_to_disk(
 
 
 pub fn save_chunk_collision_data_to_disk(
-    serialized_collision_data: String,
+    serialized_collision_data: Vec<u8>,
     save_file_path: String    
 ){
      

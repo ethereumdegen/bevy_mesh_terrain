@@ -46,7 +46,7 @@ impl Material for TerrainMaterial {
     }
 
     fn alpha_mode(&self) -> AlphaMode {
-        AlphaMode::Blend
+        AlphaMode::Mask(0.1)
     }
 }
 

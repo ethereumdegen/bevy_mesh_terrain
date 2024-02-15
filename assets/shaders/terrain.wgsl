@@ -77,6 +77,11 @@ fn fragment(
 
     let final_color = vec4(blended_color.rgb, alpha_mask_value.r);
       
+
+      // Implement alpha masking
+    if (final_color.a < 0.5) { // Use your threshold value here
+        discard;
+    }
     
     return final_color;
     

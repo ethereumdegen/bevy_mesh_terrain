@@ -115,11 +115,16 @@ pub fn apply_command_events(
                                 for chunk_child in chunk_children { 
                                 
                                     if let Ok((entity, mesh_handle,  mesh_transform)) = chunk_mesh_query.get(chunk_child.clone()){
+                                           
+                                        
                                             let mesh = meshes.get(mesh_handle).expect("No mesh found for terrain chunk") ;
-                                            let collider = Collider::trimesh_from_mesh(&mesh).expect("Failed to create collider from mesh") ; 
+                                           
+  
+                                           
+                                            let collider = Collider::trimesh_from_mesh (&mesh ).expect("Failed to create collider from mesh") ; 
                                             
-                                            let collider_data_serialized = serde_json::to_string(&collider).unwrap();
-                                                
+                                            let collider_data_serialized = bincode::serialize(&collider).unwrap();
+                                                 
                                                 save_chunk_collision_data_to_disk(  
                                                     collider_data_serialized,
                                                     format!(  "assets/{}/{}.col", terrain_config.collider_data_folder_path, chunk.chunk_id ) 
