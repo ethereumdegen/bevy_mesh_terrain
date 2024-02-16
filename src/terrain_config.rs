@@ -13,7 +13,7 @@ use serde::Deserialize;
 use std::fs::File;
 use std::io::Read;
 
-#[derive(Component, Deserialize)]
+#[derive(Component, Deserialize, Serialize, Clone)]
 pub struct TerrainConfig {
     pub terrain_dimensions: Vec2,
 
