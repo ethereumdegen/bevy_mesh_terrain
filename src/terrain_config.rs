@@ -8,7 +8,7 @@ also should incorporate the paths to the height and splat folders for their text
 */
 use bevy::prelude::*;
 
-use serde::Deserialize;
+use serde::{Deserialize,Serialize};
 
 use std::fs::File;
 use std::io::Read;
