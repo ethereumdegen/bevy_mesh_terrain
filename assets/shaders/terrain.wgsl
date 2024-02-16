@@ -120,7 +120,7 @@ fn fragment(
   // generate a PbrInput struct from the StandardMaterial bindings
     var pbr_input = pbr_input_from_standard_material(mesh, is_front);
  
-    //hack out material so the color is from the terrain splat 
+    //hack the material (StandardMaterialUniform)  so the color is from the terrain splat 
     pbr_input.material.base_color =  blended_color;
 
 

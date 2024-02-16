@@ -156,25 +156,7 @@ impl AsBindGroupShaderType<StandardMaterialUniform> for TerrainMaterial {
                 flags |= StandardMaterialFlags::DIFFUSE_TRANSMISSION_TEXTURE;
             }
         }
-        let has_normal_map = self.normal_map_texture.is_some();
-        if has_normal_map {
-            let normal_map_id = self.normal_map_texture.as_ref().map(|h| h.id()).unwrap();
-            if let Some(texture) = images.get(normal_map_id) {
-                match texture.texture_format {
-                    // All 2-component unorm formats
-                    TextureFormat::Rg8Unorm
-                    | TextureFormat::Rg16Unorm
-                    | TextureFormat::Bc5RgUnorm
-                    | TextureFormat::EacRg11Unorm => {
-                        flags |= StandardMaterialFlags::TWO_COMPONENT_NORMAL_MAP;
-                    }
-                    _ => {}
-                }
-            }
-            if self.flip_normal_map_y {
-                flags |= StandardMaterialFlags::FLIP_NORMAL_MAP_Y;
-            }
-        }
+     
         // NOTE: 0.5 is from the glTF default - do we want this?
         let mut alpha_cutoff = 0.5;
         match self.alpha_mode {
@@ -193,6 +175,44 @@ impl AsBindGroupShaderType<StandardMaterialUniform> for TerrainMaterial {
             flags |= StandardMaterialFlags::ATTENUATION_ENABLED;
         }
 */
-        StandardMaterialUniform ::default()
+
+       /* let has_normal_map = self.normal_map_texture.is_some();
+        if has_normal_map {
+            let normal_map_id = self.normal_map_texture.as_ref().map(|h| h.id()).unwrap();
+            if let Some(texture) = images.get(normal_map_id) {
+                match texture.texture_format {
+                    // All 2-component unorm formats
+                    TextureFormat::Rg8Unorm
+                    | TextureFormat::Rg16Unorm
+                    | TextureFormat::Bc5RgUnorm
+                    | TextureFormat::EacRg11Unorm => {
+                        flags |= StandardMaterialFlags::TWO_COMPONENT_NORMAL_MAP;
+                    }
+                    _ => {}
+                }
+            }
+            if self.flip_normal_map_y {
+                flags |= StandardMaterialFlags::FLIP_NORMAL_MAP_Y;
+            }
+        }*/
+
+        flags |= StandardMaterialFlags::ALPHA_MODE_MASK;
+        flags |= StandardMaterialFlags::FOG_ENABLED;
+        flags |= StandardMaterialFlags::DEPTH_MAP;
+
+        flags |= StandardMaterialFlags::FLIP_NORMAL_MAP_Y;
+
+        StandardMaterialUniform {
+            flags: flags.bits() ,
+             roughness: 0.9,
+
+            // From [0.0, 1.0], dielectric to pure metallic
+             metallic: 0.0,
+
+            // Specular intensity for non-metals on a linear scale of [0.0, 1.0]
+            // defaults to 0.5 which is mapped to 4% reflectance in the shader
+             reflectance: 0.0,
+            ..default()
+        }
     }
 }

@@ -1,5 +1,5 @@
 use bevy::input::mouse::MouseMotion;
-use bevy::prelude::*;
+use bevy::{pbr::ShadowFilteringMethod, prelude::*};
 use bevy_mesh_terrain::{
     terrain::{TerrainData, TerrainViewer},
     terrain_config::TerrainConfig,
@@ -29,6 +29,10 @@ fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
     commands.spawn(DirectionalLightBundle {
         directional_light: DirectionalLight{
 
+
+            shadow_depth_bias: 0.5,
+            shadow_normal_bias: 0.5,
+            
             color: Color::WHITE,
             ..default()
         },
@@ -40,6 +44,10 @@ fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
         point_light: PointLight {
             intensity: 1500.0,
             shadows_enabled: true,
+
+            shadow_depth_bias: 0.5,
+            shadow_normal_bias: 0.5,
+
             color: Color::WHITE,
             ..default()
         },
@@ -60,7 +68,10 @@ fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
                 .looking_at(Vec3::new(900.0, 0.0, 900.0), Vec3::Y),
             ..default()
         })
-        .insert(TerrainViewer::default());
+        .insert(TerrainViewer::default())
+        .insert(  ShadowFilteringMethod::Jimenez14 )
+        
+        ;
 }
 
 fn update_camera_look(
