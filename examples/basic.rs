@@ -27,7 +27,12 @@ fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
         .insert(TerrainData::new());
 
     commands.spawn(DirectionalLightBundle {
-        directional_light: DirectionalLight::default(),
+        directional_light: DirectionalLight{
+
+            color: Color::WHITE,
+            ..default()
+        },
+        
         ..default()
     });
     // light
@@ -35,6 +40,7 @@ fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
         point_light: PointLight {
             intensity: 1500.0,
             shadows_enabled: true,
+            color: Color::WHITE,
             ..default()
         },
         transform: Transform::from_xyz(4.0, 800.0, 4.0),

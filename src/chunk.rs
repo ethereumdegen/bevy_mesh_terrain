@@ -708,6 +708,10 @@ pub fn finish_chunk_build_tasks(
 
             let chunk_terrain_material: Handle<TerrainMaterial> =
                 terrain_materials.add(TerrainMaterial {
+                    base_color_texture:None,
+                    emissive_texture:None,
+                    metallic_roughness_texture:None,
+                    occlusion_texture: None,
                     uniforms: ChunkMaterialUniforms {
                         color_texture_expansion_factor: 32.0, //why wont this apply to shader properly ?
                         chunk_uv,
