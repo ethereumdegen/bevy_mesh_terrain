@@ -46,6 +46,13 @@ fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
         transform: Transform::from_xyz(4.0, 800.0, 4.0),
         ..default()
     });
+
+
+    commands.insert_resource(AmbientLight {
+        color: Color::WHITE,
+        brightness: 0.12,
+    });
+ 
     // camera
     commands
         .spawn(Camera3dBundle {
