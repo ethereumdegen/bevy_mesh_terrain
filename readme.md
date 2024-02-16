@@ -25,12 +25,11 @@ cargo run --example basic
  You spawn an entity and give it the 'TerrainConfig' and 'TerrainData' components, and then the plugin systems will spawn child entities which are each of the rendered chunks. 
  In this way, it works similarly to a voxel chunking system ( a la minecraft) except using heightfields (2d) instead of voxels (3d). 
  
-
-![image](https://github.com/ethereumdegen/bevy_mesh_terrain/assets/6249263/d43e21c6-d533-4195-94ab-fb40d78f404c)
-
+ 
 
  
- 
+ ![image](https://github.com/ethereumdegen/bevy_mesh_terrain/assets/6249263/492f8212-8d08-460c-ae54-7d7a0022eb95)
+
 
 ## Texture Types 
 
