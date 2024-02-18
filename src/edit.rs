@@ -30,8 +30,8 @@ use serde_json;
 
 #[derive(Debug)]
 pub enum EditingTool {
-    SetHeightMap(u16, f32, bool),       // height, radius, save to disk
-    SetSplatMap(u8, u8, u8, f32, bool), //R, G, B, radius, save to disk
+    SetHeightMap{height:u16, radius:f32},       // height, radius, save to disk
+    SetSplatMap{r:u8, g:u8, b:u8, radius:f32}, //R, G, B, radius, save to disk
 }
 
 // entity, editToolType, coords, magnitude
@@ -233,7 +233,7 @@ pub fn apply_tool_edits(
  
 
                 match &ev.tool {
-                    EditingTool::SetHeightMap(height, radius, save_to_disk) => {
+                    EditingTool::SetHeightMap{height, radius} => {
                         if let Some(height_map_data) =
                             &mut chunk_height_maps.chunk_height_maps.get_mut(&chunk.chunk_id)
                         {
@@ -275,7 +275,7 @@ pub fn apply_tool_edits(
                         }
                     }
 
-                    EditingTool::SetSplatMap(r, g, b, radius, save_to_disk) => {
+                    EditingTool::SetSplatMap{r, g, b, radius} => {
                         if let Some(splat_image_handle) = chunk_data.get_splat_texture_image() {
                             if let Some(img) = images.get_mut(splat_image_handle) {
                                 // Calculate the pixel position and radius in pixels
