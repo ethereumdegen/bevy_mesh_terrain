@@ -27,16 +27,14 @@ fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
         .insert(TerrainData::new());
 
     commands.spawn(DirectionalLightBundle {
-        directional_light: DirectionalLight{
-
-
+        directional_light: DirectionalLight {
             shadow_depth_bias: 0.5,
             shadow_normal_bias: 0.5,
-            
+
             color: Color::WHITE,
             ..default()
         },
-        
+
         ..default()
     });
     // light
@@ -55,12 +53,11 @@ fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
         ..default()
     });
 
-
     commands.insert_resource(AmbientLight {
         color: Color::WHITE,
         brightness: 0.12,
     });
- 
+
     // camera
     commands
         .spawn(Camera3dBundle {
@@ -69,9 +66,7 @@ fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
             ..default()
         })
         .insert(TerrainViewer::default())
-        .insert(  ShadowFilteringMethod::Jimenez14 )
-        
-        ;
+        .insert(ShadowFilteringMethod::Jimenez14);
 }
 
 fn update_camera_look(
