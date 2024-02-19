@@ -41,7 +41,7 @@ impl Plugin for TerrainMeshPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugins(MaterialPlugin::<TerrainMaterial>::default());
         
-        app.add_state::<terrain_loading_state::TerrainLoadingState>();
+        app.init_state::<terrain_loading_state::TerrainLoadingState>();
 
         //app.add_event::<ChunkEvent>();
         app.add_event::<EditTerrainEvent>();

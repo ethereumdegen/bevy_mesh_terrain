@@ -4,6 +4,7 @@ use std::path::Path;
 
 use bevy::asset::LoadState;
 use bevy::prelude::*;
+use bevy::render::render_asset::RenderAssetUsages;
 use bevy::render::render_resource::{Extent3d, TextureDimension, TextureFormat};
 use bevy::tasks::{ComputeTaskPool, AsyncComputeTaskPool, Task};
 
@@ -421,6 +422,7 @@ pub fn build_alpha_mask_image_from_height_data(height_map_data: &Vec<Vec<u16>>) 
         dimension,
         modified_data,
         TextureFormat::R32Float,
+        RenderAssetUsages::default()
     )
 }
 
@@ -453,6 +455,7 @@ pub fn build_alpha_mask_image(height_map_image: &Image) -> Image {
         height_map_image.texture_descriptor.dimension,
         modified_data,
         TextureFormat::R32Float,
+         RenderAssetUsages::default()
     )
 }
 

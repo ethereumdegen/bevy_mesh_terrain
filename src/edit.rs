@@ -121,7 +121,7 @@ pub fn apply_command_events(
                                            
   
                                            
-                                            let collider = Collider::trimesh_from_mesh (&mesh ).expect("Failed to create collider from mesh") ; 
+                                            let collider = Collider::trimesh_from_mesh ( mesh ).expect("Failed to create collider from mesh") ; 
                                             
                                             let collider_data_serialized = bincode::serialize(&collider).unwrap();
                                                  

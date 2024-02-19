@@ -1,6 +1,6 @@
 use bevy::asset::VisitAssetDependencies;
 use bevy::prelude::*;
-use bevy::reflect::{TypePath, TypeUuid};
+use bevy::reflect::{TypePath};
 use bevy::render::render_resource::*;
 
 use bevy::render::render_asset::RenderAssets;
@@ -51,8 +51,7 @@ pub struct CustomMaterialUniform {
 }
 
 
-#[derive(AsBindGroup, TypeUuid, TypePath, Clone)]
-#[uuid = "4acc53dd-2cfd-48ba-b659-c0e1a9bc0bdb"]    
+#[derive(AsBindGroup,  TypePath, Clone)]   
 #[uniform(0, StandardMaterialUniform)]
 pub struct TerrainMaterial {
   

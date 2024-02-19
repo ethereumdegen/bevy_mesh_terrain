@@ -1,5 +1,6 @@
 use bevy::prelude::{Mesh, Vec2};
 use bevy::render::mesh::Indices;
+use bevy::render::render_asset::RenderAssetUsages;
 use bevy::render::render_resource::PrimitiveTopology::TriangleList;
 
 use crate::heightmap::SubHeightMapU16;
@@ -39,11 +40,11 @@ impl PreMesh {
     }
 
     pub fn build(self) -> Mesh {
-        let mut mesh = Mesh::new(TriangleList);
+        let mut mesh = Mesh::new(TriangleList, RenderAssetUsages::default());
         mesh.insert_attribute(Mesh::ATTRIBUTE_POSITION, self.positions);
         mesh.insert_attribute(Mesh::ATTRIBUTE_UV_0, self.uvs);
         mesh.insert_attribute(Mesh::ATTRIBUTE_NORMAL, self.normals);
-        mesh.set_indices(Some(Indices::U32(self.indices)));
+        mesh.insert_indices(Indices::U32(self.indices));
         mesh
     }
 
