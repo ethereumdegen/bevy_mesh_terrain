@@ -13,7 +13,8 @@ use bevy::render::texture::Image;
 use bevy::prelude::*;
  
 use core::fmt::{Formatter,Display,self};
- 
+use crate::TerrainMaterialExtension;
+
 
 use crate::chunk::{Chunk, ChunkData, ChunkHeightMapResource, 
     save_chunk_height_map_to_disk, save_chunk_splat_map_to_disk,
@@ -93,7 +94,7 @@ pub fn apply_command_events(
     
 
     mut images: ResMut<Assets<Image>>,
-    mut terrain_materials: ResMut<Assets<TerrainMaterial>>,
+    mut terrain_materials: ResMut<Assets<TerrainMaterialExtension>>,
 
     mut chunk_height_maps: ResMut<ChunkHeightMapResource>,
 
@@ -199,7 +200,7 @@ pub fn apply_tool_edits(
     chunk_mesh_query: Query<(&Parent, &GlobalTransform)>,
 
     mut images: ResMut<Assets<Image>>,
-    mut terrain_materials: ResMut<Assets<TerrainMaterial>>,
+    mut terrain_materials: ResMut<Assets<TerrainMaterialExtension>>,
 
     mut chunk_height_maps: ResMut<ChunkHeightMapResource>,
     
@@ -496,7 +497,7 @@ pub fn apply_tool_edits(
                                             terrain_materials.get_mut(material_handle)
                                         {
                                             //this should let us avoid rebuilding the entire mesh
-                                            terrain_material.splat_texture =
+                                            terrain_material.extension.splat_texture =
                                                 Some(updated_image_handle);
                                             println!("rewrote splat tex in terrain material ");
                                         }

@@ -12,6 +12,7 @@ use std::time::Duration;
 //use collision::spawn_chunk_collision_data;
 
 use terrain_material::TerrainMaterial;
+use crate::chunk::TerrainMaterialExtension;
 
 use edit::{apply_tool_edits, apply_command_events, EditTerrainEvent, TerrainCommandEvent};
 
@@ -41,7 +42,7 @@ impl Default for TerrainMeshPlugin {
 
 impl Plugin for TerrainMeshPlugin {
     fn build(&self, app: &mut App) {
-        app.add_plugins(MaterialPlugin::<TerrainMaterial>::default());
+        app.add_plugins(MaterialPlugin::<TerrainMaterialExtension>::default());
         
         app.add_state::<terrain_loading_state::TerrainLoadingState>();
 

@@ -71,8 +71,8 @@ impl PreMesh {
             .extend(&[start_idx, start_idx + 1, start_idx + 2]);
 
         //stubbed in for now ...
-        //let normal = compute_normal(positions[0], positions[1], positions[2]);
-        //self.normals.extend([normal, normal, normal]);
+        let normal = compute_normal(positions[0], positions[1], positions[2]);
+        self.normals.extend([normal, normal, normal]);
 
         self.uvs.extend(uvs);
     }
@@ -175,7 +175,7 @@ impl PreMesh {
             }
         }
 
-        premesh.calculate_smooth_normals();
+    //    premesh.calculate_smooth_normals();
 
         premesh
     }
@@ -198,7 +198,7 @@ fn compute_normal(v0: [f32; 3], v1: [f32; 3], v2: [f32; 3]) -> [f32; 3] {
 
    // normal
      
-    [normal[0], normal[2], normal[1]]  //is this busted ? 
+    [normal[0], normal[1], normal[2]]  //is this busted ? 
 }
 
 //is this right !!??

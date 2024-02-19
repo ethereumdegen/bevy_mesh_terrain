@@ -17,6 +17,10 @@ use crate::terrain::{TerrainData, TerrainImageDataLoadStatus, TerrainViewer};
 use crate::terrain_config::TerrainConfig;
 use crate::terrain_material::{ChunkMaterialUniforms, TerrainMaterial};
  
+use bevy::pbr::ExtendedMaterial;
+use bevy::pbr::OpaqueRendererMethod;
+     
+
 
 use std::fs;
 
@@ -45,6 +49,8 @@ pub struct ChunkHeightMapResource {
     pub chunk_height_maps: HashMap<u32, SubHeightMapU16>, // Keyed by chunk id
 }
 
+pub type TerrainMaterialExtension = ExtendedMaterial<StandardMaterial,TerrainMaterial>;
+
 #[derive(Component)]
 pub struct ChunkData {
     chunk_state: ChunkState,
@@ -59,7 +65,7 @@ pub struct ChunkData {
 
     alpha_mask_image_handle: Option<Handle<Image>>, //built from the height map
 
-    pub material_handle: Option<Handle<TerrainMaterial>>,
+    pub material_handle: Option<Handle<TerrainMaterialExtension>>,
 }
 
 impl ChunkData {
@@ -78,7 +84,7 @@ impl ChunkData {
 
 
 
-pub type TerrainPbrBundle = MaterialMeshBundle<TerrainMaterial>;
+pub type TerrainPbrBundle = MaterialMeshBundle<TerrainMaterialExtension>;
 
 #[derive(Component)]
 pub struct MeshBuilderTask(Task<BuiltChunkMeshData>);
@@ -718,7 +724,7 @@ pub fn finish_chunk_build_tasks(
     mut meshes: ResMut<Assets<Mesh>>,
 
     terrain_query: Query<(&TerrainData, &TerrainConfig)>,
-    mut terrain_materials: ResMut<Assets<TerrainMaterial>>,
+    mut terrain_materials: ResMut<Assets<TerrainMaterialExtension>>,
 ) {
     //chunk, mut chunk_data,  terrain_entity,
       
@@ -760,8 +766,41 @@ pub fn finish_chunk_build_tasks(
             let splat_texture = chunk_data.get_splat_texture_image().clone();
             let alpha_mask_texture = chunk_data.get_alpha_mask_texture_image().clone();
 
-            let chunk_terrain_material: Handle<TerrainMaterial> =
-                terrain_materials.add(TerrainMaterial {
+            let chunk_terrain_material: Handle<TerrainMaterialExtension> =
+                terrain_materials.add(
+                    ExtendedMaterial {
+                        base: StandardMaterial {
+                           
+                            // can be used in forward or deferred mode.
+                            opaque_render_method: OpaqueRendererMethod::Auto,
+                            alpha_mode: AlphaMode::Mask(0.1),
+
+                           reflectance: 0.0,
+                           perceptual_roughness: 0.9,
+                           specular_transmission: 0.1,
+                        
+                            // in deferred mode, only the PbrInput can be modified (uvs, color and other material properties),
+                            // in forward mode, the output can also be modified after lighting is applied.
+                            // see the fragment shader `extended_material.wgsl` for more info.
+                            // Note: to run in deferred mode, you must also add a `DeferredPrepass` component to the camera and either
+                            // change the above to `OpaqueRendererMethod::Deferred` or add the `DefaultOpaqueRendererMethod` resource.
+                            ..Default::default()
+                        },
+                        extension: TerrainMaterial {
+                            uniforms: ChunkMaterialUniforms {
+                                color_texture_expansion_factor: 32.0, //why wont this apply to shader properly ?
+                                chunk_uv,
+                            },
+                            array_texture: array_texture.clone(),
+                            splat_texture: splat_texture.clone(),
+                            alpha_mask_texture: alpha_mask_texture.clone(),
+                            ..default()
+                        },
+                    }
+                );
+                    
+                    
+                    /*TerrainMaterial {
                     base_color_texture:None,
                     emissive_texture:None,
                     metallic_roughness_texture:None,
@@ -774,7 +813,7 @@ pub fn finish_chunk_build_tasks(
                     array_texture: array_texture.clone(),
                     splat_texture: splat_texture.clone(),
                     alpha_mask_texture: alpha_mask_texture.clone(),
-                });
+                });*/
 
             let terrain_mesh_handle = meshes.add(mesh);
 
