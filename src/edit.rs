@@ -10,11 +10,15 @@ use bevy::asset::{AssetServer, Assets};
 use bevy::render::render_resource::{Extent3d, TextureFormat};
 use bevy::render::texture::Image;
 
+use bevy::utils::HashMap;
+
+
 use bevy::prelude::*;
  
 use core::fmt::{Formatter,Display,self};
 use crate::TerrainMaterialExtension;
-
+use bevy::tasks::{AsyncComputeTaskPool };
+use bevy::tasks::Task;
 
 use crate::chunk::{Chunk, ChunkData, ChunkHeightMapResource, 
     save_chunk_height_map_to_disk, save_chunk_splat_map_to_disk,
@@ -32,8 +36,29 @@ use serde::{Serialize, Deserialize};
 use serde_json;
 
 use rand::Rng;
+use futures_lite::future;
 
 use core::cmp::{max,min};
+
+
+ 
+pub struct BuiltChunkCollisionDataArray {
+    chunk_elements: Vec<BuiltChunkCollisionData>
+}
+
+pub struct BuiltChunkCollisionData {
+    
+    chunk_id: u32,
+
+    collider: Collider,
+    collider_data_serialized: Vec<u8> ,
+    collider_data_folder_path: String 
+   
+}
+
+
+#[derive(Component)]
+pub struct CollisionDataSaveTask(Task<BuiltChunkCollisionDataArray>);
 
 
 
@@ -88,6 +113,7 @@ pub enum TerrainCommandEvent {
 
 
 pub fn apply_command_events(
+    mut commands: Commands,
     asset_server: Res<AssetServer>,
 
     mut chunk_query: Query<(&Chunk, &mut ChunkData, &Parent, &Children)>, //chunks parent should have terrain data
@@ -110,6 +136,14 @@ pub fn apply_command_events(
     
      for ev in ev_reader.read() {
          
+
+
+    
+
+        let mut chunk_meshes_cache:HashMap<u32,(Mesh,String)> = HashMap::new();
+
+
+
          
         for (chunk, chunk_data , parent_terrain_entity, chunk_children) in chunk_query.iter() {
              
@@ -148,29 +182,32 @@ pub fn apply_command_events(
                              }
                              
                              if *save_collision {
-                                  println!("Generating and saving collision data.. please wait..");
-                                for chunk_child in chunk_children { 
-                                
-                                    if let Ok((entity, mesh_handle,  mesh_transform)) = chunk_mesh_query.get(chunk_child.clone()){
-                                           
-                                        
-                                            let mesh = meshes.get(mesh_handle).expect("No mesh found for terrain chunk") ;
-                                           
-  
-                                           
-                                            let collider = Collider::trimesh_from_mesh (&mesh ).expect("Failed to create collider from mesh") ; 
-                                            
-                                            let collider_data_serialized = bincode::serialize(&collider).unwrap();
-                                                 
-                                                save_chunk_collision_data_to_disk(  
-                                                    collider_data_serialized,
-                                                    format!(  "assets/{}/{}.col", terrain_config.collider_data_folder_path, chunk.chunk_id ) 
-                                                );
-                                                continue;
-                                        }
+                               
+                               
+                               
+                                    println!("Generating and saving collision data.. please wait..");
+                                  
+
+
+                                    for chunk_child in chunk_children { 
                                     
-                                    println!("saved terrain collider data  " ); 
-                                    }
+                                        if let Ok((chunk_entity, mesh_handle,  mesh_transform)) = chunk_mesh_query.get(chunk_child.clone()){
+                                            let mesh =  meshes.get(mesh_handle).expect("No mesh found for terrain chunk").clone() ;
+
+                                            let collider_data_folder_path = terrain_config.collider_data_folder_path.clone();
+
+                                            chunk_meshes_cache.insert(
+                                                chunk.chunk_id.clone(),
+                                                (mesh, collider_data_folder_path)
+                                               
+                                            
+                                            );
+                                            continue; // one mesh per chunk 
+                                        }
+                                    } 
+                                    
+                                    
+                                    
                               }
                         
                               println!("save complete" ); 
@@ -178,13 +215,53 @@ pub fn apply_command_events(
                     
                     
                     
-                }  
-                 
+                }
+            }        
                 
+
+            //if we have no chunk collider data, just return 
+            if chunk_meshes_cache.is_empty() {
+                return 
+            }
+
+
+            //spawn a thread worker to save our collision data 
+                let thread_pool =  AsyncComputeTaskPool::get();
                 
+
+                let task = thread_pool.spawn_local(async move {  
+
+                    let mut collision_data_array = Vec::new();
+
+                    for (chunk_id,(chunk_mesh,collider_data_folder_path)) in chunk_meshes_cache { 
+
+                      let collider = Collider::trimesh_from_mesh (&chunk_mesh ).expect("Failed to create collider from mesh") ; 
+                            
+                      let collider_data_serialized = bincode::serialize(&collider).unwrap();
+                       
+                      collision_data_array.push(  BuiltChunkCollisionData {
+                              chunk_id: chunk_id.clone(), 
+                              collider,
+                              collider_data_serialized ,
+                              collider_data_folder_path
+                          }
+                      ) 
+
+                    }  
+                    
+                  
+
+                    BuiltChunkCollisionDataArray {
+                        chunk_elements: collision_data_array
+                    }
+
+                }); 
+
+
+                commands.spawn(CollisionDataSaveTask(task));
                 
-                
-         }  
+        
+
          
        
      }
@@ -192,6 +269,45 @@ pub fn apply_command_events(
     
    //  Ok(()) 
 }
+
+
+
+
+
+pub fn finish_chunk_collision_save_tasks(
+    mut commands: Commands,
+    mut chunk_build_tasks: Query<  &mut CollisionDataSaveTask >, 
+ 
+) { 
+
+    for   mut task  in &mut chunk_build_tasks {
+     println!("meep1");
+        if let Some(built_chunk_collision_array) = future::block_on(future::poll_once(&mut task.0)) {
+           
+            println!("meep2");
+            for chunk_element in built_chunk_collision_array.chunk_elements {
+                let chunk_id = chunk_element.chunk_id;
+                let collider_data_serialized = chunk_element.collider_data_serialized;
+                let collider_data_folder_path = chunk_element.collider_data_folder_path;
+                
+                 
+                     save_chunk_collision_data_to_disk(  
+                               collider_data_serialized,
+                              format!(  "assets/{}/{}.col",  collider_data_folder_path,  chunk_id.clone() ) 
+                            );  
+                   
+
+                     println!("saved terrain collider data for chunk {:?} " , chunk_id.clone());  
+            }
+
+            
+
+
+
+        }
+    }
+}
+
 
 pub fn apply_tool_edits(
     mut asset_server: Res<AssetServer>,

@@ -5,16 +5,16 @@ use chunk::{
     reset_chunk_height_data, update_chunk_visibility, ChunkHeightMapResource,
 };
 use terrain::{initialize_terrain, load_terrain_texture_from_image};
+ 
+
 
 use std::time::Duration;
-
-//use chunk::{activate_terrain_chunks, destroy_terrain_chunks, despawn_terrain_chunks, build_active_terrain_chunks, finish_chunk_build_tasks, ChunkEvent};
-//use collision::spawn_chunk_collision_data;
+ 
 
 use terrain_material::TerrainMaterial;
 use crate::chunk::TerrainMaterialExtension;
 
-use edit::{apply_tool_edits, apply_command_events, EditTerrainEvent, TerrainCommandEvent};
+use edit::{apply_tool_edits, apply_command_events, finish_chunk_collision_save_tasks, EditTerrainEvent, TerrainCommandEvent};
 
 pub mod chunk;
 //pub mod collision;
@@ -42,6 +42,9 @@ impl Default for TerrainMeshPlugin {
 
 impl Plugin for TerrainMeshPlugin {
     fn build(&self, app: &mut App) {
+
+       
+
         app.add_plugins(MaterialPlugin::<TerrainMaterialExtension>::default());
         
         app.add_state::<terrain_loading_state::TerrainLoadingState>();
@@ -87,10 +90,14 @@ impl Plugin for TerrainMeshPlugin {
         );
 
         app.add_systems(Update, load_terrain_texture_from_image);
-
-        app.add_systems(Update, apply_tool_edits); //put this in a sub plugin ?
-        app.add_systems(Update, apply_command_events);
+ 
+        app.add_systems(Update, (apply_tool_edits,apply_command_events ));
         
+        app.add_systems(
+            Update,
+            finish_chunk_collision_save_tasks.run_if(on_timer(self.task_update_rate)),
+        ); 
+
         
     }
 }
