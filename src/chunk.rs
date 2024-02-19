@@ -461,7 +461,7 @@ pub fn build_alpha_mask_image_from_height_data(height_map_data: &Vec<Vec<u16>>) 
     for y in 0..height {
         for x in 0..width {
             //  let index = 2 * (y * width + x); // 2 because of R16Uint
-            let height_value = height_map_data[y][x];
+            let height_value = height_map_data[x][y];
 
             let pixel_value: f32 = if height_value > THRESHOLD { 1.0 } else { 0.0 };
             modified_data.extend_from_slice(&pixel_value.to_le_bytes());
@@ -483,7 +483,7 @@ pub fn build_alpha_mask_image_from_height_data(height_map_data: &Vec<Vec<u16>>) 
         TextureFormat::R32Float,
     )
 }
-
+/*
 pub fn build_alpha_mask_image(height_map_image: &Image) -> Image {
     let width = height_map_image.size().x as usize;
     let height = height_map_image.size().y as usize;
@@ -515,7 +515,7 @@ pub fn build_alpha_mask_image(height_map_image: &Image) -> Image {
         TextureFormat::R32Float,
     )
 }
-
+*/
 /*
 On initialization of terrain entity, the chunk entities should be spawned and they should just remain there forever !!!
  */
