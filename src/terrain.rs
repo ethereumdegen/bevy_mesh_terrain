@@ -8,7 +8,7 @@ use bevy::render::texture::{
 };
 use bevy::utils::HashMap;
 
-use crate::chunk::{Chunk, ChunkCoordinates, ChunkCoords, ChunkData};
+use crate::chunk::{Chunk, ChunkCoordinates, ChunkCoords, ChunkData, TerrainMaterialExtension};
 use crate::heightmap::{HeightMap, HeightMapU16};
 use crate::terrain_material::{ChunkMaterialUniforms, TerrainMaterial};
 
@@ -127,7 +127,7 @@ pub fn load_terrain_texture_from_image(
     asset_server: Res<AssetServer>,
     mut images: ResMut<Assets<Image>>,
 
-    mut materials: ResMut<Assets<TerrainMaterial>>,
+    //  materials: Res <Assets<TerrainMaterialExtension>>,
 ) {
     for (mut terrain_data, terrain_config) in terrain_query.iter_mut() {
         if terrain_data.texture_image_handle.is_none() {

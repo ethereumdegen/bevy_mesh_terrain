@@ -17,6 +17,11 @@ use crate::pre_mesh::PreMesh;
 use crate::terrain::{TerrainData, TerrainImageDataLoadStatus, TerrainViewer};
 use crate::terrain_config::TerrainConfig;
 use crate::terrain_material::{ChunkMaterialUniforms, TerrainMaterial};
+ 
+use bevy::pbr::ExtendedMaterial;
+use bevy::pbr::OpaqueRendererMethod;
+     
+
 
 use std::fs;
 
@@ -45,6 +50,8 @@ pub struct ChunkHeightMapResource {
     pub chunk_height_maps: HashMap<u32, SubHeightMapU16>, // Keyed by chunk id
 }
 
+pub type TerrainMaterialExtension = ExtendedMaterial<StandardMaterial,TerrainMaterial>;
+
 #[derive(Component)]
 pub struct ChunkData {
     chunk_state: ChunkState,
@@ -59,7 +66,7 @@ pub struct ChunkData {
 
     alpha_mask_image_handle: Option<Handle<Image>>, //built from the height map
 
-    pub material_handle: Option<Handle<TerrainMaterial>>,
+    pub material_handle: Option<Handle<TerrainMaterialExtension>>,
 }
 
 impl ChunkData {
@@ -78,7 +85,7 @@ impl ChunkData {
 
 
 
-pub type TerrainPbrBundle = MaterialMeshBundle<TerrainMaterial>;
+pub type TerrainPbrBundle = MaterialMeshBundle<TerrainMaterialExtension>;
 
 #[derive(Component)]
 pub struct MeshBuilderTask(Task<BuiltChunkMeshData>);
@@ -252,6 +259,8 @@ pub fn initialize_chunk_data(
     mut chunk_query: Query<(Entity, &Chunk, &Parent), Without<ChunkData>>,
 
     terrain_query: Query<(&TerrainConfig, &TerrainData)>,
+
+
 ) {
     for (chunk_entity, chunk, terrain_entity) in chunk_query.iter_mut() {
         let terrain_entity_id = terrain_entity.get();
@@ -276,6 +285,7 @@ pub fn initialize_chunk_data(
         
         let splat_image_handle: Handle<Image> = asset_server.load(splat_texture_path);
 
+
         let chunk_data_component = ChunkData {
             chunk_state: ChunkState::Init,
             lod_level: 0, // hmm might cause issues ..
@@ -295,6 +305,56 @@ pub fn initialize_chunk_data(
             .insert(chunk_data_component);
     }
 }
+
+/*
+
+Have to do this hack since bevy is not correctly detecting the format 
+
+*/
+
+pub fn update_splat_image_formats(
+    mut ev_asset: EventReader<AssetEvent<Image>>,
+    mut images: ResMut<Assets<Image>>,
+
+
+    mut chunk_query: Query<(Entity, &Chunk, &ChunkData) >,
+
+){
+
+    for ev in ev_asset.read() {
+        match ev {
+            AssetEvent::LoadedWithDependencies { id  } => {
+                
+                let mut image_is_splat = false; 
+
+                let handle = Handle::Weak(*id);
+
+                for (entity,chunk,chunk_data) in chunk_query.iter(){
+                    if chunk_data.splat_image_handle == Some(handle.clone()) {
+                        image_is_splat = true
+                    }
+                }
+
+                if image_is_splat {
+
+                    let img = images.get_mut(handle).unwrap();
+                    println!("splat image format is {:?}", img.texture_descriptor.format );
+                    img.texture_descriptor.format = TextureFormat::Rgba8Unorm;
+
+                }  
+            }
+           
+            _ => {
+                
+            }
+        }
+    } 
+
+
+
+
+}
+
 
 pub fn reset_chunk_height_data(
     mut commands: Commands,
@@ -402,7 +462,7 @@ pub fn build_alpha_mask_image_from_height_data(height_map_data: &Vec<Vec<u16>>) 
     for y in 0..height {
         for x in 0..width {
             //  let index = 2 * (y * width + x); // 2 because of R16Uint
-            let height_value = height_map_data[y][x];
+            let height_value = height_map_data[x][y];
 
             let pixel_value: f32 = if height_value > THRESHOLD { 1.0 } else { 0.0 };
             modified_data.extend_from_slice(&pixel_value.to_le_bytes());
@@ -425,7 +485,7 @@ pub fn build_alpha_mask_image_from_height_data(height_map_data: &Vec<Vec<u16>>) 
         RenderAssetUsages::default()
     )
 }
-
+/*
 pub fn build_alpha_mask_image(height_map_image: &Image) -> Image {
     let width = height_map_image.size().x as usize;
     let height = height_map_image.size().y as usize;
@@ -458,7 +518,7 @@ pub fn build_alpha_mask_image(height_map_image: &Image) -> Image {
          RenderAssetUsages::default()
     )
 }
-
+*/
 /*
 On initialization of terrain entity, the chunk entities should be spawned and they should just remain there forever !!!
  */
@@ -667,7 +727,7 @@ pub fn finish_chunk_build_tasks(
     mut meshes: ResMut<Assets<Mesh>>,
 
     terrain_query: Query<(&TerrainData, &TerrainConfig)>,
-    mut terrain_materials: ResMut<Assets<TerrainMaterial>>,
+    mut terrain_materials: ResMut<Assets<TerrainMaterialExtension>>,
 ) {
     //chunk, mut chunk_data,  terrain_entity,
       
@@ -709,8 +769,41 @@ pub fn finish_chunk_build_tasks(
             let splat_texture = chunk_data.get_splat_texture_image().clone();
             let alpha_mask_texture = chunk_data.get_alpha_mask_texture_image().clone();
 
-            let chunk_terrain_material: Handle<TerrainMaterial> =
-                terrain_materials.add(TerrainMaterial {
+            let chunk_terrain_material: Handle<TerrainMaterialExtension> =
+                terrain_materials.add(
+                    ExtendedMaterial {
+                        base: StandardMaterial {
+                           
+                            // can be used in forward or deferred mode.
+                            opaque_render_method: OpaqueRendererMethod::Auto,
+                            alpha_mode: AlphaMode::Mask(0.1),
+
+                           reflectance: 0.0,
+                           perceptual_roughness: 0.9,
+                           specular_transmission: 0.1,
+                        
+                            // in deferred mode, only the PbrInput can be modified (uvs, color and other material properties),
+                            // in forward mode, the output can also be modified after lighting is applied.
+                            // see the fragment shader `extended_material.wgsl` for more info.
+                            // Note: to run in deferred mode, you must also add a `DeferredPrepass` component to the camera and either
+                            // change the above to `OpaqueRendererMethod::Deferred` or add the `DefaultOpaqueRendererMethod` resource.
+                            ..Default::default()
+                        },
+                        extension: TerrainMaterial {
+                            uniforms: ChunkMaterialUniforms {
+                                color_texture_expansion_factor: 32.0, //why wont this apply to shader properly ?
+                                chunk_uv,
+                            },
+                            array_texture: array_texture.clone(),
+                            splat_texture: splat_texture.clone(),
+                            alpha_mask_texture: alpha_mask_texture.clone(),
+                            ..default()
+                        },
+                    }
+                );
+                    
+                    
+                    /*TerrainMaterial {
                     base_color_texture:None,
                     emissive_texture:None,
                     metallic_roughness_texture:None,
@@ -723,7 +816,7 @@ pub fn finish_chunk_build_tasks(
                     array_texture: array_texture.clone(),
                     splat_texture: splat_texture.clone(),
                     alpha_mask_texture: alpha_mask_texture.clone(),
-                });
+                });*/
 
             let terrain_mesh_handle = meshes.add(mesh);
 
@@ -871,14 +964,18 @@ pub fn save_chunk_splat_map_to_disk(
             let height = splat_image.texture_descriptor.size.height;
 
             // Ensure the format is Rgba8 or adapt this code block for other formats
-            if format == bevy::render::render_resource::TextureFormat::Rgba8Unorm
-                || format == bevy::render::render_resource::TextureFormat::Rgba8UnormSrgb
+            if format == TextureFormat::Rgba8Unorm
+                || format == TextureFormat::Rgba8UnormSrgb
+             //   || format == TextureFormat::Rgba16Unorm
             {
                 // The data in Bevy's Image type is stored in a Vec<u8>, so we can use it directly
                 let img: RgbaImage = ImageBuffer::from_raw(width, height, image_data.clone()).expect("Failed to create image buffer");
 
                 // Save the image to the specified file path
                 img.save(&save_file_path).expect("Failed to save splat map");
+
+                println!("saved splat image {:?}", save_file_path.clone() );
+                
             } else {
                 eprintln!("Unsupported image format for saving: {:?}", format);
             }
@@ -898,6 +995,5 @@ pub fn save_chunk_collision_data_to_disk(
         Ok(_) => println!("Successfully saved collision data to file."),
         Err(e) => println!("Failed to save to file: {}", e),
     }
-    
     
 }

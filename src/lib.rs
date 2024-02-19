@@ -12,6 +12,7 @@ use std::time::Duration;
 //use collision::spawn_chunk_collision_data;
 
 use terrain_material::TerrainMaterial;
+use crate::chunk::TerrainMaterialExtension;
 
 use edit::{apply_tool_edits, apply_command_events, EditTerrainEvent, TerrainCommandEvent};
 
@@ -24,6 +25,8 @@ pub mod terrain;
 pub mod terrain_config;
 pub mod terrain_material;
 pub mod terrain_loading_state;
+
+
 
 pub struct TerrainMeshPlugin {
     task_update_rate: Duration 
@@ -39,7 +42,7 @@ impl Default for TerrainMeshPlugin {
 
 impl Plugin for TerrainMeshPlugin {
     fn build(&self, app: &mut App) {
-        app.add_plugins(MaterialPlugin::<TerrainMaterial>::default());
+        app.add_plugins(MaterialPlugin::<TerrainMaterialExtension>::default());
         
         app.init_state::<terrain_loading_state::TerrainLoadingState>();
 
@@ -47,6 +50,11 @@ impl Plugin for TerrainMeshPlugin {
         app.add_event::<EditTerrainEvent>();
         app.add_event::<TerrainCommandEvent>();
         app.insert_resource(ChunkHeightMapResource::default());
+
+        app.add_systems(
+            Update,
+            chunk::update_splat_image_formats
+        );
 
         app.add_systems(
             Update,

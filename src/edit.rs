@@ -11,6 +11,10 @@ use bevy::render::render_resource::{Extent3d, TextureFormat};
 use bevy::render::texture::Image;
 
 use bevy::prelude::*;
+ 
+use core::fmt::{Formatter,Display,self};
+use crate::TerrainMaterialExtension;
+
 
 use crate::chunk::{Chunk, ChunkData, ChunkHeightMapResource, 
     save_chunk_height_map_to_disk, save_chunk_splat_map_to_disk,
@@ -27,19 +31,52 @@ use crate::chunk::TerrainChunkMesh;
 use serde::{Serialize, Deserialize};
 use serde_json;
 
+use rand::Rng;
+
+use core::cmp::{max,min};
+
+
 
 #[derive(Debug)]
 pub enum EditingTool {
-    SetHeightMap(u16, f32, bool),       // height, radius, save to disk
-    SetSplatMap(u8, u8, u8, f32, bool), //R, G, B, radius, save to disk
+    SetHeightMap{height:u16 },       // height, radius, save to disk
+    SetSplatMap{r:u8, g:u8, b:u8 }, //R, G, B, radius, save to disk
 }
+
+#[derive(Debug,Default,Clone,Eq,PartialEq)]
+pub enum BrushType {
+    #[default]
+    SetExact ,  // hardness ?      
+    Smooth , 
+    Noise
+}
+
+
+
+impl Display for BrushType {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        let label = match self {
+            BrushType::SetExact => "SetExact",
+            BrushType::Smooth => "Smooth",
+            BrushType::Noise => "Noise",
+        };
+
+        write!(f, "{}", label)
+    }
+}
+
+
 
 // entity, editToolType, coords, magnitude
 #[derive(Event)]
 pub struct EditTerrainEvent {
     pub entity: Entity,
     pub tool: EditingTool,
+    pub radius: f32,  
+    pub brush_hardness: f32, //1.0 is full 
     pub coordinates: Vec2,
+    pub brush_type: BrushType,
+  
 }
 
 #[derive(Event)]
@@ -57,7 +94,7 @@ pub fn apply_command_events(
     
 
     mut images: ResMut<Assets<Image>>,
-    mut terrain_materials: ResMut<Assets<TerrainMaterial>>,
+    mut terrain_materials: ResMut<Assets<TerrainMaterialExtension>>,
 
     mut chunk_height_maps: ResMut<ChunkHeightMapResource>,
 
@@ -136,7 +173,7 @@ pub fn apply_command_events(
                                     }
                               }
                         
-                        
+                              println!("save complete" ); 
                     }
                     
                     
@@ -163,7 +200,7 @@ pub fn apply_tool_edits(
     chunk_mesh_query: Query<(&Parent, &GlobalTransform)>,
 
     mut images: ResMut<Assets<Image>>,
-    mut terrain_materials: ResMut<Assets<TerrainMaterial>>,
+    mut terrain_materials: ResMut<Assets<TerrainMaterialExtension>>,
 
     mut chunk_height_maps: ResMut<ChunkHeightMapResource>,
     
@@ -222,7 +259,63 @@ pub fn apply_tool_edits(
                 
             }
             
-            
+             
+             
+             //compute average height since we need this for some tools 
+             
+              let mut total_height:f32 = 0.0;
+               let mut heights_len = 0;
+               
+             for chunk_entity_within_range in chunk_entities_within_range.clone(){ 
+         
+            if let Some((chunk_entity, chunk, mut chunk_data, terrain_entity, chunk_transform)) =
+                chunk_query.get_mut(chunk_entity_within_range.clone()).ok()
+            {
+                if let Some(height_map_data) =
+                            &mut chunk_height_maps.chunk_height_maps.get_mut(&chunk.chunk_id)
+                        {
+             
+                                   
+                             let tool_coords: &Vec2 = &ev.coordinates;
+                            let chunk_transform = chunk_transform.translation();
+                            let chunk_transform_vec2: Vec2 =
+                                Vec2::new(chunk_transform.x, chunk_transform.z);
+
+                           
+
+                            let tool_coords_local = tool_coords.add(chunk_transform_vec2.neg());
+
+                            //need to make an array of all of the data indices of the terrain that will be set .. hm ? 
+                            let img_data_length = height_map_data.0.len();
+                             
+
+                            //let mut height_changed = false;
+                            let radius = &ev.radius;
+                         //   let radius_clone = radius.clone();
+                                   
+                                   
+                                   //  let tool_height:f32 = *height as f32;
+                                    for x in 0..img_data_length {
+                                        for y in 0..img_data_length {
+                                              let local_coords = Vec2::new(x as f32, y as f32);
+                                                if tool_coords_local.distance(local_coords) < *radius {
+                                                    let original_height = height_map_data.0[x][y];
+                                                    total_height += original_height as f32;
+                                                    heights_len+=1;
+                                                }
+                                        }
+                                           
+                                    }
+                                   
+              }
+            }
+           }                   
+            let average_height = total_height as f32 /  heights_len as f32;              
+            // ------ 
+              let radius = &ev.radius;
+              let brush_type = &ev.brush_type;
+                    
+              let  brush_hardness = &ev.brush_hardness;
             //apply the tool to each chunk in range 
            for chunk_entity_within_range in chunk_entities_within_range{ 
          
@@ -230,10 +323,11 @@ pub fn apply_tool_edits(
                 chunk_query.get_mut(chunk_entity_within_range.clone()).ok()
             {
                 //   if let Some(mut terrain_data) = terrain_data_query.get_mut(terrain_entity.get().clone()).ok() { //why cant i find this ?
- 
+                    
+                  
 
                 match &ev.tool {
-                    EditingTool::SetHeightMap(height, radius, save_to_disk) => {
+                    EditingTool::SetHeightMap{height } => {
                         if let Some(height_map_data) =
                             &mut chunk_height_maps.chunk_height_maps.get_mut(&chunk.chunk_id)
                         {
@@ -248,25 +342,87 @@ pub fn apply_tool_edits(
 
                             let tool_coords_local = tool_coords.add(chunk_transform_vec2.neg());
 
-                            //need to make an array of all of the data indices of the terrain that will be set .. hm ?
-
+                            //need to make an array of all of the data indices of the terrain that will be set .. hm ? 
                             let img_data_length = height_map_data.0.len();
-                            //println!("trying to edit the height map via its handle :)  {}", max );
+                             
 
                             let mut height_changed = false;
 
                             let radius_clone = radius.clone();
-                            //fake it for now
-                            for x in 0..img_data_length {
-                                for y in 0..img_data_length {
-                                    let local_coords = Vec2::new(x as f32, y as f32);
-
-                                    if tool_coords_local.distance(local_coords) < radius_clone {
-                                        height_map_data.0[x][y] = height.clone();
-                                        height_changed = true;
+                          
+                            match brush_type {
+                                BrushType::SetExact => {
+                                    
+                                    for x in 0..img_data_length {
+                                        for y in 0..img_data_length {
+                                            let local_coords = Vec2::new(x as f32, y as f32);
+                                            
+                                            let hardness_multiplier = get_hardness_multiplier(  tool_coords_local.distance(local_coords), radius_clone, *brush_hardness );
+                                              let original_height = height_map_data.0[x][y];
+                                            
+                                            if tool_coords_local.distance(local_coords) < radius_clone {
+                                                let new_height = height.clone();
+                                                 height_map_data.0[x][y] = apply_hardness_multiplier( original_height as f32,new_height  as f32, hardness_multiplier) as u16;
+                                                height_changed = true;
+                                            }
+                                        }
                                     }
+                                
                                 }
+                                
+                                BrushType::Smooth => { 
+                                  
+                                                 
+                                       for x in 0..img_data_length {
+                                        for y in 0..img_data_length {
+                                           
+                                            
+                                          let local_coords = Vec2::new(x as f32, y as f32);
+                                                if tool_coords_local.distance(local_coords) < *radius {
+                                                
+                                                let hardness_multiplier = get_hardness_multiplier(  tool_coords_local.distance(local_coords), radius_clone, *brush_hardness );
+        
+                                                let original_height = height_map_data.0[x][y];
+                                                // Gather heights of the current point and its neighbors within the brush radius
+                                                
+                                                let new_height = ( (average_height  + original_height as f32) / 2.0 )  as u16; 
+                                                   height_map_data.0[x][y] = apply_hardness_multiplier( original_height as f32,new_height  as f32, hardness_multiplier) as u16;
+                                                height_changed = true;
+                                            }
+                                        
+                                        
+                                        }
+                                    }
+                                
+                                }
+                                
+                                BrushType::Noise => {
+                                    
+                                   let mut rng = rand::thread_rng();
+                                    for x in 0..img_data_length {
+                                        for y in 0..img_data_length {
+                                            let local_coords = Vec2::new(x as f32, y as f32);
+                                            if tool_coords_local.distance(local_coords) < *radius {
+                                                  let original_height = height_map_data.0[x][y];
+                                                   let hardness_multiplier = get_hardness_multiplier(  tool_coords_local.distance(local_coords), radius_clone, *brush_hardness );
+        
+        
+                                                // Generate a random value between -0.5 and 0.5, then scale it by the desired height variation
+                                                let noise =  rng.gen::<f32>() - 0.5;
+                                                let noise_scaled = noise * *height as f32; // Adjust *height to control the scale of the noise
+                                                 let new_height = noise_scaled as u16;
+                                                
+                                                   
+                                                   height_map_data.0[x][y] = apply_hardness_multiplier( original_height as f32,new_height  as f32, hardness_multiplier) as u16;
+                                                height_changed = true;
+                                            }
+                                        }
+                                    }
+                                
+                                }
+                                
                             }
+                            
                             
                             if height_changed {
                                 chunk_data.height_map_image_data_load_status =
@@ -275,7 +431,7 @@ pub fn apply_tool_edits(
                         }
                     }
 
-                    EditingTool::SetSplatMap(r, g, b, radius, save_to_disk) => {
+                    EditingTool::SetSplatMap{r, g, b} => {
                         if let Some(splat_image_handle) = chunk_data.get_splat_texture_image() {
                             if let Some(img) = images.get_mut(splat_image_handle) {
                                 // Calculate the pixel position and radius in pixels
@@ -296,11 +452,14 @@ pub fn apply_tool_edits(
                                 );
                                 let pixel_radius = *radius as f32;
 
-                                println!("set splat map at {} {}", pixel_pos, pixel_radius);
+
+                                    //force override 
+                              //  img.texture_descriptor.format = TextureFormat::Rgba8Unorm;
+
+                                println!("set splat map at {} {} {}", pixel_pos, pixel_radius, r);
                                 // Assuming the image format is Rgba8
                                 if img.texture_descriptor.format == TextureFormat::Rgba8Unorm
-                                    || img.texture_descriptor.format
-                                        == TextureFormat::Rgba8UnormSrgb
+                                    || img.texture_descriptor.format == TextureFormat::Rgba8UnormSrgb
                                 {
                                     //                let img_data = img.data.as_mut_slice();
 
@@ -320,17 +479,63 @@ pub fn apply_tool_edits(
                                                 img.data[idx + 2] = *b as u8; // B
                                                                               // Alpha value remains unchanged
 
-                                                println!("modify pixel data ");
+                                                //println!("modify pixel data ");
                                             }
                                         }
                                     }
+ 
 
-                                    // Mark the image as modified -- how does that work ? touch in another way ?
-                                    /*img.texture_descriptor.size = Extent3d{
-                                        width: img_size.x,
-                                        height: img_size.y,
-                                        depth_or_array_layers: 1,
-                                    };*/
+                                    let updated_image = img.clone();
+
+                                    let updated_image_handle = asset_server.add(updated_image);
+
+                                    chunk_data
+                                        .set_splat_texture_image(updated_image_handle.clone()); //is this necessary? i think so in case the height is modified
+
+                                    if let Some(material_handle) = &chunk_data.material_handle {
+                                        if let Some(terrain_material) =
+                                            terrain_materials.get_mut(material_handle)
+                                        {
+                                            //this should let us avoid rebuilding the entire mesh
+                                            terrain_material.extension.splat_texture =
+                                                Some(updated_image_handle);
+                                            println!("rewrote splat tex in terrain material ");
+                                        }
+                                    }
+
+                               /* 
+                              } else if  img.texture_descriptor.format == TextureFormat::Rgba16Unorm
+                                || img.texture_descriptor.format
+                                    == TextureFormat::Rgba16Snorm  {
+
+
+
+
+                                         // Iterate over each pixel in the image
+                                    for y in 0..img_size.y {
+                                        for x in 0..img_size.x {
+                                            let idx = (y * img_size.x + x) as usize * 8; // 8 bytes per pixel (R, G, B, A)
+                                            let pixel_coords = Vec2::new(x as f32, y as f32);
+ 
+
+                                            // Check if the pixel is within the tool's radius
+                                            if pixel_coords.distance(pixel_pos) < pixel_radius {
+                                               // Convert u8 values to u16
+                                                let r_u16 = (*r as u16) * 257; // Equivalent to shifting left by 8 bits and adding the original value for a more accurate representation
+                                                let g_u16 = (*g as u16) * 257;
+                                                let b_u16 = (*b as u16) * 257;
+
+                                                // Split the u16 into two u8s and store them
+                                                img.data[idx] = (r_u16 & 0xFF) as u8; // R low byte
+                                                img.data[idx + 1] = (r_u16 >> 8) as u8; // R high byte
+                                                img.data[idx + 2] = (g_u16 & 0xFF) as u8; // G low byte
+                                                img.data[idx + 3] = (g_u16 >> 8) as u8; // G high byte
+                                                img.data[idx + 4] = (b_u16 & 0xFF) as u8; // B low byte
+                                                img.data[idx + 5] = (b_u16 >> 8) as u8; // B high byte
+                                        }
+                                    }
+                                }
+ 
 
                                     let updated_image = img.clone();
 
@@ -349,11 +554,14 @@ pub fn apply_tool_edits(
                                             println!("rewrote splat tex in terrain material ");
                                         }
                                     }
+                                    */
+
+
 
                                     //mark  material as needing reload !!
                                 } else {
                                     println!(
-                                        "incorrect tex format {:?}",
+                                        "incorrect splat tex format {:?}",
                                         img.texture_descriptor.format
                                     );
                                 }
@@ -366,3 +574,30 @@ pub fn apply_tool_edits(
         }
     }
 }
+
+
+
+  fn get_hardness_multiplier(  pixel_distance: f32, brush_radius: f32, brush_hardness:f32) -> f32 {
+      
+         // Calculate the distance as a percentage of the radius
+    let distance_percent = pixel_distance / brush_radius;
+    let adjusted_distance_percent = f32::min(1.0, distance_percent); // Ensure it does not exceed 1
+
+    // Calculate the fade effect based on brush hardness
+    // When hardness is 0, this will linearly interpolate from 1 at the center to 0 at the edge
+    // When hardness is between 0 and 1, it adjusts the fade effect accordingly
+    let fade_effect = 1.0 - adjusted_distance_percent;
+
+    // Apply the brush hardness to scale the fade effect, ensuring a minimum of 0
+    f32::max(0.0, fade_effect * (1.0 + brush_hardness) - (adjusted_distance_percent * brush_hardness))
+  }
+        
+        
+                                            
+                                                   
+ fn apply_hardness_multiplier( original_height:f32,new_height:f32 , hardness_multiplier: f32) -> f32{
+     
+     original_height + (new_height - original_height) * hardness_multiplier
+      
+ }
+                                                
