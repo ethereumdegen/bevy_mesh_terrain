@@ -16,6 +16,7 @@ use crate::pre_mesh::PreMesh;
 use crate::terrain::{TerrainData, TerrainImageDataLoadStatus, TerrainViewer};
 use crate::terrain_config::TerrainConfig;
 use crate::terrain_material::{ChunkMaterialUniforms, TerrainMaterial};
+ 
 
 use std::fs;
 
@@ -251,6 +252,8 @@ pub fn initialize_chunk_data(
     mut chunk_query: Query<(Entity, &Chunk, &Parent), Without<ChunkData>>,
 
     terrain_query: Query<(&TerrainConfig, &TerrainData)>,
+
+
 ) {
     for (chunk_entity, chunk, terrain_entity) in chunk_query.iter_mut() {
         let terrain_entity_id = terrain_entity.get();
@@ -275,6 +278,7 @@ pub fn initialize_chunk_data(
         
         let splat_image_handle: Handle<Image> = asset_server.load(splat_texture_path);
 
+
         let chunk_data_component = ChunkData {
             chunk_state: ChunkState::Init,
             lod_level: 0, // hmm might cause issues ..
@@ -294,6 +298,56 @@ pub fn initialize_chunk_data(
             .insert(chunk_data_component);
     }
 }
+
+/*
+
+Have to do this hack since bevy is not correctly detecting the format 
+
+*/
+
+pub fn update_splat_image_formats(
+    mut ev_asset: EventReader<AssetEvent<Image>>,
+    mut images: ResMut<Assets<Image>>,
+
+
+    mut chunk_query: Query<(Entity, &Chunk, &ChunkData) >,
+
+){
+
+    for ev in ev_asset.iter() {
+        match ev {
+            AssetEvent::LoadedWithDependencies { id  } => {
+                
+                let mut image_is_splat = false; 
+
+                let handle = Handle::Weak(*id);
+
+                for (entity,chunk,chunk_data) in chunk_query.iter(){
+                    if chunk_data.splat_image_handle == Some(handle.clone()) {
+                        image_is_splat = true
+                    }
+                }
+
+                if image_is_splat {
+
+                    let img = images.get_mut(handle).unwrap();
+                    println!("splat image format is {:?}", img.texture_descriptor.format );
+                    img.texture_descriptor.format = TextureFormat::Rgba8Unorm;
+
+                }  
+            }
+           
+            _ => {
+                
+            }
+        }
+    } 
+
+
+
+
+}
+
 
 pub fn reset_chunk_height_data(
     mut commands: Commands,
@@ -868,14 +922,18 @@ pub fn save_chunk_splat_map_to_disk(
             let height = splat_image.texture_descriptor.size.height;
 
             // Ensure the format is Rgba8 or adapt this code block for other formats
-            if format == bevy::render::render_resource::TextureFormat::Rgba8Unorm
-                || format == bevy::render::render_resource::TextureFormat::Rgba8UnormSrgb
+            if format == TextureFormat::Rgba8Unorm
+                || format == TextureFormat::Rgba8UnormSrgb
+             //   || format == TextureFormat::Rgba16Unorm
             {
                 // The data in Bevy's Image type is stored in a Vec<u8>, so we can use it directly
                 let img: RgbaImage = ImageBuffer::from_raw(width, height, image_data.clone()).expect("Failed to create image buffer");
 
                 // Save the image to the specified file path
                 img.save(&save_file_path).expect("Failed to save splat map");
+
+                println!("saved splat image {:?}", save_file_path.clone() );
+                
             } else {
                 eprintln!("Unsupported image format for saving: {:?}", format);
             }

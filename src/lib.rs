@@ -25,6 +25,8 @@ pub mod terrain_config;
 pub mod terrain_material;
 pub mod terrain_loading_state;
 
+
+
 pub struct TerrainMeshPlugin {
     task_update_rate: Duration 
 }
@@ -47,6 +49,11 @@ impl Plugin for TerrainMeshPlugin {
         app.add_event::<EditTerrainEvent>();
         app.add_event::<TerrainCommandEvent>();
         app.insert_resource(ChunkHeightMapResource::default());
+
+        app.add_systems(
+            Update,
+            chunk::update_splat_image_formats
+        );
 
         app.add_systems(
             Update,

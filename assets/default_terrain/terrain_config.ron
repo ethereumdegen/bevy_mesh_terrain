@@ -12,6 +12,6 @@ TerrainConfig(
     height_folder_path: "default_terrain/height",  
     collider_data_folder_path: "default_terrain/collision",  
     splat_folder_path: "default_terrain/splat",  
-    diffuse_folder_path: "default_terrain/diffuse/array_texture.png",  
-    texture_image_sections: 8
+    diffuse_folder_path: "default_terrain/diffuse/array_texture_lg.png",  
+    texture_image_sections: 32
 )
