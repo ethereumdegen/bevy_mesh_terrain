@@ -26,47 +26,54 @@ fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
         .insert(TerrainConfig::load_from_file("assets/default_terrain/terrain_config.ron").unwrap())
         .insert(TerrainData::new());
 
-    commands.spawn(DirectionalLightBundle {
-        directional_light: DirectionalLight {
-            shadow_depth_bias: 0.5,
-            shadow_normal_bias: 0.5,
 
+        
+
+        commands.spawn(DirectionalLightBundle {
+            directional_light: DirectionalLight {
+                shadow_depth_bias: 0.5,
+                shadow_normal_bias: 0.5,
+    
+                color: Color::WHITE,
+                ..default()
+            },
+    
+            ..default()
+        });
+        // light
+        commands.spawn(PointLightBundle {
+            point_light: PointLight {
+                intensity: 1500.0,
+                shadows_enabled: true,
+    
+                shadow_depth_bias: 0.5,
+                shadow_normal_bias: 0.5,
+    
+                color: Color::WHITE,
+                ..default()
+            },
+            transform: Transform::from_xyz(4.0, 800.0, 4.0),
+            ..default()
+        });
+    
+        commands.insert_resource(AmbientLight {
             color: Color::WHITE,
-            ..default()
-        },
+            brightness: 0.62,
+        });
+    
+        // camera
+        commands
+            .spawn(Camera3dBundle {
+                transform: Transform::from_xyz(20.0, 162.5, 20.0)
+                    .looking_at(Vec3::new(900.0, 0.0, 900.0), Vec3::Y),
+                ..default()
+            })
+            .insert(TerrainViewer::default())
+            .insert(ShadowFilteringMethod::Jimenez14);
 
-        ..default()
-    });
-    // light
-    commands.spawn(PointLightBundle {
-        point_light: PointLight {
-            intensity: 1500.0,
-            shadows_enabled: true,
+            
 
-            shadow_depth_bias: 0.5,
-            shadow_normal_bias: 0.5,
-
-            color: Color::WHITE,
-            ..default()
-        },
-        transform: Transform::from_xyz(4.0, 800.0, 4.0),
-        ..default()
-    });
-
-    commands.insert_resource(AmbientLight {
-        color: Color::WHITE,
-        brightness: 0.12,
-    });
-
-    // camera
-    commands
-        .spawn(Camera3dBundle {
-            transform: Transform::from_xyz(20.0, 162.5, 20.0)
-                .looking_at(Vec3::new(900.0, 0.0, 900.0), Vec3::Y),
-            ..default()
-        })
-        .insert(TerrainViewer::default())
-        .insert(ShadowFilteringMethod::Jimenez14);
+        
 }
 
 fn update_camera_look(
@@ -76,14 +83,16 @@ fn update_camera_look(
 ) {
     const MOUSE_SENSITIVITY: f32 = 2.0;
 
-    if !mouse_input.pressed(MouseButton::Left) {
-        return;
-    }
+   
 
     // Accumulate mouse delta
     let mut delta: Vec2 = Vec2::ZERO;
     for event in event_reader.read() {
         delta += event.delta;
+    }
+
+    if !mouse_input.pressed(MouseButton::Left) {
+        return;
     }
 
     // Apply to each camera with the CameraTag

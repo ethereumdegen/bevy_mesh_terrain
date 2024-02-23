@@ -89,7 +89,7 @@ fn fragment(
 ) -> @location(0) vec4<f32> {
     
    
-   // let tiled_uv = material.color_texture_expansion_factor*mesh.uv;  //cannot get this binding to work !? 
+    //let tiled_uv = chunk_uniforms.color_texture_expansion_factor*mesh.uv;  //cannot get this binding to work !? 
     let tiled_uv = 8.0*mesh.uv;
     
     

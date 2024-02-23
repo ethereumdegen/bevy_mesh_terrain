@@ -4,6 +4,10 @@ use bevy::render::render_resource::PrimitiveTopology::TriangleList;
 
 use crate::heightmap::SubHeightMapU16;
 
+
+
+const THRESHOLD: u16 = (0.0001 * 65535.0) as u16;
+
 pub struct PreMesh {
     positions: Vec<[f32; 3]>,
     uvs: Vec<[f32; 2]>,
@@ -85,6 +89,8 @@ impl PreMesh {
         mesh
     }
 
+
+
     /*
 
     Could improve this so that NO MATTER WHAT lod level, the edges are never decimated at all and always full resolution.  Only decimate the middle. (interim fix for stitching) .
@@ -123,6 +129,9 @@ impl PreMesh {
 
         let width_scale = 1.0;
 
+        //tris completely below this will be skipped 
+        let scaled_min_threshold = (THRESHOLD as f32) * height_scale;
+
         //there is a weird bug where there are gaps in betweeen each chunk ...
         for x in (0..tex_dim_x as usize).step_by(step_size) {
             for y in (0..tex_dim_y as usize).step_by(step_size) {
@@ -148,6 +157,18 @@ impl PreMesh {
                     }
                     false => (0.0, 0.0, 0.0, 0.0),
                 };
+
+                //if the triangle would be completely under the threshold, 
+                //do not add it to the mesh at all.  This makes a hole for collision
+                //since this mesh is used to generate the collider 
+                if lb < scaled_min_threshold && lf < scaled_min_threshold &&
+                rb < scaled_min_threshold && rf < scaled_min_threshold {
+
+                   continue;
+                }
+
+
+                
 
                 /* let lb = height_data[x][y] as f32 * height_scale;
                 let lf = height_data[x][y + step_size] as f32 * height_scale;
