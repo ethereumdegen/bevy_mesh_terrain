@@ -6,22 +6,20 @@ use bevy::asset::LoadState;
 use bevy::prelude::*;
 use bevy::render::render_asset::RenderAssetUsages;
 use bevy::render::render_resource::{Extent3d, TextureDimension, TextureFormat};
-use bevy::tasks::{ComputeTaskPool, AsyncComputeTaskPool, Task};
+use bevy::tasks::{AsyncComputeTaskPool, ComputeTaskPool, Task};
 
 use bevy::utils::HashMap;
 use futures_lite::future;
-use image::{GrayImage, Luma, RgbaImage, ImageBuffer};
+use image::{GrayImage, ImageBuffer, Luma, RgbaImage};
 
 use crate::heightmap::{HeightMap, HeightMapU16, SubHeightMapU16};
 use crate::pre_mesh::PreMesh;
 use crate::terrain::{TerrainData, TerrainImageDataLoadStatus, TerrainViewer};
 use crate::terrain_config::TerrainConfig;
 use crate::terrain_material::{ChunkMaterialUniforms, TerrainMaterial};
- 
+
 use bevy::pbr::ExtendedMaterial;
 use bevy::pbr::OpaqueRendererMethod;
-     
-
 
 use std::fs;
 
@@ -50,7 +48,7 @@ pub struct ChunkHeightMapResource {
     pub chunk_height_maps: HashMap<u32, SubHeightMapU16>, // Keyed by chunk id
 }
 
-pub type TerrainMaterialExtension = ExtendedMaterial<StandardMaterial,TerrainMaterial>;
+pub type TerrainMaterialExtension = ExtendedMaterial<StandardMaterial, TerrainMaterial>;
 
 #[derive(Component)]
 pub struct ChunkData {
@@ -80,10 +78,8 @@ impl ChunkData {
 
     pub fn get_alpha_mask_texture_image(&self) -> &Option<Handle<Image>> {
         &self.alpha_mask_image_handle
-    } 
+    }
 }
-
-
 
 pub type TerrainPbrBundle = MaterialMeshBundle<TerrainMaterialExtension>;
 
@@ -99,15 +95,12 @@ pub struct BuiltChunkMeshData {
     lod_level: u8,
 }
 
+#[derive(Component)]
+pub struct TerrainChunkMesh {}
 
 #[derive(Component)]
-pub struct TerrainChunkMesh {
-
-}
-
-#[derive(Component)]
-pub struct CachedHeightmapData{
-    pub heightmap_data: Vec<Vec<u16>>
+pub struct CachedHeightmapData {
+    pub heightmap_data: Vec<Vec<u16>>,
 }
 
 pub trait ChunkCoordinates {
@@ -259,8 +252,6 @@ pub fn initialize_chunk_data(
     mut chunk_query: Query<(Entity, &Chunk, &Parent), Without<ChunkData>>,
 
     terrain_query: Query<(&TerrainConfig, &TerrainData)>,
-
-
 ) {
     for (chunk_entity, chunk, terrain_entity) in chunk_query.iter_mut() {
         let terrain_entity_id = terrain_entity.get();
@@ -274,17 +265,16 @@ pub fn initialize_chunk_data(
         //default_terrain/diffuse
         let height_texture_folder_path = &terrain_config.height_folder_path;
         let height_texture_path = format!("{}/{}.png", height_texture_folder_path, chunk_id);
-       println!("loading from {}",height_texture_path);
-        
-          let height_map_image_handle: Handle<Image> = asset_server.load(height_texture_path);
+        println!("loading from {}", height_texture_path);
+
+        let height_map_image_handle: Handle<Image> = asset_server.load(height_texture_path);
 
         //default_terrain/splat
         let splat_texture_folder_path = &terrain_config.splat_folder_path;
         let splat_texture_path = format!("{}/{}.png", splat_texture_folder_path, chunk_id);
-        println!("loading from {}",splat_texture_path);
-        
-        let splat_image_handle: Handle<Image> = asset_server.load(splat_texture_path);
+        println!("loading from {}", splat_texture_path);
 
+        let splat_image_handle: Handle<Image> = asset_server.load(splat_texture_path);
 
         let chunk_data_component = ChunkData {
             chunk_state: ChunkState::Init,
@@ -298,7 +288,7 @@ pub fn initialize_chunk_data(
             alpha_mask_image_handle: None, //gets set later
             material_handle: None,         //gets set later
         };
-        
+
         commands
             .get_entity(chunk_entity)
             .unwrap()
@@ -308,7 +298,7 @@ pub fn initialize_chunk_data(
 
 /*
 
-Have to do this hack since bevy is not correctly detecting the format 
+Have to do this hack since bevy is not correctly detecting the format
 
 */
 
@@ -316,45 +306,32 @@ pub fn update_splat_image_formats(
     mut ev_asset: EventReader<AssetEvent<Image>>,
     mut images: ResMut<Assets<Image>>,
 
-
-    mut chunk_query: Query<(Entity, &Chunk, &ChunkData) >,
-
-){
-
+    mut chunk_query: Query<(Entity, &Chunk, &ChunkData)>,
+) {
     for ev in ev_asset.read() {
         match ev {
-            AssetEvent::LoadedWithDependencies { id  } => {
-                
-                let mut image_is_splat = false; 
+            AssetEvent::LoadedWithDependencies { id } => {
+                let mut image_is_splat = false;
 
                 let handle = Handle::Weak(*id);
 
-                for (entity,chunk,chunk_data) in chunk_query.iter(){
+                for (entity, chunk, chunk_data) in chunk_query.iter() {
                     if chunk_data.splat_image_handle == Some(handle.clone()) {
                         image_is_splat = true
                     }
                 }
 
                 if image_is_splat {
-
                     let img = images.get_mut(handle).unwrap();
-                    println!("splat image format is {:?}", img.texture_descriptor.format );
+                    println!("splat image format is {:?}", img.texture_descriptor.format);
                     img.texture_descriptor.format = TextureFormat::Rgba8Unorm;
+                }
+            }
 
-                }  
-            }
-           
-            _ => {
-                
-            }
+            _ => {}
         }
-    } 
-
-
-
-
+    }
 }
-
 
 pub fn reset_chunk_height_data(
     mut commands: Commands,
@@ -482,7 +459,7 @@ pub fn build_alpha_mask_image_from_height_data(height_map_data: &Vec<Vec<u16>>) 
         dimension,
         modified_data,
         TextureFormat::R32Float,
-        RenderAssetUsages::default()
+        RenderAssetUsages::default(),
     )
 }
 /*
@@ -535,7 +512,6 @@ pub fn build_chunk_meshes(
 ) {
     for (chunk_entity, chunk, mut chunk_data, terrain_entity, visibility) in chunk_query.iter_mut()
     {
-        
         if chunk_data.chunk_state == ChunkState::Init {
             let terrain_entity_id = terrain_entity.get();
             if terrain_query.get(terrain_entity_id).is_ok() == false {
@@ -543,8 +519,7 @@ pub fn build_chunk_meshes(
             }
             let (terrain_config, terrain_data) = terrain_query.get(terrain_entity_id).unwrap();
 
-
-        println!("build chunk mesh 2  ");
+            println!("build chunk mesh 2  ");
 
             let height_map_data = chunk_height_maps.chunk_height_maps.get(&chunk.chunk_id); // &chunk_data.height_map_data.clone();
 
@@ -625,12 +600,12 @@ pub fn build_chunk_meshes(
                     final_vec.push(chunk_height_data.0[0][i]);
                 }
                 stitch_data_x_row = Some(final_vec);
-            }else{
+            } else {
                 let mut final_vec = Vec::new();
                 for i in 0..chunk_dimensions.x() as usize {
                     final_vec.push(0);
                 }
-               
+
                 stitch_data_x_row = Some(final_vec);
             }
 
@@ -642,32 +617,29 @@ pub fn build_chunk_meshes(
                 for i in 0..chunk_dimensions.y() as usize {
                     final_vec.push(chunk_height_data.0[i][0]);
                 }
-                  final_vec.push(0); // the corner corner --gotta fix me some how ?? - try to read diag chunk 
+                final_vec.push(0); // the corner corner --gotta fix me some how ?? - try to read diag chunk
                 stitch_data_y_col = Some(final_vec);
-            }else{
+            } else {
                 let mut final_vec = Vec::new();
                 for i in 0..chunk_dimensions.y() as usize {
                     final_vec.push(0);
                 }
-                final_vec.push(0);  // the corner corner --gotta fix me some how ?? - try to read diag chunk 
-               
+                final_vec.push(0); // the corner corner --gotta fix me some how ?? - try to read diag chunk
+
                 stitch_data_y_col = Some(final_vec);
             }
 
-            //for now, add the unstitched data.. 
-            commands.entity(chunk_entity).insert(
-                CachedHeightmapData {
-                    heightmap_data: height_map_data_cloned.clone()
-                }
-            );  
+            //for now, add the unstitched data..
+            commands.entity(chunk_entity).insert(CachedHeightmapData {
+                heightmap_data: height_map_data_cloned.clone(),
+            });
 
-                //these three LOC really take no time at all 
+            //these three LOC really take no time at all
             let mut sub_heightmap = SubHeightMapU16(height_map_data_cloned);
 
-            
             stitch_data_x_row.map(|x_row| sub_heightmap.append_x_row(x_row));
             stitch_data_y_col.map(|y_col| sub_heightmap.append_y_col(y_col));
-           
+
             /*
             commands.entity(chunk_entity).insert(
                 CachedHeightmapData {
@@ -675,15 +647,10 @@ pub fn build_chunk_meshes(
                 }
             );  */
 
-            // This is not right for some of the edge chunks -- their 
-
-
-
-
+            // This is not right for some of the edge chunks -- their
 
             let task = thread_pool.spawn(async move {
                 println!("trying to build premesh");
-                
 
                 //we add the +1 for stitching data
                 let sub_texture_dim = [
@@ -730,12 +697,11 @@ pub fn finish_chunk_build_tasks(
     mut terrain_materials: ResMut<Assets<TerrainMaterialExtension>>,
 ) {
     //chunk, mut chunk_data,  terrain_entity,
-      
+
     for (entity, mut task) in &mut chunk_build_tasks {
-     
         if let Some(built_chunk_mesh_data) = future::block_on(future::poll_once(&mut task.0)) {
             // Add our new PbrBundle of components to our tagged entity
-          
+
             let chunk_entity_id = built_chunk_mesh_data.chunk_entity_id;
 
             if chunk_query.get_mut(chunk_entity_id).is_ok() == false {
@@ -763,60 +729,55 @@ pub fn finish_chunk_build_tasks(
 
             let (terrain_data, terrain_config) = terrain_query.get(terrain_entity_id).unwrap();
 
-            
             let array_texture = terrain_data.get_array_texture_image().clone();
 
             let splat_texture = chunk_data.get_splat_texture_image().clone();
             let alpha_mask_texture = chunk_data.get_alpha_mask_texture_image().clone();
 
             let chunk_terrain_material: Handle<TerrainMaterialExtension> =
-                terrain_materials.add(
-                    ExtendedMaterial {
-                        base: StandardMaterial {
-                           
-                            // can be used in forward or deferred mode.
-                            opaque_render_method: OpaqueRendererMethod::Auto,
-                            alpha_mode: AlphaMode::Mask(0.1),
+                terrain_materials.add(ExtendedMaterial {
+                    base: StandardMaterial {
+                        // can be used in forward or deferred mode.
+                        opaque_render_method: OpaqueRendererMethod::Auto,
+                        alpha_mode: AlphaMode::Mask(0.1),
 
-                           reflectance: 0.0,
-                           perceptual_roughness: 0.9,
-                           specular_transmission: 0.1,
-                        
-                            // in deferred mode, only the PbrInput can be modified (uvs, color and other material properties),
-                            // in forward mode, the output can also be modified after lighting is applied.
-                            // see the fragment shader `extended_material.wgsl` for more info.
-                            // Note: to run in deferred mode, you must also add a `DeferredPrepass` component to the camera and either
-                            // change the above to `OpaqueRendererMethod::Deferred` or add the `DefaultOpaqueRendererMethod` resource.
-                            ..Default::default()
-                        },
-                        extension: TerrainMaterial {
-                            uniforms: ChunkMaterialUniforms {
-                                color_texture_expansion_factor: 32.0, //why wont this apply to shader properly ?
-                                chunk_uv,
-                            },
-                            array_texture: array_texture.clone(),
-                            splat_texture: splat_texture.clone(),
-                            alpha_mask_texture: alpha_mask_texture.clone(),
-                            ..default()
-                        },
-                    }
-                );
-                    
-                    
-                    /*TerrainMaterial {
-                    base_color_texture:None,
-                    emissive_texture:None,
-                    metallic_roughness_texture:None,
-                    occlusion_texture: None,
-                    uniforms: ChunkMaterialUniforms {
-                        color_texture_expansion_factor: 32.0, //why wont this apply to shader properly ?
-                        chunk_uv,
+                        reflectance: 0.0,
+                        perceptual_roughness: 0.9,
+                        specular_transmission: 0.1,
+
+                        // in deferred mode, only the PbrInput can be modified (uvs, color and other material properties),
+                        // in forward mode, the output can also be modified after lighting is applied.
+                        // see the fragment shader `extended_material.wgsl` for more info.
+                        // Note: to run in deferred mode, you must also add a `DeferredPrepass` component to the camera and either
+                        // change the above to `OpaqueRendererMethod::Deferred` or add the `DefaultOpaqueRendererMethod` resource.
+                        ..Default::default()
                     },
+                    extension: TerrainMaterial {
+                        uniforms: ChunkMaterialUniforms {
+                            color_texture_expansion_factor: 32.0, //why wont this apply to shader properly ?
+                            chunk_uv,
+                        },
+                        array_texture: array_texture.clone(),
+                        splat_texture: splat_texture.clone(),
+                        alpha_mask_texture: alpha_mask_texture.clone(),
+                        ..default()
+                    },
+                });
 
-                    array_texture: array_texture.clone(),
-                    splat_texture: splat_texture.clone(),
-                    alpha_mask_texture: alpha_mask_texture.clone(),
-                });*/
+            /*TerrainMaterial {
+                base_color_texture:None,
+                emissive_texture:None,
+                metallic_roughness_texture:None,
+                occlusion_texture: None,
+                uniforms: ChunkMaterialUniforms {
+                    color_texture_expansion_factor: 32.0, //why wont this apply to shader properly ?
+                    chunk_uv,
+                },
+
+                array_texture: array_texture.clone(),
+                splat_texture: splat_texture.clone(),
+                alpha_mask_texture: alpha_mask_texture.clone(),
+            });*/
 
             let terrain_mesh_handle = meshes.add(mesh);
 
@@ -828,11 +789,10 @@ pub fn finish_chunk_build_tasks(
 
                     ..default()
                 })
-                .insert(TerrainChunkMesh{})
+                .insert(TerrainChunkMesh {})
                 .id();
 
             chunk_data.material_handle = Some(chunk_terrain_material);
- 
 
             let mut chunk_entity_commands = commands.get_entity(chunk_entity_id).unwrap();
             chunk_entity_commands.add_child(mesh_bundle);
@@ -855,7 +815,7 @@ pub fn update_chunk_visibility(
         &Parent,
         &GlobalTransform,
         &mut Visibility,
-  )>,  
+    )>,
 
     terrain_viewer: Query<&GlobalTransform, With<TerrainViewer>>,
 ) {
@@ -897,29 +857,22 @@ pub fn update_chunk_visibility(
             let max_render_distance = terrain_config.get_max_render_distance();
 
             let should_be_visible = distance_to_chunk <= max_render_distance;
-           
+
             *chunk_visibility = match should_be_visible {
                 true => Visibility::Visible,
                 false => Visibility::Hidden,
             };
- }
-  
+        }
+    }
 }
 
-
-
-}
-
-
- 
-
-// outputs as R16 grayscale 
+// outputs as R16 grayscale
 pub fn save_chunk_height_map_to_disk(
-    chunk_height_data: &SubHeightMapU16,  // Adjusted for direct Vec<Vec<u16>> input
+    chunk_height_data: &SubHeightMapU16, // Adjusted for direct Vec<Vec<u16>> input
     save_file_path: String,
 ) {
-      let chunk_height_data = chunk_height_data.0.clone();
-      
+    let chunk_height_data = chunk_height_data.0.clone();
+
     // Assuming chunk_height_data is a Vec<Vec<u16>>
     let height = chunk_height_data.len();
     let width = chunk_height_data.first().map_or(0, |row| row.len());
@@ -938,62 +891,50 @@ pub fn save_chunk_height_map_to_disk(
     // Flatten the Vec<Vec<u16>> to a Vec<u8> for the PNG encoder
     let mut buffer: Vec<u8> = Vec::with_capacity(width * height * 2);
     for row in chunk_height_data {
-        for  value in row {
+        for value in row {
             buffer.extend_from_slice(&value.to_be_bytes()); // Ensure big-endian byte order
         }
     }
 
     // Write the image data
-    writer.write_image_data(&buffer).expect("Failed to write PNG data");
+    writer
+        .write_image_data(&buffer)
+        .expect("Failed to write PNG data");
 }
 
-
-pub fn save_chunk_splat_map_to_disk( 
-   
-      splat_image: & Image ,      
-      save_file_path: String 
-){
-    
+pub fn save_chunk_splat_map_to_disk(splat_image: &Image, save_file_path: String) {
     // Attempt to find the image in the Assets<Image> collection
-    
-        // Assuming the image format is Rgba8, which is common for splat maps
-          let  image_data  = &splat_image.data ;
-            // Create an image buffer from the raw image data
-            let format = splat_image.texture_descriptor.format;
-            let width = splat_image.texture_descriptor.size.width;
-            let height = splat_image.texture_descriptor.size.height;
 
-            // Ensure the format is Rgba8 or adapt this code block for other formats
-            if format == TextureFormat::Rgba8Unorm
-                || format == TextureFormat::Rgba8UnormSrgb
-             //   || format == TextureFormat::Rgba16Unorm
-            {
-                // The data in Bevy's Image type is stored in a Vec<u8>, so we can use it directly
-                let img: RgbaImage = ImageBuffer::from_raw(width, height, image_data.clone()).expect("Failed to create image buffer");
+    // Assuming the image format is Rgba8, which is common for splat maps
+    let image_data = &splat_image.data;
+    // Create an image buffer from the raw image data
+    let format = splat_image.texture_descriptor.format;
+    let width = splat_image.texture_descriptor.size.width;
+    let height = splat_image.texture_descriptor.size.height;
 
-                // Save the image to the specified file path
-                img.save(&save_file_path).expect("Failed to save splat map");
+    // Ensure the format is Rgba8 or adapt this code block for other formats
+    if format == TextureFormat::Rgba8Unorm || format == TextureFormat::Rgba8UnormSrgb
+    //   || format == TextureFormat::Rgba16Unorm
+    {
+        // The data in Bevy's Image type is stored in a Vec<u8>, so we can use it directly
+        let img: RgbaImage = ImageBuffer::from_raw(width, height, image_data.clone())
+            .expect("Failed to create image buffer");
 
-                println!("saved splat image {:?}", save_file_path.clone() );
-                
-            } else {
-                eprintln!("Unsupported image format for saving: {:?}", format);
-            }
-         
-    
-    
+        // Save the image to the specified file path
+        img.save(&save_file_path).expect("Failed to save splat map");
+
+        println!("saved splat image {:?}", save_file_path.clone());
+    } else {
+        eprintln!("Unsupported image format for saving: {:?}", format);
+    }
 }
-
 
 pub fn save_chunk_collision_data_to_disk(
     serialized_collision_data: Vec<u8>,
-    save_file_path: String    
-){
-     
-    
-      match fs::write(save_file_path, serialized_collision_data) {
+    save_file_path: String,
+) {
+    match fs::write(save_file_path, serialized_collision_data) {
         Ok(_) => println!("Successfully saved collision data to file."),
         Err(e) => println!("Failed to save to file: {}", e),
     }
-    
 }

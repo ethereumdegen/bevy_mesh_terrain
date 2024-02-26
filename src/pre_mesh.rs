@@ -22,44 +22,43 @@ impl PreMesh {
         }
     }
 
+    fn calculate_smooth_normals(&mut self) {
+        let mut vertex_normals_accum: Vec<[f32; 3]> = vec![[0.0, 0.0, 0.0]; self.positions.len()];
 
-  fn calculate_smooth_normals(&mut self) {
-    let mut vertex_normals_accum: Vec<[f32; 3]> = vec![[0.0, 0.0, 0.0]; self.positions.len()];
+        // Step 1: Calculate face normals and accumulate them for each vertex
+        for i in (0..self.indices.len()).step_by(3) {
+            let idx0 = self.indices[i] as usize;
+            let idx1 = self.indices[i + 1] as usize;
+            let idx2 = self.indices[i + 2] as usize;
 
-    // Step 1: Calculate face normals and accumulate them for each vertex
-    for i in (0..self.indices.len()).step_by(3) {
-        let idx0 = self.indices[i] as usize;
-        let idx1 = self.indices[i + 1] as usize;
-        let idx2 = self.indices[i + 2] as usize;
+            let v0 = self.positions[idx0];
+            let v1 = self.positions[idx1];
+            let v2 = self.positions[idx2];
 
-        let v0 = self.positions[idx0];
-        let v1 = self.positions[idx1];
-        let v2 = self.positions[idx2];
+            let normal = compute_normal(v0, v1, v2);
 
-        let normal = compute_normal(v0, v1, v2);
-
-        // Step 2: Accumulate normals for each vertex of the face
-        for &idx in &[idx0, idx1, idx2] {
-            vertex_normals_accum[idx][0] += normal[0];
-            vertex_normals_accum[idx][1] += normal[1];
-            vertex_normals_accum[idx][2] += normal[2];
+            // Step 2: Accumulate normals for each vertex of the face
+            for &idx in &[idx0, idx1, idx2] {
+                vertex_normals_accum[idx][0] += normal[0];
+                vertex_normals_accum[idx][1] += normal[1];
+                vertex_normals_accum[idx][2] += normal[2];
+            }
         }
-    }
 
-    // Step 3: Normalize accumulated normals to average them
-    for normal in vertex_normals_accum.iter_mut() {
-        let len = f32::sqrt(normal[0] * normal[0] + normal[1] * normal[1] + normal[2] * normal[2]);
-        if len > 0.0 {
-            normal[0] /= len;
-            normal[1] /= len;
-            normal[2] /= len;
+        // Step 3: Normalize accumulated normals to average them
+        for normal in vertex_normals_accum.iter_mut() {
+            let len =
+                f32::sqrt(normal[0] * normal[0] + normal[1] * normal[1] + normal[2] * normal[2]);
+            if len > 0.0 {
+                normal[0] /= len;
+                normal[1] /= len;
+                normal[2] /= len;
+            }
         }
+
+        // Step 4: Assign averaged normals to the mesh
+        self.normals = vertex_normals_accum;
     }
-
-    // Step 4: Assign averaged normals to the mesh
-    self.normals = vertex_normals_accum;
-}
-
 
     fn add_triangle(&mut self, positions: [[f32; 3]; 3], uvs: [[f32; 2]; 3]) {
         // Add vertices and indices
@@ -72,7 +71,7 @@ impl PreMesh {
             .extend(&[start_idx, start_idx + 1, start_idx + 2]);
 
         //stubbed in for now ...
-       // let normal = compute_normal(positions[0], positions[1], positions[2]);
+        // let normal = compute_normal(positions[0], positions[1], positions[2]);
         //self.normals.extend([normal, normal, normal]);
 
         self.uvs.extend(uvs);
@@ -182,24 +181,20 @@ impl PreMesh {
     }
 }
 
- 
- 
-
 fn compute_normal(v0: [f32; 3], v1: [f32; 3], v2: [f32; 3]) -> [f32; 3] {
     let edge1 = [v1[0] - v0[0], v1[1] - v0[1], v1[2] - v0[2]];
     let edge2 = [v2[0] - v0[0], v2[1] - v0[1], v2[2] - v0[2]];
 
     // Cross product
-    let normal =  [
+    let normal = [
         edge1[1] * edge2[2] - edge1[2] * edge2[1],
         edge1[2] * edge2[0] - edge1[0] * edge2[2],
-        edge1[0] * edge2[1] - edge1[1] * edge2[0], 
-       
+        edge1[0] * edge2[1] - edge1[1] * edge2[0],
     ];
 
-   // normal
-     
-    [normal[0], normal[1], normal[2]]  //is this busted ? 
+    // normal
+
+    [normal[0], normal[1], normal[2]] //is this busted ?
 }
 
 //is this right !!??
@@ -226,4 +221,3 @@ fn compute_uv(x: f32, y: f32, bounds: [[f32; 2]; 2], texture_dimensions: [f32; 2
 
     uv
 }
-

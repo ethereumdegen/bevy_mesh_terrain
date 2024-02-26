@@ -126,7 +126,6 @@ pub fn load_terrain_texture_from_image(
     mut terrain_query: Query<(&mut TerrainData, &TerrainConfig)>,
     asset_server: Res<AssetServer>,
     mut images: ResMut<Assets<Image>>,
-
     //  materials: Res <Assets<TerrainMaterialExtension>>,
 ) {
     for (mut terrain_data, terrain_config) in terrain_query.iter_mut() {
