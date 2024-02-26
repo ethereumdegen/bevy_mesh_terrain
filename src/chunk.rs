@@ -519,7 +519,7 @@ pub fn build_chunk_meshes(
             }
             let (terrain_config, terrain_data) = terrain_query.get(terrain_entity_id).unwrap();
 
-            println!("build chunk mesh 2  ");
+          
 
             let height_map_data = chunk_height_maps.chunk_height_maps.get(&chunk.chunk_id); // &chunk_data.height_map_data.clone();
 
@@ -538,11 +538,13 @@ pub fn build_chunk_meshes(
                 continue;
             }
 
-            println!("build chunk mesh 3  ");
             if visibility != Visibility::Visible {
                 //do not do the intensive calculations to build a chunk mesh until it is 'visible' -- this speeds up initial map loading
                 continue;
             }
+
+
+            println!("build chunk mesh {:?}  ", chunk_entity);
 
             chunk_data.chunk_state = ChunkState::Building;
 
@@ -754,7 +756,7 @@ pub fn finish_chunk_build_tasks(
                     },
                     extension: TerrainMaterial {
                         uniforms: ChunkMaterialUniforms {
-                            color_texture_expansion_factor: 32.0, //why wont this apply to shader properly ?
+                            color_texture_expansion_factor: 8.0, //why wont this apply to shader properly ?
                             chunk_uv,
                         },
                         array_texture: array_texture.clone(),

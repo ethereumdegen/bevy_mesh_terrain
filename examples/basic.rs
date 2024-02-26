@@ -38,6 +38,18 @@ fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
         ..default()
     });
     // light
+    commands.spawn(DirectionalLightBundle {
+        directional_light: DirectionalLight {
+            shadow_depth_bias: 0.5,
+            shadow_normal_bias: 0.5,
+
+            color: Color::WHITE,
+            ..default()
+        },
+
+        ..default()
+    });
+    // light
     commands.spawn(PointLightBundle {
         point_light: PointLight {
             intensity: 1500.0,
@@ -71,19 +83,21 @@ fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
 
 fn update_camera_look(
     mut event_reader: EventReader<MouseMotion>,
-    mouse_input: Res<Input<MouseButton>>,
+    mouse_input: Res<ButtonInput<MouseButton>>,
     mut query: Query<(&mut Transform, &Camera3d)>,
 ) {
     const MOUSE_SENSITIVITY: f32 = 2.0;
 
-    if !mouse_input.pressed(MouseButton::Left) {
-        return;
-    }
+   
 
     // Accumulate mouse delta
     let mut delta: Vec2 = Vec2::ZERO;
     for event in event_reader.read() {
         delta += event.delta;
+    }
+
+    if !mouse_input.pressed(MouseButton::Left) {
+        return;
     }
 
     // Apply to each camera with the CameraTag
@@ -101,7 +115,7 @@ fn update_camera_look(
 }
 
 fn update_camera_move(
-    keyboard_input: Res<Input<KeyCode>>,
+    keyboard_input: Res<ButtonInput<KeyCode>>,
     mut query: Query<(&mut Transform, &Camera3d)>,
 ) {
     const MOVE_SPEED: f32 = 10.0; // You can adjust this value as needed
@@ -109,12 +123,12 @@ fn update_camera_move(
     // Apply to each camera with the CameraTag
     for (mut transform, _) in query.iter_mut() {
         // Move the camera forward if W is pressed
-        if keyboard_input.pressed(KeyCode::W) {
+        if keyboard_input.pressed(KeyCode::KeyW) {
             let forward = transform.forward();
             transform.translation += forward * MOVE_SPEED;
         }
 
-        if keyboard_input.pressed(KeyCode::S) {
+        if keyboard_input.pressed(KeyCode::KeyS) {
             let forward = transform.forward();
             transform.translation -= forward * MOVE_SPEED;
         }
