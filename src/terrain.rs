@@ -79,8 +79,11 @@ pub fn initialize_terrain(
                 let chunk_coords = ChunkCoords::from_chunk_id(chunk_id, terrain_config.chunk_rows); // [ chunk_id / terrain_config.chunk_rows ,  chunk_id  % terrain_config.chunk_rows];
                 let chunk_dimensions = terrain_config.get_chunk_dimensions();
 
+                let chunk_name = format!("Chunk {:?}", chunk_id);
+
                 let chunk_entity = commands
                     .spawn(Chunk::new(chunk_id))
+                    .insert(Name::new(chunk_name))
                     .insert(SpatialBundle {
                         transform: Transform::from_xyz(
                             chunk_coords.x() as f32 * chunk_dimensions.x,
