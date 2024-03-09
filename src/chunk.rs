@@ -538,7 +538,7 @@ pub fn build_chunk_meshes(
                 continue;
             }
 
-            if visibility != Visibility::Visible {
+            if visibility == Visibility::Hidden {
                 //do not do the intensive calculations to build a chunk mesh until it is 'visible' -- this speeds up initial map loading
                 continue;
             }
@@ -861,7 +861,7 @@ pub fn update_chunk_visibility(
             let should_be_visible = distance_to_chunk <= max_render_distance;
 
             *chunk_visibility = match should_be_visible {
-                true => Visibility::Visible,
+                true => Visibility::Inherited,
                 false => Visibility::Hidden,
             };
         }
