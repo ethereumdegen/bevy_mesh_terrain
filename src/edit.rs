@@ -12,6 +12,7 @@ use bevy::render::texture::Image;
 
 use bevy::prelude::*;
 
+use crate::pre_mesh::PreMesh;
 use crate::TerrainMaterialExtension;
 use core::fmt::{self, Display, Formatter};
 
@@ -22,6 +23,9 @@ use crate::chunk::{
 use crate::terrain::{TerrainData, TerrainImageDataLoadStatus};
 use crate::terrain_config::TerrainConfig;
 use crate::terrain_material::TerrainMaterial;
+
+use crate::heightmap::SubHeightMapU16;
+
 
 use bevy_xpbd_3d::prelude::Collider;
 
@@ -140,11 +144,37 @@ pub fn apply_command_events(
                             if let Ok((entity, mesh_handle, mesh_transform)) =
                                 chunk_mesh_query.get(chunk_child.clone())
                             {
-                                let mesh = meshes
+                               /* let mesh = meshes
                                     .get(mesh_handle)
-                                    .expect("No mesh found for terrain chunk");
+                                    .expect("No mesh found for terrain chunk");*/
 
-                                let collider = Collider::trimesh_from_mesh(mesh)
+                                let lod_level = 1;   // can customize lod level of colliders here 
+
+                            let chunk_rows = terrain_config.chunk_rows;
+                            let terrain_dimensions = terrain_config.terrain_dimensions;
+
+                                  let height_scale = terrain_config.height_scale;
+                                    let sub_texture_dim = [
+                                        terrain_dimensions.x / chunk_rows as f32 + 1.0,
+                                        terrain_dimensions.y / chunk_rows as f32 + 1.0,
+                                    ];
+
+                                   
+
+
+                               let height_map_data = chunk_height_maps.chunk_height_maps.get(&chunk.chunk_id); // &chunk_data.height_map_data.clone();
+                               let height_map_data_cloned = (&height_map_data.as_ref().unwrap().0).clone();
+                                  let mut sub_heightmap = SubHeightMapU16(height_map_data_cloned);
+
+                                let mesh = PreMesh::from_heightmap_subsection(
+                                    &sub_heightmap,
+                                    height_scale,
+                                    lod_level,
+                                    sub_texture_dim,
+                                )
+                                .build();
+
+                                let collider = Collider::trimesh_from_mesh(&mesh)
                                     .expect("Failed to create collider from mesh");
 
                                 let collider_data_serialized =

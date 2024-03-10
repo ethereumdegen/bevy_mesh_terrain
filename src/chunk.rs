@@ -522,7 +522,7 @@ pub fn build_chunk_meshes(
           
 
             let height_map_data = chunk_height_maps.chunk_height_maps.get(&chunk.chunk_id); // &chunk_data.height_map_data.clone();
-
+ 
             if height_map_data.is_none() {
                 println!("chunk is missing height map data .");
                 continue;
