@@ -223,7 +223,7 @@ impl PreMesh {
         
         let mut premesh = Self::new();
 
-        let step_size = 1 << lod_level; // doubles the step for each LOD level using bit shifting
+        let step_size = 1 << 2; // doubles the step for each LOD level using bit shifting
 
         let height_data = &sub_heightmap.0;
         //  let start_bound: Vec<usize> = vec![0, 0];
@@ -249,7 +249,7 @@ impl PreMesh {
         //tris completely below this will be skipped 
         let scaled_min_threshold = (THRESHOLD as f32) * height_scale;
 
-          let similarity_threshold = scaled_min_threshold * 1.0;
+          let similarity_threshold = scaled_min_threshold * 2.0;
 
        
         for x in (0..(tex_dim_x as usize - step_size  ) as usize).step_by(step_size) {
@@ -323,7 +323,7 @@ impl PreMesh {
 
                        
                                 //why does this 2.0 expansion fix the issue !? 
-                        total_step_size = ( (fz - greedy_points_y_start.unwrap())   * 2.0   ) as usize;
+                        total_step_size = ( (fz - greedy_points_y_start.unwrap())   + ( step_size as f32 * width_scale)  ) as usize;
 
                         fz = greedy_points_y_start.unwrap();
                         lb = greedy_height;
