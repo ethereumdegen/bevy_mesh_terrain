@@ -147,7 +147,7 @@ pub fn apply_command_events(
                                     .get(mesh_handle)
                                     .expect("No mesh found for terrain chunk");*/
 
-                                let lod_level = 2;   // can customize lod level of colliders here 
+                                let lod_level = 1;   // can customize lod level of colliders here 
 
                             let chunk_rows = terrain_config.chunk_rows;
                             let terrain_dimensions = terrain_config.terrain_dimensions;
@@ -185,10 +185,9 @@ pub fn apply_command_events(
                                         terrain_dimensions.y / chunk_rows as f32 + 1.0,
                                     ];
 
-                                   
+                                    
 
-
-                                let mesh = PreMesh::from_heightmap_subsection(
+                                let mesh = PreMesh::from_heightmap_subsection_greedy(
                                     &sub_heightmap,
                                     height_scale,
                                     lod_level,
