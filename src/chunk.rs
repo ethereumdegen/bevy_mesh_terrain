@@ -546,7 +546,7 @@ pub fn build_chunk_meshes(
 
             println!("build chunk mesh {:?}  ", chunk_entity);
 
-            chunk_data.chunk_state = ChunkState::Building;
+          
 
             let thread_pool = AsyncComputeTaskPool::get();
 
@@ -578,14 +578,18 @@ pub fn build_chunk_meshes(
 
             //need to add stitching row !
 
-            // this may not be correct ..... 
+            // this may not be correct .....  this breaks for wrap arounds !! 
             let stitch_chunk_id_pos_x = ChunkCoords::new(chunk_coords.x() + 1, chunk_coords.y())
                 .get_chunk_index(chunk_rows);
             let stitch_chunk_id_pos_y = ChunkCoords::new(chunk_coords.x() , chunk_coords.y() + 1)
                 .get_chunk_index(chunk_rows);
 
+                println!("chunk id ... {} {} {} " , chunk_id_clone , stitch_chunk_id_pos_x, stitch_chunk_id_pos_y  );
+
             let stitch_chunk_id_pos_x_y_corner = ChunkCoords::new(chunk_coords.x() + 1, chunk_coords.y() + 1)
                 .get_chunk_index(chunk_rows);
+
+            let max_chunk_id_plus_one = chunk_rows * chunk_rows;
 
             let  stitch_data_x_row: Option<Vec<u16>>  ;
 
@@ -625,6 +629,10 @@ pub fn build_chunk_meshes(
                 }
                 stitch_data_x_row = Some(final_vec);
             } else {
+                println!("WARN no height data for {:?}" , stitch_chunk_id_pos_x);
+
+                if  stitch_chunk_id_pos_x < max_chunk_id_plus_one {continue}; //prevents loading race cond issue with stitching 
+
                 let mut final_vec = Vec::new();
                 for _ in 0..chunk_dimensions.x() as usize {
                     final_vec.push(0);
@@ -647,6 +655,10 @@ pub fn build_chunk_meshes(
                  final_vec.push(  stitch_data_x_y_corner.unwrap_or(0)   ); // the corner corner --gotta fix me some how ?? - try to read diag chunk
                 stitch_data_y_col = Some(final_vec);
             } else {
+                  println!("WARN no height data for {:?}" , stitch_chunk_id_pos_y);
+                     if  stitch_chunk_id_pos_y < max_chunk_id_plus_one {continue};  //prevents loading race cond issue with stitching 
+
+
                 let mut final_vec = Vec::new();
                 for _ in 0..chunk_dimensions.y() as usize {
                     final_vec.push(0);
@@ -656,7 +668,7 @@ pub fn build_chunk_meshes(
                 stitch_data_y_col = Some(final_vec);
             }
 
-          
+             
 
 
             //for now, add the unstitched data..
@@ -678,6 +690,9 @@ pub fn build_chunk_meshes(
             );  */
 
             // This is not right for some of the edge chunks -- their
+
+
+             chunk_data.chunk_state = ChunkState::Building;
 
             let task = thread_pool.spawn(async move {
                 println!("trying to build premesh");
