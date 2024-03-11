@@ -17,8 +17,7 @@ use crate::TerrainMaterialExtension;
 use core::fmt::{self, Display, Formatter};
 
 use crate::chunk::{
-    save_chunk_collision_data_to_disk, save_chunk_height_map_to_disk, save_chunk_splat_map_to_disk,
-    Chunk, ChunkCoordinates, ChunkData, ChunkHeightMapResource,
+    compute_stitch_data, save_chunk_collision_data_to_disk, save_chunk_height_map_to_disk, save_chunk_splat_map_to_disk, Chunk, ChunkCoordinates, ChunkCoords, ChunkData, ChunkHeightMapResource
 };
 use crate::terrain::{TerrainData, TerrainImageDataLoadStatus};
 use crate::terrain_config::TerrainConfig;
@@ -153,6 +152,33 @@ pub fn apply_command_events(
                             let chunk_rows = terrain_config.chunk_rows;
                             let terrain_dimensions = terrain_config.terrain_dimensions;
 
+                                 
+
+
+                               let height_map_data = chunk_height_maps.chunk_height_maps.get(&chunk.chunk_id); // &chunk_data.height_map_data.clone();
+                               let height_map_data_cloned = (&height_map_data.as_ref().unwrap().0).clone();
+                                  let mut sub_heightmap = SubHeightMapU16(height_map_data_cloned);
+
+
+                                    let chunk_id_clone = chunk.chunk_id.clone();
+
+                                    let (stitch_data_x_row, stitch_data_y_col) = compute_stitch_data(
+                                        chunk_id_clone, chunk_rows, terrain_dimensions, &chunk_height_maps.chunk_height_maps
+                                        );
+
+
+                                        if stitch_data_x_row.is_none() || stitch_data_y_col.is_none() {
+                                            return 
+                                        }
+
+                                        stitch_data_x_row.map(|x_row| sub_heightmap.append_x_row(x_row));
+                                        stitch_data_y_col.map(|y_col| sub_heightmap.append_y_col(y_col));
+
+
+
+
+
+
                                   let height_scale = terrain_config.height_scale;
                                     let sub_texture_dim = [
                                         terrain_dimensions.x / chunk_rows as f32 + 1.0,
@@ -161,10 +187,6 @@ pub fn apply_command_events(
 
                                    
 
-
-                               let height_map_data = chunk_height_maps.chunk_height_maps.get(&chunk.chunk_id); // &chunk_data.height_map_data.clone();
-                               let height_map_data_cloned = (&height_map_data.as_ref().unwrap().0).clone();
-                                  let mut sub_heightmap = SubHeightMapU16(height_map_data_cloned);
 
                                 let mesh = PreMesh::from_heightmap_subsection(
                                     &sub_heightmap,

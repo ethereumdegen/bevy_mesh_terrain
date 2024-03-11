@@ -574,102 +574,15 @@ pub fn build_chunk_meshes(
 
             let chunk_id_clone = chunk.chunk_id.clone();
 
-            let chunk_coords = ChunkCoords::from_chunk_id(chunk_id_clone, chunk_rows);
+          //  let chunk_coords = ChunkCoords::from_chunk_id(chunk_id_clone, chunk_rows);
 
-            //need to add stitching row !
+             let (stitch_data_x_row, stitch_data_y_col) = compute_stitch_data(
+                      chunk_id_clone, chunk_rows, terrain_dimensions, &chunk_height_maps.chunk_height_maps
+                   );
 
-            // this may not be correct .....  this breaks for wrap arounds !! 
-            let stitch_chunk_id_pos_x = ChunkCoords::new(chunk_coords.x() + 1, chunk_coords.y())
-                .get_chunk_index(chunk_rows);
-            let stitch_chunk_id_pos_y = ChunkCoords::new(chunk_coords.x() , chunk_coords.y() + 1)
-                .get_chunk_index(chunk_rows);
-
-                println!("chunk id ... {} {} {} " , chunk_id_clone , stitch_chunk_id_pos_x, stitch_chunk_id_pos_y  );
-
-            let stitch_chunk_id_pos_x_y_corner = ChunkCoords::new(chunk_coords.x() + 1, chunk_coords.y() + 1)
-                .get_chunk_index(chunk_rows);
-
-            let max_chunk_id_plus_one = chunk_rows * chunk_rows;
-
-            let  stitch_data_x_row: Option<Vec<u16>>  ;
-
-            let  stitch_data_y_col: Option<Vec<u16>> ;
-
-            let  stitch_data_x_y_corner: Option<u16> ;
-
-            let chunk_dimensions = [
-                terrain_dimensions.x as u32 / chunk_rows,
-                terrain_dimensions.y as u32 / chunk_rows,
-            ];
-
-            println!("build chunk mesh 4 ");
-
-
-              if let Some(chunk_height_data) = chunk_height_maps
-                .chunk_height_maps
-                .get(&stitch_chunk_id_pos_x_y_corner)
-            { 
-               
-                
-                stitch_data_x_y_corner = Some(  chunk_height_data.0[0][0]  );
-            } else {
-                
-                 stitch_data_x_y_corner = Some( 0  );
-            }
-
-
-
-            if let Some(chunk_height_data) = chunk_height_maps
-                .chunk_height_maps
-                .get(&stitch_chunk_id_pos_x)
-            {
-                let mut final_vec = Vec::new();
-                for i in 0..chunk_dimensions.x() as usize {
-                    final_vec.push(chunk_height_data.0[0][i]);
-                }
-                stitch_data_x_row = Some(final_vec);
-            } else {
-                println!("WARN no height data for {:?}" , stitch_chunk_id_pos_x);
-
-                if  stitch_chunk_id_pos_x < max_chunk_id_plus_one {continue}; //prevents loading race cond issue with stitching 
-
-                let mut final_vec = Vec::new();
-                for _ in 0..chunk_dimensions.x() as usize {
-                    final_vec.push(0);
-                }
-
-                stitch_data_x_row = Some(final_vec);
-            }
-
-
-
-
-            if let Some(chunk_height_data) = chunk_height_maps
-                .chunk_height_maps
-                .get(&stitch_chunk_id_pos_y)
-            {
-                let mut final_vec = Vec::new();
-                for i in 0..chunk_dimensions.y() as usize {
-                    final_vec.push(chunk_height_data.0[i][0]);
-                }
-                 final_vec.push(  stitch_data_x_y_corner.unwrap_or(0)   ); // the corner corner --gotta fix me some how ?? - try to read diag chunk
-                stitch_data_y_col = Some(final_vec);
-            } else {
-                  println!("WARN no height data for {:?}" , stitch_chunk_id_pos_y);
-                     if  stitch_chunk_id_pos_y < max_chunk_id_plus_one {continue};  //prevents loading race cond issue with stitching 
-
-
-                let mut final_vec = Vec::new();
-                for _ in 0..chunk_dimensions.y() as usize {
-                    final_vec.push(0);
-                }
-                final_vec.push(  stitch_data_x_y_corner.unwrap_or(0)   ); // the corner corner --gotta fix me some how ?? - try to read diag chunk
-
-                stitch_data_y_col = Some(final_vec);
-            }
-
-             
-
+           if stitch_data_x_row.is_none() || stitch_data_y_col.is_none() {   return   }
+ 
+ 
 
             //for now, add the unstitched data..
             commands.entity(chunk_entity).insert(CachedHeightmapData {
@@ -982,4 +895,118 @@ pub fn save_chunk_collision_data_to_disk(
         Ok(_) => println!("Successfully saved collision data to file."),
         Err(e) => println!("Failed to save to file: {}", e),
     }
+}
+
+
+/*
+
+    Attempts to look at adjacent height maps to return stitch data 
+*/
+pub fn compute_stitch_data(
+    chunk_id: u32,
+    chunk_rows: u32,
+    terrain_dimensions: Vec2,
+    chunk_height_maps: &HashMap<u32,SubHeightMapU16>
+
+
+    ) -> (Option<Vec<u16>>, Option<Vec<u16>> ){
+
+
+
+                                   let chunk_coords = ChunkCoords::from_chunk_id(chunk_id , chunk_rows);
+
+                                      let stitch_chunk_id_pos_x = ChunkCoords::new(chunk_coords.x() + 1, chunk_coords.y())
+                                        .get_chunk_index(chunk_rows);
+                                        let stitch_chunk_id_pos_y = ChunkCoords::new(chunk_coords.x() , chunk_coords.y() + 1)
+                                            .get_chunk_index(chunk_rows);
+
+                                            println!("chunk id ... {} {} {} " , chunk_id  , stitch_chunk_id_pos_x, stitch_chunk_id_pos_y  );
+
+                                        let stitch_chunk_id_pos_x_y_corner = ChunkCoords::new(chunk_coords.x() + 1, chunk_coords.y() + 1)
+                                            .get_chunk_index(chunk_rows);
+
+
+
+                                         let max_chunk_id_plus_one = chunk_rows * chunk_rows;
+
+                                        let  stitch_data_x_row: Option<Vec<u16>>  ;
+
+                                        let  stitch_data_y_col: Option<Vec<u16>> ;
+
+                                        let  stitch_data_x_y_corner: Option<u16> ;
+
+                                        let chunk_dimensions = [
+                                            terrain_dimensions.x as u32 / chunk_rows,
+                                            terrain_dimensions.y as u32 / chunk_rows,
+                                        ];
+
+
+
+
+                                           if let Some(chunk_height_data) =  chunk_height_maps
+                                                .get(&stitch_chunk_id_pos_x_y_corner)
+                                            { 
+                                               
+                                                
+                                                stitch_data_x_y_corner = Some(  chunk_height_data.0[0][0]  );
+                                            } else {
+                                                
+                                                 stitch_data_x_y_corner = Some( 0  );
+                                            }
+
+
+
+                                            if let Some(chunk_height_data) = chunk_height_maps
+                                                .get(&stitch_chunk_id_pos_x)
+                                            {
+                                                let mut final_vec = Vec::new();
+                                                for i in 0..chunk_dimensions.x() as usize {
+                                                    final_vec.push(chunk_height_data.0[0][i]);
+                                                }
+                                                stitch_data_x_row = Some(final_vec);
+                                            } else {
+                                                println!("WARN no height data for {:?}" , stitch_chunk_id_pos_x);
+
+                                                if  stitch_chunk_id_pos_x < max_chunk_id_plus_one { return (None,None)  }; //prevents loading race cond issue with stitching 
+
+                                                let mut final_vec = Vec::new();
+                                                for _ in 0..chunk_dimensions.x() as usize {
+                                                    final_vec.push(0);
+                                                }
+
+                                                stitch_data_x_row = Some(final_vec);
+                                            }
+
+
+
+
+                                            if let Some(chunk_height_data) = chunk_height_maps
+                                                .get(&stitch_chunk_id_pos_y)
+                                            {
+                                                let mut final_vec = Vec::new();
+                                                for i in 0..chunk_dimensions.y() as usize {
+                                                    final_vec.push(chunk_height_data.0[i][0]);
+                                                }
+                                                 final_vec.push(  stitch_data_x_y_corner.unwrap_or(0)   ); // the corner corner --gotta fix me some how ?? - try to read diag chunk
+                                                stitch_data_y_col = Some(final_vec);
+                                            } else {
+                                                  println!("WARN no height data for {:?}" , stitch_chunk_id_pos_y);
+                                                     if  stitch_chunk_id_pos_y < max_chunk_id_plus_one { return (None,None)  };  //prevents loading race cond issue with stitching 
+
+
+                                                let mut final_vec = Vec::new();
+                                                for _ in 0..chunk_dimensions.y() as usize {
+                                                    final_vec.push(0);
+                                                }
+                                                final_vec.push(  stitch_data_x_y_corner.unwrap_or(0)   ); // the corner corner --gotta fix me some how ?? - try to read diag chunk
+
+                                                stitch_data_y_col = Some(final_vec);
+                                            }
+
+
+
+
+
+                                        (stitch_data_x_row,stitch_data_y_col)
+
 }
