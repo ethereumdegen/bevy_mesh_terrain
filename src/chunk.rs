@@ -616,7 +616,7 @@ pub fn build_chunk_meshes(
                     terrain_dimensions.y / chunk_rows as f32 + 1.0,
                 ];
 
-                let mesh = PreMesh::from_heightmap_subsection(
+                let mesh = PreMesh::from_heightmap_subsection_greedy(
                     &sub_heightmap,
                     height_scale,
                     lod_level,
