@@ -26,17 +26,7 @@ fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
         .insert(TerrainConfig::load_from_file("assets/default_terrain/terrain_config.ron").unwrap())
         .insert(TerrainData::new());
 
-    commands.spawn(DirectionalLightBundle {
-        directional_light: DirectionalLight {
-            shadow_depth_bias: 0.5,
-            shadow_normal_bias: 0.5,
-
-            color: Color::WHITE,
-            ..default()
-        },
-
-        ..default()
-    });
+   
     // light
     commands.spawn(DirectionalLightBundle {
         directional_light: DirectionalLight {
@@ -44,30 +34,19 @@ fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
             shadow_normal_bias: 0.5,
 
             color: Color::WHITE,
+
+
             ..default()
         },
-
+         transform: Transform::from_xyz(4.0, 6.0, 4.0),
         ..default()
     });
     // light
-    commands.spawn(PointLightBundle {
-        point_light: PointLight {
-            intensity: 1500.0,
-            shadows_enabled: true,
-
-            shadow_depth_bias: 0.5,
-            shadow_normal_bias: 0.5,
-
-            color: Color::WHITE,
-            ..default()
-        },
-        transform: Transform::from_xyz(4.0, 800.0, 4.0),
-        ..default()
-    });
+   
 
     commands.insert_resource(AmbientLight {
         color: Color::WHITE,
-        brightness: 0.12,
+        brightness: 222.12,
     });
 
     // camera
