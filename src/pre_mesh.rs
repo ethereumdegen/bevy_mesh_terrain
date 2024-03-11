@@ -120,7 +120,7 @@ impl PreMesh {
         let bounds_pct: [[f32; 2]; 2] = [[0.0, 0.0], [1.0, 1.0]]; //1.0 is the max right ?
 
         let sub_heightmap_width = height_data.len();
-        let sub_heightmap_height = height_data[256].len();
+        let sub_heightmap_height = height_data[0].len();
 
         println!("sub_heightmap_width {}", sub_heightmap_width);
         println!("sub_heightmap_height {}", sub_heightmap_height);
