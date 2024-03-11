@@ -562,7 +562,7 @@ pub fn build_chunk_meshes(
             //maybe we subsection first and THEN build the mesh!  oh well... anyways
             let height_map_data_cloned = (&height_map_data.as_ref().unwrap().0).clone();
 
-            let lod_level = chunk_data.lod_level;
+            let lod_level = 2;
 
             let chunk_uv = Vec4::new(
                 //tell the shader how to use the height map for this chunk
@@ -582,9 +582,14 @@ pub fn build_chunk_meshes(
             let stitch_chunk_id_pos_y = ChunkCoords::new(chunk_coords.x(), chunk_coords.y() + 1)
                 .get_chunk_index(chunk_rows);
 
-            let mut stitch_data_x_row: Option<Vec<u16>> = None;
+            let stitch_chunk_id_pos_x_y_corner = ChunkCoords::new(chunk_coords.x() + 1, chunk_coords.y() + 1)
+                .get_chunk_index(chunk_rows);
 
-            let mut stitch_data_y_col: Option<Vec<u16>> = None;
+            let  stitch_data_x_row: Option<Vec<u16>>  ;
+
+            let  stitch_data_y_col: Option<Vec<u16>> ;
+
+            let  stitch_data_x_y_corner: Option<u16> ;
 
             let chunk_dimensions = [
                 terrain_dimensions.x as u32 / chunk_rows,
@@ -592,6 +597,21 @@ pub fn build_chunk_meshes(
             ];
 
             println!("build chunk mesh 4 ");
+
+
+              if let Some(chunk_height_data) = chunk_height_maps
+                .chunk_height_maps
+                .get(&stitch_chunk_id_pos_x_y_corner)
+            { 
+               
+                
+                stitch_data_x_y_corner = Some(  chunk_height_data.0[0][0]  );
+            } else {
+                
+                 stitch_data_x_y_corner = Some( 0  );
+            }
+
+
 
             if let Some(chunk_height_data) = chunk_height_maps
                 .chunk_height_maps
@@ -604,12 +624,15 @@ pub fn build_chunk_meshes(
                 stitch_data_x_row = Some(final_vec);
             } else {
                 let mut final_vec = Vec::new();
-                for i in 0..chunk_dimensions.x() as usize {
+                for _ in 0..chunk_dimensions.x() as usize {
                     final_vec.push(0);
                 }
 
                 stitch_data_x_row = Some(final_vec);
             }
+
+
+
 
             if let Some(chunk_height_data) = chunk_height_maps
                 .chunk_height_maps
@@ -619,17 +642,20 @@ pub fn build_chunk_meshes(
                 for i in 0..chunk_dimensions.y() as usize {
                     final_vec.push(chunk_height_data.0[i][0]);
                 }
-                final_vec.push(0); // the corner corner --gotta fix me some how ?? - try to read diag chunk
+                 final_vec.push(  stitch_data_x_y_corner.unwrap_or(0)   ); // the corner corner --gotta fix me some how ?? - try to read diag chunk
                 stitch_data_y_col = Some(final_vec);
             } else {
                 let mut final_vec = Vec::new();
-                for i in 0..chunk_dimensions.y() as usize {
+                for _ in 0..chunk_dimensions.y() as usize {
                     final_vec.push(0);
                 }
-                final_vec.push(0); // the corner corner --gotta fix me some how ?? - try to read diag chunk
+                final_vec.push(  stitch_data_x_y_corner.unwrap_or(0)   ); // the corner corner --gotta fix me some how ?? - try to read diag chunk
 
                 stitch_data_y_col = Some(final_vec);
             }
+
+          
+
 
             //for now, add the unstitched data..
             commands.entity(chunk_entity).insert(CachedHeightmapData {

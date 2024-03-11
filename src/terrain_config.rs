@@ -44,7 +44,7 @@ impl Default for TerrainConfig {
             render_distance: 2000.0,
             lod_distance: 1000.0,
 
-            lod_level_offset: 1,
+            lod_level_offset: 0,
 
             height_scale: 0.004, //for building the mesh
 
