@@ -134,8 +134,8 @@ impl PreMesh {
         let scaled_min_threshold = (THRESHOLD as f32) * height_scale;
 
         //there is a weird bug where there are gaps in betweeen each chunk ...
-        for x in (0..tex_dim_x as usize).step_by(step_size) {
-            for y in (0..tex_dim_y as usize).step_by(step_size) {
+        for x in (0..(tex_dim_x as usize - step_size  ) as usize).step_by(step_size) {
+            for y in (0..(tex_dim_y as usize - step_size   ) as usize).step_by(step_size) {
                 let fx = (x) as f32 * width_scale;
                 let fz = (y) as f32 * width_scale;
 
@@ -143,11 +143,14 @@ impl PreMesh {
                 //cant sample so we just continue
                 if x + step_size >= sub_heightmap_width as usize {
                     sample_allowed = false;
+                    panic!("x {}", x +step_size);
                 }
                 if y + step_size >= sub_heightmap_height as usize {
                     sample_allowed = false;
+                    panic!("y {}", y +step_size);
                 }
 
+                // println!( "{} {} {} {} ", x , y , x+step_size, y + step_size   );
                 let (lb, lf, rb, rf) = match sample_allowed {
                     true => {
                         let lb = height_data[x][y] as f32 * height_scale;

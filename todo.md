@@ -5,12 +5,6 @@
    
   
   3. lods 
-  
-  Consider having only 1 LOD levels and retaining them both in memory to minimzie lag 
-  
+  BUG : lod stitching is not working right 
    
-  
-  ### BUGS 
-  
-  1. there is a weird graphic glitch on the terrain shader or normals ... depth buffer ??
-  
+   

@@ -562,7 +562,7 @@ pub fn build_chunk_meshes(
             //maybe we subsection first and THEN build the mesh!  oh well... anyways
             let height_map_data_cloned = (&height_map_data.as_ref().unwrap().0).clone();
 
-            let lod_level = 2;
+            let lod_level = chunk_data.lod_level;
 
             let chunk_uv = Vec4::new(
                 //tell the shader how to use the height map for this chunk
@@ -577,9 +577,11 @@ pub fn build_chunk_meshes(
             let chunk_coords = ChunkCoords::from_chunk_id(chunk_id_clone, chunk_rows);
 
             //need to add stitching row !
+
+            // this may not be correct ..... 
             let stitch_chunk_id_pos_x = ChunkCoords::new(chunk_coords.x() + 1, chunk_coords.y())
                 .get_chunk_index(chunk_rows);
-            let stitch_chunk_id_pos_y = ChunkCoords::new(chunk_coords.x(), chunk_coords.y() + 1)
+            let stitch_chunk_id_pos_y = ChunkCoords::new(chunk_coords.x() , chunk_coords.y() + 1)
                 .get_chunk_index(chunk_rows);
 
             let stitch_chunk_id_pos_x_y_corner = ChunkCoords::new(chunk_coords.x() + 1, chunk_coords.y() + 1)
