@@ -38,7 +38,7 @@ use rand::Rng;
 
 use core::cmp::{max, min};
 
-#[derive(Debug)]
+#[derive(Debug,Clone)]
 pub enum EditingTool {
     SetHeightMap { height: u16 },        // height, radius, save to disk
     SetSplatMap { r: u8, g: u8, b: u8 }, //R, G, B, radius, save to disk
@@ -50,6 +50,7 @@ pub enum BrushType {
     SetExact, // hardness ?
     Smooth,
     Noise,
+    EyeDropper
 }
 
 impl Display for BrushType {
@@ -58,6 +59,7 @@ impl Display for BrushType {
             BrushType::SetExact => "SetExact",
             BrushType::Smooth => "Smooth",
             BrushType::Noise => "Noise",
+            BrushType::EyeDropper => "EyeDropper",
         };
 
         write!(f, "{}", label)
@@ -65,7 +67,7 @@ impl Display for BrushType {
 }
 
 // entity, editToolType, coords, magnitude
-#[derive(Event)]
+#[derive(Event,Debug,Clone)]
 pub struct EditTerrainEvent {
     pub entity: Entity,
     pub tool: EditingTool,
@@ -75,7 +77,14 @@ pub struct EditTerrainEvent {
     pub brush_type: BrushType,
 }
 
-#[derive(Event)]
+#[derive(Event,Debug,Clone)]
+pub enum TerrainBrushEvent {
+    EyeDropTerrainHeight { height: u16 }  ,
+    EyeDropSplatMap{r:u8, g:u8, b:u8}
+
+}
+
+#[derive(Event,Debug,Clone)]
 pub enum TerrainCommandEvent {
     SaveAllChunks(bool, bool, bool), //height data, splat data, collision data
 }
@@ -238,6 +247,8 @@ pub fn apply_tool_edits(
     terrain_query: Query<(&TerrainData, &TerrainConfig)>,
 
     mut ev_reader: EventReader<EditTerrainEvent>,
+
+    mut evt_writer: EventWriter<TerrainBrushEvent>
 ) {
     for ev in ev_reader.read() {
         eprintln!("-- {:?} -- terrain edit event!", &ev.tool);
@@ -466,6 +477,27 @@ pub fn apply_tool_edits(
                                             }
                                         }
                                     }
+
+                                   BrushType::EyeDropper => {
+ 
+
+                                      // Check if the clicked coordinates are within the current chunk
+                                        if tool_coords.x >= chunk_transform_vec2.x && tool_coords.x < chunk_transform_vec2.x + chunk_dimensions.x() as f32 &&
+                                           tool_coords.y >= chunk_transform_vec2.y && tool_coords.y < chunk_transform_vec2.y + chunk_dimensions.y() as f32{
+                                            let tool_coords_local = tool_coords.add(chunk_transform_vec2.neg());
+                                            let x = tool_coords_local.x as usize;
+                                            let y = tool_coords_local.y as usize;
+
+                                            if x < img_data_length && y < img_data_length {
+                                                let local_height = height_map_data.0[x][y];
+                                                evt_writer.send(TerrainBrushEvent::EyeDropTerrainHeight {
+                                                    height: local_height,
+                                                });
+                                            }
+                                        }   
+                                    }
+
+
                                 }
 
                                 if height_changed {
@@ -509,6 +541,12 @@ pub fn apply_tool_edits(
                                         "set splat map at {} {} {}",
                                         pixel_pos, pixel_radius, r
                                     );
+
+
+                                match brush_type {
+                                    BrushType::SetExact => {
+
+
                                     // Assuming the image format is Rgba8
                                     if img.texture_descriptor.format == TextureFormat::Rgba8Unorm
                                         || img.texture_descriptor.format
@@ -556,58 +594,7 @@ pub fn apply_tool_edits(
                                             }
                                         }
 
-                                    /*
-                                    } else if  img.texture_descriptor.format == TextureFormat::Rgba16Unorm
-                                      || img.texture_descriptor.format
-                                          == TextureFormat::Rgba16Snorm  {
-
-
-
-
-                                               // Iterate over each pixel in the image
-                                          for y in 0..img_size.y {
-                                              for x in 0..img_size.x {
-                                                  let idx = (y * img_size.x + x) as usize * 8; // 8 bytes per pixel (R, G, B, A)
-                                                  let pixel_coords = Vec2::new(x as f32, y as f32);
-
-
-                                                  // Check if the pixel is within the tool's radius
-                                                  if pixel_coords.distance(pixel_pos) < pixel_radius {
-                                                     // Convert u8 values to u16
-                                                      let r_u16 = (*r as u16) * 257; // Equivalent to shifting left by 8 bits and adding the original value for a more accurate representation
-                                                      let g_u16 = (*g as u16) * 257;
-                                                      let b_u16 = (*b as u16) * 257;
-
-                                                      // Split the u16 into two u8s and store them
-                                                      img.data[idx] = (r_u16 & 0xFF) as u8; // R low byte
-                                                      img.data[idx + 1] = (r_u16 >> 8) as u8; // R high byte
-                                                      img.data[idx + 2] = (g_u16 & 0xFF) as u8; // G low byte
-                                                      img.data[idx + 3] = (g_u16 >> 8) as u8; // G high byte
-                                                      img.data[idx + 4] = (b_u16 & 0xFF) as u8; // B low byte
-                                                      img.data[idx + 5] = (b_u16 >> 8) as u8; // B high byte
-                                              }
-                                          }
-                                      }
-
-
-                                          let updated_image = img.clone();
-
-                                          let updated_image_handle = asset_server.add(updated_image);
-
-                                          chunk_data
-                                              .set_splat_texture_image(updated_image_handle.clone()); //is this necessary? i think so in case the height is modified
-
-                                          if let Some(material_handle) = &chunk_data.material_handle {
-                                              if let Some(terrain_material) =
-                                                  terrain_materials.get_mut(material_handle)
-                                              {
-                                                  //this should let us avoid rebuilding the entire mesh
-                                                  terrain_material.splat_texture =
-                                                      Some(updated_image_handle);
-                                                  println!("rewrote splat tex in terrain material ");
-                                              }
-                                          }
-                                          */
+                                   
 
                                     //mark  material as needing reload !!
                                     } else {
@@ -616,7 +603,53 @@ pub fn apply_tool_edits(
                                             img.texture_descriptor.format
                                         );
                                     }
+
+
+                                } ,
+
+
+                                BrushType::EyeDropper => {
+
+                                      if img.texture_descriptor.format == TextureFormat::Rgba8Unorm
+                                        || img.texture_descriptor.format
+                                            == TextureFormat::Rgba8UnormSrgb
+                                    {
+
+
+                                       if tool_coords.x >= chunk_transform_vec2.x && tool_coords.x < chunk_transform_vec2.x + chunk_dimensions.x() as f32 &&
+                                           tool_coords.y >= chunk_transform_vec2.y && tool_coords.y < chunk_transform_vec2.y + chunk_dimensions.y() as f32{
+                                            let tool_coords_local = tool_coords.add(chunk_transform_vec2.neg());
+                                            let x = tool_coords_local.x as u32;
+                                            let y = tool_coords_local.y as u32;
+
+                                            if x < img_size.x   && y < img_size.y  {
+                                              //  let local_height = height_map_data.0[x][y];
+                                                let idx = (y * img_size.x + x) as usize * 4;
+                                            let r = img.data[idx];
+                                            let g = img.data[idx + 1];
+                                            let b = img.data[idx + 2];
+
+                                            evt_writer.send(TerrainBrushEvent::EyeDropSplatMap {
+                                                r,
+                                                g,
+                                                b,
+                                            });
+                                            }
+                                         }   
+ 
+
+                                         
+                                                                            
+
+                                        }
                                 }
+
+                                //brush type 
+                                 _ => {} //todo ! 
+                                 }
+
+
+                             }
                             }
                         } // SetSplatMap
                     } //match

@@ -14,7 +14,7 @@ use std::time::Duration;
 use crate::chunk::TerrainMaterialExtension;
 use terrain_material::TerrainMaterial;
 
-use edit::{apply_command_events, apply_tool_edits, EditTerrainEvent, TerrainCommandEvent};
+use edit::{apply_command_events, apply_tool_edits, EditTerrainEvent, TerrainBrushEvent, TerrainCommandEvent};
 
 pub mod chunk;
 //pub mod collision;
@@ -47,6 +47,7 @@ impl Plugin for TerrainMeshPlugin {
         //app.add_event::<ChunkEvent>();
         app.add_event::<EditTerrainEvent>();
         app.add_event::<TerrainCommandEvent>();
+        app.add_event::<TerrainBrushEvent>();
         app.insert_resource(ChunkHeightMapResource::default());
 
         app.add_systems(Update, chunk::update_splat_image_formats);
