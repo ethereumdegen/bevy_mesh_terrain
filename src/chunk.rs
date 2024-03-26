@@ -6,7 +6,7 @@ use bevy::asset::LoadState;
 use bevy::prelude::*;
 use bevy::render::render_asset::RenderAssetUsages;
 use bevy::render::render_resource::{Extent3d, TextureDimension, TextureFormat};
-use bevy::tasks::{AsyncComputeTaskPool, ComputeTaskPool, Task};
+use bevy::tasks::{AsyncComputeTaskPool, Task};
 
 use bevy::utils::HashMap;
 use futures_lite::future;
@@ -16,7 +16,8 @@ use crate::heightmap::{HeightMap, HeightMapU16, SubHeightMapU16};
 use crate::pre_mesh::PreMesh;
 use crate::terrain::{TerrainData, TerrainImageDataLoadStatus, TerrainViewer};
 use crate::terrain_config::TerrainConfig;
-use crate::terrain_material::{ChunkMaterialUniforms, TerrainMaterial};
+use crate::terrain_material::{ChunkMaterialUniforms,ToolPreviewUniforms, TerrainMaterial};
+use crate::tool_preview::ToolPreviewResource;
 
 use bevy::pbr::ExtendedMaterial;
 use bevy::pbr::OpaqueRendererMethod;
@@ -711,10 +712,11 @@ pub fn finish_chunk_build_tasks(
                         ..Default::default()
                     },
                     extension: TerrainMaterial {
-                        uniforms: ChunkMaterialUniforms {
+                        chunk_uniforms: ChunkMaterialUniforms {
                             color_texture_expansion_factor: 8.0, //why wont this apply to shader properly ?
                             chunk_uv,
                         },
+                        tool_preview_uniforms: ToolPreviewUniforms::default(),
                         array_texture: array_texture.clone(),
                         splat_texture: splat_texture.clone(),
                         alpha_mask_texture: alpha_mask_texture.clone(),
@@ -762,6 +764,33 @@ pub fn finish_chunk_build_tasks(
             commands.entity(entity).despawn();
         }
     }
+}
+
+
+pub fn update_tool_uniforms(
+
+      terrain_chunk_mesh_query:Query< &Handle<TerrainMaterialExtension>, With<TerrainChunkMesh> >,
+
+       mut terrain_materials: ResMut<Assets<TerrainMaterialExtension>>,
+
+       tool_preview_resource: Res<ToolPreviewResource> 
+
+    ){
+
+
+
+    for mat_handle in terrain_chunk_mesh_query.iter() {
+        if let Some(mat) = terrain_materials.get_mut(mat_handle){
+
+            mat.extension.tool_preview_uniforms.tool_coordinates = tool_preview_resource.tool_coordinates;
+            mat.extension.tool_preview_uniforms.tool_color = tool_preview_resource.tool_color;
+            mat.extension.tool_preview_uniforms.tool_radius = tool_preview_resource.tool_radius;
+
+        }
+
+    }
+
+
 }
 
 pub fn update_chunk_visibility(

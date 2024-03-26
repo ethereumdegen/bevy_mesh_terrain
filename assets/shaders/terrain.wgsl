@@ -29,6 +29,13 @@ struct ChunkMaterialUniforms {
     
 };
 
+
+struct ToolPreviewUniforms { 
+    tool_coordinates: vec2<f32>,
+    tool_radius: f32,
+    tool_color: vec3<f32>    
+};
+
 //https://github.com/DGriffin91/bevy_mod_standard_material/blob/main/assets/shaders/pbr.wgsl
 
 
@@ -56,26 +63,32 @@ var occlusion_sampler: sampler;
 
 @group(2) @binding(20)
 var<uniform> chunk_uniforms: ChunkMaterialUniforms;
+
 @group(2) @binding(21)
-var base_color_texture: texture_2d_array<f32>;
+var<uniform> tool_preview_uniforms: ToolPreviewUniforms;
+
 @group(2) @binding(22)
+var base_color_texture: texture_2d_array<f32>;
+@group(2) @binding(23)
 var base_color_sampler: sampler;
+
+
 
 
 //the splat map texture has 3 channels: R, G, B
 //R tells us the terrain_layer_index 0 per pixel
 //G tells us the terrain_layer_index 1 per pixel
 //B is 0-255 mapped to 0 to 100% telling us how much of R to render versus how much of G to render 
-@group(2) @binding(23)
+@group(2) @binding(24)
  var splat_map_texture: texture_2d<f32>; 
 //var splat_map_texture: texture_2d_array<f32>; //these are control maps and there will be 4 
-@group(2) @binding(24)
+@group(2) @binding(25)
 var splat_map_sampler: sampler;
 
 //works similar to splat mask  -- we use a separate tex for this for NOW to make collision mesh building far easier (only need height map and not splat)
-@group(2) @binding(25)
-var alpha_mask_texture: texture_2d<f32>; 
 @group(2) @binding(26)
+var alpha_mask_texture: texture_2d<f32>; 
+@group(2) @binding(27)
 var alpha_mask_sampler: sampler;
  
 
@@ -141,8 +154,24 @@ fn fragment(
 
    // let shadowFactor = calculate_shadow_factor(frag_lightSpacePos);
 
-    let final_color = vec4(   pbr_out.color.rgb , alpha_mask_value.r)  ;
-      
+
+   
+    let vertex_world_psn = mesh.world_position.xz; // Assuming the vertex position is in world space
+
+    let tool_coordinates = tool_preview_uniforms.tool_coordinates;
+    let tool_radius = tool_preview_uniforms.tool_radius;
+    let color_from_tool = tool_preview_uniforms.tool_color;
+
+    let distance = length(vertex_world_psn - tool_coordinates);
+
+    let within_tool_radius = f32(distance <= tool_radius);
+
+    let final_color = mix(
+        vec4(pbr_out.color.rgb, alpha_mask_value.r),
+        vec4(pbr_out.color.rgb * color_from_tool, alpha_mask_value.r),
+        within_tool_radius
+    );
+          
 
       // Implement alpha masking
     if (alpha_mask_value.r < 0.1) { // Use your threshold value here

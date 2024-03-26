@@ -19,26 +19,40 @@ pub struct ChunkMaterialUniforms {
     pub chunk_uv: Vec4, //start_x, start_y, end_x, end_y   -- used to subselect a region from the splat texture
 }
 
+
+#[derive(Clone, ShaderType,Default,Debug)]
+pub struct ToolPreviewUniforms {
+        
+    pub tool_coordinates: Vec2,
+    pub tool_radius: f32,
+    pub tool_color: Vec3   
+
+ 
+}
+
 #[derive(Asset,AsBindGroup,  TypePath, Clone, Debug, Default)]    
 pub struct TerrainMaterial {
   
      
     #[uniform(20)]
-    pub uniforms: ChunkMaterialUniforms,
+    pub chunk_uniforms: ChunkMaterialUniforms,
+
+    #[uniform(21)]
+    pub tool_preview_uniforms: ToolPreviewUniforms,
   
     
-    #[texture(21, dimension = "2d_array")]
-    #[sampler(22)]
+    #[texture(22, dimension = "2d_array")]
+    #[sampler(23)]
     pub array_texture: Option<Handle<Image>>,
 
   
-    #[texture(23)]
-    #[sampler(24)]
+    #[texture(24)]
+    #[sampler(25)]
     pub splat_texture: Option<Handle<Image>>,
 
    
-    #[texture(25)]
-    #[sampler(26)]
+    #[texture(26)]
+    #[sampler(27)]
     pub alpha_mask_texture: Option<Handle<Image>>,
 }
 
