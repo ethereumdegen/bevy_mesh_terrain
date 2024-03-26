@@ -608,6 +608,8 @@ pub fn build_chunk_meshes(
 
              chunk_data.chunk_state = ChunkState::Building;
 
+             let use_greedy_mesh = terrain_config.use_greedy_mesh;
+
             let task = thread_pool.spawn(async move {
                 println!("trying to build premesh");
 
@@ -617,13 +619,23 @@ pub fn build_chunk_meshes(
                     terrain_dimensions.y / chunk_rows as f32 + 1.0,
                 ];
 
-                let mesh = PreMesh::from_heightmap_subsection(
-                    &sub_heightmap,
-                    height_scale,
-                    lod_level,
-                    sub_texture_dim,
-                )
-                .build();
+                let mesh = match use_greedy_mesh {
+
+                    true => PreMesh::from_heightmap_subsection_greedy(
+                        &sub_heightmap,
+                        height_scale,
+                        lod_level,
+                        sub_texture_dim,
+                    )  ,
+
+                    false => PreMesh::from_heightmap_subsection(
+                        &sub_heightmap,
+                        height_scale,
+                        lod_level,
+                        sub_texture_dim,
+                    ) 
+
+                } .build();
 
                 println!("built premesh   ");
 
@@ -827,7 +839,7 @@ pub fn update_chunk_visibility(
 
             let distance_to_chunk: f32 = chunk_world_location.distance(viewer_location);
 
-            let lod_level: u8 = match distance_to_chunk {
+            /*let lod_level: u8 = match distance_to_chunk {
                 dist => {
                     if dist > lod_level_distance * 2.0 {
                         2
@@ -837,9 +849,9 @@ pub fn update_chunk_visibility(
                         0
                     }
                 }
-            } + lod_level_offset;
+            } + lod_level_offset;*/
 
-            chunk_data.lod_level = lod_level;
+            chunk_data.lod_level = lod_level_offset; // for now 
 
             let max_render_distance = terrain_config.get_max_render_distance();
 

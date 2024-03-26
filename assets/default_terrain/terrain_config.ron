@@ -6,6 +6,8 @@ TerrainConfig(
     lod_distance: 500.0,
     lod_level_offset: 0,
     height_scale: 0.0004,
+
+    use_greedy_mesh:false, 
     attach_collision_data: true, 
    
      

@@ -26,7 +26,7 @@ pub struct TerrainConfig {
 
     pub height_scale: f32,
 
-    pub attach_collision_data: bool,
+    pub use_greedy_mesh: bool, 
 
     pub texture_image_sections: u32,
     pub diffuse_folder_path: String,
@@ -48,7 +48,7 @@ impl Default for TerrainConfig {
 
             height_scale: 0.004, //for building the mesh
 
-            attach_collision_data: true,
+            use_greedy_mesh: false,
             texture_image_sections: 8,
 
             diffuse_folder_path: "diffuse".into(),

@@ -321,8 +321,7 @@ impl PreMesh {
                     }else{
                         //end this segment and render the triangles 
 
-                       
-                                //why does this 2.0 expansion fix the issue !? 
+                      
                         total_step_size = ( (fz - greedy_points_y_start.unwrap())   + ( step_size as f32 * width_scale)  ) as usize;
 
                         fz = greedy_points_y_start.unwrap();

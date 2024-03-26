@@ -161,11 +161,12 @@ pub fn apply_command_events(
                                     .expect("No mesh found for terrain chunk");*/
 
                                 let lod_level = 1;   // can customize lod level of colliders here 
+                                let use_greedy_mesh = false; 
 
-                            let chunk_rows = terrain_config.chunk_rows;
-                            let terrain_dimensions = terrain_config.terrain_dimensions;
+                                let chunk_rows = terrain_config.chunk_rows;
+                                let terrain_dimensions = terrain_config.terrain_dimensions;
 
-                                 
+                                     
 
 
                                let height_map_data = chunk_height_maps.chunk_height_maps.get(&chunk.chunk_id); // &chunk_data.height_map_data.clone();
@@ -200,13 +201,23 @@ pub fn apply_command_events(
 
                                     
 
-                                let mesh = PreMesh::from_heightmap_subsection_greedy(
-                                    &sub_heightmap,
-                                    height_scale,
-                                    lod_level,
-                                    sub_texture_dim,
-                                )
-                                .build();
+                                 let mesh = match use_greedy_mesh {
+
+                                    true => PreMesh::from_heightmap_subsection_greedy(
+                                        &sub_heightmap,
+                                        height_scale,
+                                        lod_level,
+                                        sub_texture_dim,
+                                    )  ,
+
+                                    false => PreMesh::from_heightmap_subsection(
+                                        &sub_heightmap,
+                                        height_scale,
+                                        lod_level,
+                                        sub_texture_dim,
+                                    ) 
+
+                                } .build();
 
                                 let collider = Collider::trimesh_from_mesh(&mesh)
                                     .expect("Failed to create collider from mesh");
