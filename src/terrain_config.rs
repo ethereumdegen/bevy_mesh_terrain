@@ -26,7 +26,7 @@ pub struct TerrainConfig {
 
     pub height_scale: f32,
 
-    pub use_greedy_mesh: bool, 
+    pub use_greedy_mesh: bool,
 
     pub texture_image_sections: u32,
     pub diffuse_folder_path: String,

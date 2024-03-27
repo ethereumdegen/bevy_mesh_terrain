@@ -26,7 +26,6 @@ fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
         .insert(TerrainConfig::load_from_file("assets/default_terrain/terrain_config.ron").unwrap())
         .insert(TerrainData::new());
 
-   
     // light
     commands.spawn(DirectionalLightBundle {
         directional_light: DirectionalLight {
@@ -35,14 +34,12 @@ fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
 
             color: Color::WHITE,
 
-
             ..default()
         },
-         transform: Transform::from_xyz(4.0, 6.0, 4.0),
+        transform: Transform::from_xyz(4.0, 6.0, 4.0),
         ..default()
     });
     // light
-   
 
     commands.insert_resource(AmbientLight {
         color: Color::WHITE,
@@ -66,8 +63,6 @@ fn update_camera_look(
     mut query: Query<(&mut Transform, &Camera3d)>,
 ) {
     const MOUSE_SENSITIVITY: f32 = 2.0;
-
-   
 
     // Accumulate mouse delta
     let mut delta: Vec2 = Vec2::ZERO;

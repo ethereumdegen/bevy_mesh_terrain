@@ -5,8 +5,6 @@ use bevy::render::render_resource::PrimitiveTopology::TriangleList;
 
 use crate::heightmap::SubHeightMapU16;
 
-
-
 const THRESHOLD: u16 = (0.0001 * 65535.0) as u16;
 
 pub struct PreMesh {
@@ -90,8 +88,6 @@ impl PreMesh {
         mesh
     }
 
-
-
     /*
 
     Could improve this so that NO MATTER WHAT lod level, the edges are never decimated at all and always full resolution.  Only decimate the middle. (interim fix for stitching) .
@@ -130,12 +126,12 @@ impl PreMesh {
 
         let width_scale = 1.0;
 
-        //tris completely below this will be skipped 
+        //tris completely below this will be skipped
         let scaled_min_threshold = (THRESHOLD as f32) * height_scale;
 
         //there is a weird bug where there are gaps in betweeen each chunk ...
-        for x in (0..(tex_dim_x as usize - step_size  ) as usize).step_by(step_size) {
-            for y in (0..(tex_dim_y as usize - step_size   ) as usize).step_by(step_size) {
+        for x in (0..(tex_dim_x as usize - step_size) as usize).step_by(step_size) {
+            for y in (0..(tex_dim_y as usize - step_size) as usize).step_by(step_size) {
                 let fx = (x) as f32 * width_scale;
                 let fz = (y) as f32 * width_scale;
 
@@ -143,11 +139,11 @@ impl PreMesh {
                 //cant sample so we just continue
                 if x + step_size >= sub_heightmap_width as usize {
                     sample_allowed = false;
-                    panic!("x {}", x +step_size);
+                    panic!("x {}", x + step_size);
                 }
                 if y + step_size >= sub_heightmap_height as usize {
                     sample_allowed = false;
-                    panic!("y {}", y +step_size);
+                    panic!("y {}", y + step_size);
                 }
 
                 // println!( "{} {} {} {} ", x , y , x+step_size, y + step_size   );
@@ -162,17 +158,16 @@ impl PreMesh {
                     false => (0.0, 0.0, 0.0, 0.0),
                 };
 
-                //if the triangle would be completely under the threshold, 
+                //if the triangle would be completely under the threshold,
                 //do not add it to the mesh at all.  This makes a hole for collision
-                //since this mesh is used to generate the collider 
-                if lb < scaled_min_threshold && lf < scaled_min_threshold &&
-                rb < scaled_min_threshold && rf < scaled_min_threshold {
-
-                   continue;
+                //since this mesh is used to generate the collider
+                if lb < scaled_min_threshold
+                    && lf < scaled_min_threshold
+                    && rb < scaled_min_threshold
+                    && rf < scaled_min_threshold
+                {
+                    continue;
                 }
-
-
-                
 
                 /* let lb = height_data[x][y] as f32 * height_scale;
                 let lf = height_data[x][y + step_size] as f32 * height_scale;
@@ -204,13 +199,7 @@ impl PreMesh {
         premesh
     }
 
-
-
-
-
-
-
-  pub fn from_heightmap_subsection_greedy(
+    pub fn from_heightmap_subsection_greedy(
         sub_heightmap: &SubHeightMapU16,
 
         height_scale: f32,
@@ -218,9 +207,6 @@ impl PreMesh {
 
         texture_dimensions: [f32; 2],
     ) -> Self {
-
-      
-        
         let mut premesh = Self::new();
 
         let step_size = 1 << 2; // doubles the step for each LOD level using bit shifting
@@ -246,44 +232,36 @@ impl PreMesh {
 
         let width_scale = 1.0;
 
-        //tris completely below this will be skipped 
+        //tris completely below this will be skipped
         let scaled_min_threshold = (THRESHOLD as f32) * height_scale;
 
-          let similarity_threshold = scaled_min_threshold * 2.0;
+        let similarity_threshold = scaled_min_threshold * 2.0;
 
-       
-        for x in (0..(tex_dim_x as usize - step_size  ) as usize).step_by(step_size) {
-           // let mut greedy_y_start:Option<f32> = None;
-            let mut current_greedy_height:Option<f32> = None;
-            let mut greedy_points_z_start: Option<f32> = None;  //fx 
+        for x in (0..(tex_dim_x as usize - step_size) as usize).step_by(step_size) {
+            // let mut greedy_y_start:Option<f32> = None;
+            let mut current_greedy_height: Option<f32> = None;
+            let mut greedy_points_z_start: Option<f32> = None; //fx
 
-             let fx = (x) as f32 * width_scale;
+            let fx = (x) as f32 * width_scale;
 
-            for y in (0..(tex_dim_y as usize - step_size   ) as usize).step_by(step_size) {
-                
-                      let at_end_of_segment = y >=  tex_dim_y as usize - (step_size*2)   ;
+            for y in (0..(tex_dim_y as usize - step_size) as usize).step_by(step_size) {
+                let at_end_of_segment = y >= tex_dim_y as usize - (step_size * 2);
 
                 let fz = (y) as f32 * width_scale;
-
-
-
-            
-
-                
 
                 let mut sample_allowed = true;
                 //cant sample so we just continue
                 if x + step_size >= sub_heightmap_width as usize {
                     sample_allowed = false;
-                    panic!("x {}", x +step_size);
+                    panic!("x {}", x + step_size);
                 }
                 if y + step_size >= sub_heightmap_height as usize {
                     sample_allowed = false;
-                    panic!("y {}", y +step_size);
+                    panic!("y {}", y + step_size);
                 }
 
                 // println!( "{} {} {} {} ", x , y , x+step_size, y + step_size   );
-                let  (mut lb, mut lf, mut rb, mut rf) = match sample_allowed {
+                let (mut lb, mut lf, mut rb, mut rf) = match sample_allowed {
                     true => {
                         let lb = height_data[x][y] as f32 * height_scale;
                         let lf = height_data[x][y + step_size] as f32 * height_scale;
@@ -294,78 +272,79 @@ impl PreMesh {
                     false => (0.0, 0.0, 0.0, 0.0),
                 };
 
-               
-
-
-
-                     //if the triangle would be completely under the threshold, 
+                //if the triangle would be completely under the threshold,
                 //do not add it to the mesh at all.  This makes a hole for collision
-                //since this mesh is used to generate the collider 
-                if lb < scaled_min_threshold && lf < scaled_min_threshold &&
-                rb < scaled_min_threshold && rf < scaled_min_threshold {
-                        //this does goofy things w greedy !? 
-                   // continue;
+                //since this mesh is used to generate the collider
+                if lb < scaled_min_threshold
+                    && lf < scaled_min_threshold
+                    && rb < scaled_min_threshold
+                    && rf < scaled_min_threshold
+                {
+                    //this does goofy things w greedy !?
+                    // continue;
                 }
 
+                if let Some(greedy_height) = current_greedy_height {
+                    // let mut total_step_size = step_size.clone();
 
-
-                if let Some(greedy_height) = current_greedy_height{
-
-                   // let mut total_step_size = step_size.clone();
-
-                     let differences = [
-                        (lb - greedy_height).abs(), 
+                    let differences = [
+                        (lb - greedy_height).abs(),
                         (lf - greedy_height).abs(),
                         (rf - greedy_height).abs(),
                         (rb - greedy_height).abs(),
                     ];
 
                     // Check if all differences are within the threshold
-                    let current_points_are_similar = differences.iter().all(|&diff| diff <= similarity_threshold);
+                    let current_points_are_similar =
+                        differences.iter().all(|&diff| diff <= similarity_threshold);
 
+                    if current_points_are_similar && !at_end_of_segment {
+                        //keep going -- continue
 
+                        continue;
+                    } else {
+                        //end this segment and render the triangles
 
+                        let start_fz = greedy_points_z_start.unwrap();
 
-                    if current_points_are_similar &&  !at_end_of_segment{
-                        //keep going -- continue 
+                        let uv_lb = compute_uv(fx, start_fz, bounds_pct, texture_dimensions);
+                        let uv_rb = compute_uv(
+                            fx + step_size as f32,
+                            start_fz,
+                            bounds_pct,
+                            texture_dimensions,
+                        );
+                        let uv_rf = compute_uv(
+                            fx + step_size as f32,
+                            start_fz + step_size as f32,
+                            bounds_pct,
+                            texture_dimensions,
+                        );
+                        let uv_lf = compute_uv(
+                            fx,
+                            start_fz + step_size as f32,
+                            bounds_pct,
+                            texture_dimensions,
+                        );
 
+                        let left_back = [fx, greedy_height, start_fz];
+                        let right_back = [fx + step_size as f32, greedy_height, start_fz];
+                        let right_front = [fx + step_size as f32, greedy_height, fz];
+                        let left_front = [fx, greedy_height, fz];
 
-                        continue; 
-                    }else{
-                        //end this segment and render the triangles 
- 
+                        premesh.add_triangle(
+                            [left_front, right_back, left_back],
+                            [uv_lf, uv_rb, uv_lb],
+                        );
+                        premesh.add_triangle(
+                            [right_front, right_back, left_front],
+                            [uv_rf, uv_rb, uv_lf],
+                        );
 
-                            let start_fz = greedy_points_z_start.unwrap();  
-
-                            let uv_lb = compute_uv(fx, start_fz, bounds_pct, texture_dimensions);
-                            let uv_rb = compute_uv(fx + step_size as f32, start_fz, bounds_pct, texture_dimensions);
-                            let uv_rf = compute_uv(
-                                fx + step_size as f32,
-                                start_fz + step_size as f32,
-                                bounds_pct,
-                                texture_dimensions,
-                            );
-                            let uv_lf = compute_uv(fx, start_fz + step_size as f32, bounds_pct, texture_dimensions); 
-
-                            let left_back = [fx, greedy_height, start_fz];
-                            let right_back = [fx + step_size as f32, greedy_height, start_fz];
-                            let right_front = [fx + step_size as f32, greedy_height, fz];
-                            let left_front = [fx, greedy_height, fz];
-
-
-                           
-                             premesh.add_triangle([left_front, right_back, left_back], [uv_lf, uv_rb, uv_lb]);
-                             premesh.add_triangle([right_front, right_back, left_front], [uv_rf, uv_rb, uv_lf]); 
-
- 
-                             greedy_points_z_start = None;
-                             current_greedy_height = None; 
- 
-                   
+                        greedy_points_z_start = None;
+                        current_greedy_height = None;
                     }
-
-                }else{
-                    
+                } else {
                     let differences = [
                         (lb - lf).abs(),
                         (lb - rb).abs(),
@@ -376,24 +355,21 @@ impl PreMesh {
                     ];
 
                     // Check if all differences are within the threshold
-                    let current_points_are_similar = differences.iter().all(|&diff| diff <= similarity_threshold);
+                    let current_points_are_similar =
+                        differences.iter().all(|&diff| diff <= similarity_threshold);
 
-                    // we start the greedy meshing here 
-                    if current_points_are_similar &&  !at_end_of_segment {
-                        current_greedy_height = Some((lb + lf + rb + rf)/4.0);
+                    // we start the greedy meshing here
+                    if current_points_are_similar && !at_end_of_segment {
+                        current_greedy_height = Some((lb + lf + rb + rf) / 4.0);
                         greedy_points_z_start = Some(fz);
-                        continue; 
-                    } 
+                        continue;
+                    }
+                }
 
-                } 
-                 
-                   
-                //if the 4 points heights are very similar, skip adding this triangle and instead increment the 
-                //greedy counter and continue .   lf and rf will be way out, the others will be saved.  
+                //if the 4 points heights are very similar, skip adding this triangle and instead increment the
+                //greedy counter and continue .   lf and rf will be way out, the others will be saved.
 
-
- 
-                        //add normal mini tris here 
+                //add normal mini tris here
                 let uv_lb = compute_uv(fx, fz, bounds_pct, texture_dimensions);
                 let uv_rb = compute_uv(fx + step_size as f32, fz, bounds_pct, texture_dimensions);
                 let uv_rf = compute_uv(
@@ -411,30 +387,22 @@ impl PreMesh {
 
                 premesh.add_triangle([left_front, right_back, left_back], [uv_lf, uv_rb, uv_lb]);
                 premesh.add_triangle([right_front, right_back, left_front], [uv_rf, uv_rb, uv_lf]);
-            
-             }  // z loop 
+            } // z loop
 
-
- 
-           
-
-           
-
-
-          
-
-
-
-             //if there is still a greedy segment left over ... lets render it ! 
-             if let Some(greedy_height) = current_greedy_height {
-                if let Some(fz) = greedy_points_z_start{
-               
-
+            //if there is still a greedy segment left over ... lets render it !
+            if let Some(greedy_height) = current_greedy_height {
+                if let Some(fz) = greedy_points_z_start {
                     let start_fz = greedy_points_z_start.unwrap();
 
                     let uv_lb = compute_uv(fx, start_fz, bounds_pct, texture_dimensions);
-                    let uv_rb = compute_uv(fx + step_size as f32, start_fz, bounds_pct, texture_dimensions);
-                    let uv_rf = compute_uv(fx + step_size as f32, fz, bounds_pct, texture_dimensions);
+                    let uv_rb = compute_uv(
+                        fx + step_size as f32,
+                        start_fz,
+                        bounds_pct,
+                        texture_dimensions,
+                    );
+                    let uv_rf =
+                        compute_uv(fx + step_size as f32, fz, bounds_pct, texture_dimensions);
                     let uv_lf = compute_uv(fx, fz, bounds_pct, texture_dimensions);
 
                     let left_back = [fx, greedy_height, start_fz];
@@ -442,32 +410,19 @@ impl PreMesh {
                     let right_front = [fx + step_size as f32, greedy_height, fz];
                     let left_front = [fx, greedy_height, fz];
 
-                    premesh.add_triangle([left_front, right_back, left_back], [uv_lf, uv_rb, uv_lb]);
-                    premesh.add_triangle([right_front, right_back, left_front], [uv_rf, uv_rb, uv_lf]);
-                }//if 
-
-
-            }// x loop 
-
-
-
-
-
-
-       } // x loop 
-
-
+                    premesh
+                        .add_triangle([left_front, right_back, left_back], [uv_lf, uv_rb, uv_lb]);
+                    premesh
+                        .add_triangle([right_front, right_back, left_front], [uv_rf, uv_rb, uv_lf]);
+                } //if
+            } // x loop
+        } // x loop
 
         premesh.calculate_smooth_normals();
 
         premesh
     }
-  
-
-
 }
-
-
 
 fn compute_normal(v0: [f32; 3], v1: [f32; 3], v2: [f32; 3]) -> [f32; 3] {
     let edge1 = [v1[0] - v0[0], v1[1] - v0[1], v1[2] - v0[2]];

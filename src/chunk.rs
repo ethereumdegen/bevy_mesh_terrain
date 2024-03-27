@@ -16,7 +16,7 @@ use crate::heightmap::{HeightMap, HeightMapU16, SubHeightMapU16};
 use crate::pre_mesh::PreMesh;
 use crate::terrain::{TerrainData, TerrainImageDataLoadStatus, TerrainViewer};
 use crate::terrain_config::TerrainConfig;
-use crate::terrain_material::{ChunkMaterialUniforms,ToolPreviewUniforms, TerrainMaterial};
+use crate::terrain_material::{ChunkMaterialUniforms, TerrainMaterial, ToolPreviewUniforms};
 use crate::tool_preview::ToolPreviewResource;
 
 use bevy::pbr::ExtendedMaterial;
@@ -520,10 +520,8 @@ pub fn build_chunk_meshes(
             }
             let (terrain_config, terrain_data) = terrain_query.get(terrain_entity_id).unwrap();
 
-          
-
             let height_map_data = chunk_height_maps.chunk_height_maps.get(&chunk.chunk_id); // &chunk_data.height_map_data.clone();
- 
+
             if height_map_data.is_none() {
                 println!("chunk is missing height map data .");
                 continue;
@@ -544,10 +542,7 @@ pub fn build_chunk_meshes(
                 continue;
             }
 
-
             println!("build chunk mesh {:?}  ", chunk_entity);
-
-          
 
             let thread_pool = AsyncComputeTaskPool::get();
 
@@ -575,15 +570,18 @@ pub fn build_chunk_meshes(
 
             let chunk_id_clone = chunk.chunk_id.clone();
 
-          //  let chunk_coords = ChunkCoords::from_chunk_id(chunk_id_clone, chunk_rows);
+            //  let chunk_coords = ChunkCoords::from_chunk_id(chunk_id_clone, chunk_rows);
 
-             let (stitch_data_x_row, stitch_data_y_col) = compute_stitch_data(
-                      chunk_id_clone, chunk_rows, terrain_dimensions, &chunk_height_maps.chunk_height_maps
-                   );
+            let (stitch_data_x_row, stitch_data_y_col) = compute_stitch_data(
+                chunk_id_clone,
+                chunk_rows,
+                terrain_dimensions,
+                &chunk_height_maps.chunk_height_maps,
+            );
 
-           if stitch_data_x_row.is_none() || stitch_data_y_col.is_none() {   return   }
- 
- 
+            if stitch_data_x_row.is_none() || stitch_data_y_col.is_none() {
+                return;
+            }
 
             //for now, add the unstitched data..
             commands.entity(chunk_entity).insert(CachedHeightmapData {
@@ -605,10 +603,9 @@ pub fn build_chunk_meshes(
 
             // This is not right for some of the edge chunks -- their
 
+            chunk_data.chunk_state = ChunkState::Building;
 
-             chunk_data.chunk_state = ChunkState::Building;
-
-             let use_greedy_mesh = terrain_config.use_greedy_mesh;
+            let use_greedy_mesh = terrain_config.use_greedy_mesh;
 
             let task = thread_pool.spawn(async move {
                 println!("trying to build premesh");
@@ -620,22 +617,21 @@ pub fn build_chunk_meshes(
                 ];
 
                 let mesh = match use_greedy_mesh {
-
                     true => PreMesh::from_heightmap_subsection_greedy(
                         &sub_heightmap,
                         height_scale,
                         lod_level,
                         sub_texture_dim,
-                    )  ,
+                    ),
 
                     false => PreMesh::from_heightmap_subsection(
                         &sub_heightmap,
                         height_scale,
                         lod_level,
                         sub_texture_dim,
-                    ) 
-
-                } .build();
+                    ),
+                }
+                .build();
 
                 println!("built premesh   ");
 
@@ -778,31 +774,21 @@ pub fn finish_chunk_build_tasks(
     }
 }
 
-
 pub fn update_tool_uniforms(
+    terrain_chunk_mesh_query: Query<&Handle<TerrainMaterialExtension>, With<TerrainChunkMesh>>,
 
-      terrain_chunk_mesh_query:Query< &Handle<TerrainMaterialExtension>, With<TerrainChunkMesh> >,
+    mut terrain_materials: ResMut<Assets<TerrainMaterialExtension>>,
 
-       mut terrain_materials: ResMut<Assets<TerrainMaterialExtension>>,
-
-       tool_preview_resource: Res<ToolPreviewResource> 
-
-    ){
-
-
-
+    tool_preview_resource: Res<ToolPreviewResource>,
+) {
     for mat_handle in terrain_chunk_mesh_query.iter() {
-        if let Some(mat) = terrain_materials.get_mut(mat_handle){
-
-            mat.extension.tool_preview_uniforms.tool_coordinates = tool_preview_resource.tool_coordinates;
+        if let Some(mat) = terrain_materials.get_mut(mat_handle) {
+            mat.extension.tool_preview_uniforms.tool_coordinates =
+                tool_preview_resource.tool_coordinates;
             mat.extension.tool_preview_uniforms.tool_color = tool_preview_resource.tool_color;
             mat.extension.tool_preview_uniforms.tool_radius = tool_preview_resource.tool_radius;
-
         }
-
     }
-
-
 }
 
 pub fn update_chunk_visibility(
@@ -851,7 +837,7 @@ pub fn update_chunk_visibility(
                 }
             } + lod_level_offset;*/
 
-            chunk_data.lod_level = lod_level_offset; // for now 
+            chunk_data.lod_level = lod_level_offset; // for now
 
             let max_render_distance = terrain_config.get_max_render_distance();
 
@@ -938,116 +924,92 @@ pub fn save_chunk_collision_data_to_disk(
     }
 }
 
-
 /*
 
-    Attempts to look at adjacent height maps to return stitch data 
+    Attempts to look at adjacent height maps to return stitch data
 */
 pub fn compute_stitch_data(
     chunk_id: u32,
     chunk_rows: u32,
     terrain_dimensions: Vec2,
-    chunk_height_maps: &HashMap<u32,SubHeightMapU16>
+    chunk_height_maps: &HashMap<u32, SubHeightMapU16>,
+) -> (Option<Vec<u16>>, Option<Vec<u16>>) {
+    let chunk_coords = ChunkCoords::from_chunk_id(chunk_id, chunk_rows);
 
+    let stitch_chunk_id_pos_x =
+        ChunkCoords::new(chunk_coords.x() + 1, chunk_coords.y()).get_chunk_index(chunk_rows);
+    let stitch_chunk_id_pos_y =
+        ChunkCoords::new(chunk_coords.x(), chunk_coords.y() + 1).get_chunk_index(chunk_rows);
 
-    ) -> (Option<Vec<u16>>, Option<Vec<u16>> ){
+    println!(
+        "chunk id ... {} {} {} ",
+        chunk_id, stitch_chunk_id_pos_x, stitch_chunk_id_pos_y
+    );
 
+    let stitch_chunk_id_pos_x_y_corner =
+        ChunkCoords::new(chunk_coords.x() + 1, chunk_coords.y() + 1).get_chunk_index(chunk_rows);
 
+    let max_chunk_id_plus_one = chunk_rows * chunk_rows;
 
-                                   let chunk_coords = ChunkCoords::from_chunk_id(chunk_id , chunk_rows);
+    let stitch_data_x_row: Option<Vec<u16>>;
 
-                                      let stitch_chunk_id_pos_x = ChunkCoords::new(chunk_coords.x() + 1, chunk_coords.y())
-                                        .get_chunk_index(chunk_rows);
-                                        let stitch_chunk_id_pos_y = ChunkCoords::new(chunk_coords.x() , chunk_coords.y() + 1)
-                                            .get_chunk_index(chunk_rows);
+    let stitch_data_y_col: Option<Vec<u16>>;
 
-                                            println!("chunk id ... {} {} {} " , chunk_id  , stitch_chunk_id_pos_x, stitch_chunk_id_pos_y  );
+    let stitch_data_x_y_corner: Option<u16>;
 
-                                        let stitch_chunk_id_pos_x_y_corner = ChunkCoords::new(chunk_coords.x() + 1, chunk_coords.y() + 1)
-                                            .get_chunk_index(chunk_rows);
+    let chunk_dimensions = [
+        terrain_dimensions.x as u32 / chunk_rows,
+        terrain_dimensions.y as u32 / chunk_rows,
+    ];
 
+    if let Some(chunk_height_data) = chunk_height_maps.get(&stitch_chunk_id_pos_x_y_corner) {
+        stitch_data_x_y_corner = Some(chunk_height_data.0[0][0]);
+    } else {
+        stitch_data_x_y_corner = Some(0);
+    }
 
+    if let Some(chunk_height_data) = chunk_height_maps.get(&stitch_chunk_id_pos_x) {
+        let mut final_vec = Vec::new();
+        for i in 0..chunk_dimensions.x() as usize {
+            final_vec.push(chunk_height_data.0[0][i]);
+        }
+        stitch_data_x_row = Some(final_vec);
+    } else {
+        println!("WARN no height data for {:?}", stitch_chunk_id_pos_x);
 
-                                         let max_chunk_id_plus_one = chunk_rows * chunk_rows;
+        if stitch_chunk_id_pos_x < max_chunk_id_plus_one {
+            return (None, None);
+        }; //prevents loading race cond issue with stitching
 
-                                        let  stitch_data_x_row: Option<Vec<u16>>  ;
+        let mut final_vec = Vec::new();
+        for _ in 0..chunk_dimensions.x() as usize {
+            final_vec.push(0);
+        }
 
-                                        let  stitch_data_y_col: Option<Vec<u16>> ;
+        stitch_data_x_row = Some(final_vec);
+    }
 
-                                        let  stitch_data_x_y_corner: Option<u16> ;
+    if let Some(chunk_height_data) = chunk_height_maps.get(&stitch_chunk_id_pos_y) {
+        let mut final_vec = Vec::new();
+        for i in 0..chunk_dimensions.y() as usize {
+            final_vec.push(chunk_height_data.0[i][0]);
+        }
+        final_vec.push(stitch_data_x_y_corner.unwrap_or(0)); // the corner corner --gotta fix me some how ?? - try to read diag chunk
+        stitch_data_y_col = Some(final_vec);
+    } else {
+        println!("WARN no height data for {:?}", stitch_chunk_id_pos_y);
+        if stitch_chunk_id_pos_y < max_chunk_id_plus_one {
+            return (None, None);
+        }; //prevents loading race cond issue with stitching
 
-                                        let chunk_dimensions = [
-                                            terrain_dimensions.x as u32 / chunk_rows,
-                                            terrain_dimensions.y as u32 / chunk_rows,
-                                        ];
+        let mut final_vec = Vec::new();
+        for _ in 0..chunk_dimensions.y() as usize {
+            final_vec.push(0);
+        }
+        final_vec.push(stitch_data_x_y_corner.unwrap_or(0)); // the corner corner --gotta fix me some how ?? - try to read diag chunk
 
+        stitch_data_y_col = Some(final_vec);
+    }
 
-
-
-                                           if let Some(chunk_height_data) =  chunk_height_maps
-                                                .get(&stitch_chunk_id_pos_x_y_corner)
-                                            { 
-                                               
-                                                
-                                                stitch_data_x_y_corner = Some(  chunk_height_data.0[0][0]  );
-                                            } else {
-                                                
-                                                 stitch_data_x_y_corner = Some( 0  );
-                                            }
-
-
-
-                                            if let Some(chunk_height_data) = chunk_height_maps
-                                                .get(&stitch_chunk_id_pos_x)
-                                            {
-                                                let mut final_vec = Vec::new();
-                                                for i in 0..chunk_dimensions.x() as usize {
-                                                    final_vec.push(chunk_height_data.0[0][i]);
-                                                }
-                                                stitch_data_x_row = Some(final_vec);
-                                            } else {
-                                                println!("WARN no height data for {:?}" , stitch_chunk_id_pos_x);
-
-                                                if  stitch_chunk_id_pos_x < max_chunk_id_plus_one { return (None,None)  }; //prevents loading race cond issue with stitching 
-
-                                                let mut final_vec = Vec::new();
-                                                for _ in 0..chunk_dimensions.x() as usize {
-                                                    final_vec.push(0);
-                                                }
-
-                                                stitch_data_x_row = Some(final_vec);
-                                            }
-
-
-
-
-                                            if let Some(chunk_height_data) = chunk_height_maps
-                                                .get(&stitch_chunk_id_pos_y)
-                                            {
-                                                let mut final_vec = Vec::new();
-                                                for i in 0..chunk_dimensions.y() as usize {
-                                                    final_vec.push(chunk_height_data.0[i][0]);
-                                                }
-                                                 final_vec.push(  stitch_data_x_y_corner.unwrap_or(0)   ); // the corner corner --gotta fix me some how ?? - try to read diag chunk
-                                                stitch_data_y_col = Some(final_vec);
-                                            } else {
-                                                  println!("WARN no height data for {:?}" , stitch_chunk_id_pos_y);
-                                                     if  stitch_chunk_id_pos_y < max_chunk_id_plus_one { return (None,None)  };  //prevents loading race cond issue with stitching 
-
-
-                                                let mut final_vec = Vec::new();
-                                                for _ in 0..chunk_dimensions.y() as usize {
-                                                    final_vec.push(0);
-                                                }
-                                                final_vec.push(  stitch_data_x_y_corner.unwrap_or(0)   ); // the corner corner --gotta fix me some how ?? - try to read diag chunk
-
-                                                stitch_data_y_col = Some(final_vec);
-                                            }
-
-
-
-
-
-                                        (stitch_data_x_row,stitch_data_y_col)
-
+    (stitch_data_x_row, stitch_data_y_col)
 }

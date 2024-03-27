@@ -14,7 +14,10 @@ use std::time::Duration;
 use crate::chunk::TerrainMaterialExtension;
 use terrain_material::TerrainMaterial;
 
-use edit::{apply_command_events, apply_tool_edits, EditTerrainEvent, TerrainBrushEvent, TerrainCommandEvent};
+use edit::{
+    apply_command_events, apply_tool_edits, EditTerrainEvent, TerrainBrushEvent,
+    TerrainCommandEvent,
+};
 
 pub mod chunk;
 //pub mod collision;
@@ -45,7 +48,6 @@ impl Plugin for TerrainMeshPlugin {
 
         app.init_state::<terrain_loading_state::TerrainLoadingState>();
 
-
         app.init_resource::<tool_preview::ToolPreviewResource>();
 
         //app.add_event::<ChunkEvent>();
@@ -56,8 +58,6 @@ impl Plugin for TerrainMeshPlugin {
 
         app.add_systems(Update, chunk::update_splat_image_formats);
         app.add_systems(Update, chunk::update_tool_uniforms);
-
-
 
         app.add_systems(
             Update,

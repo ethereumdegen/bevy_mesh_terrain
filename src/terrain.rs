@@ -170,17 +170,17 @@ pub fn load_terrain_texture_from_image(
             // Create a new array texture asset from the loaded texture.
             let desired_array_layers = terrain_config.texture_image_sections;
 
-            let need_to_reinterpret = desired_array_layers > 1 && texture_image.texture_descriptor.size.depth_or_array_layers == 1 ;
+            let need_to_reinterpret = desired_array_layers > 1
+                && texture_image.texture_descriptor.size.depth_or_array_layers == 1;
 
             if need_to_reinterpret {
                 //info!("texture info {:?}" , texture_image.texture_descriptor.dimension, texture_image.size().depth_or_array_layers);
-
 
                 texture_image.reinterpret_stacked_2d_as_array(desired_array_layers);
             }
 
             /*
-    
+
                 /// Takes a 2D image containing vertically stacked images of the same size, and reinterprets
                 /// it as a 2D array texture, where each of the stacked images becomes one layer of the
                 /// array. This is primarily for use with the `texture2DArray` shader uniform type.
