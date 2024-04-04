@@ -852,10 +852,12 @@ pub fn update_chunk_visibility(
 }
 
 // outputs as R16 grayscale
-pub fn save_chunk_height_map_to_disk(
+pub fn save_chunk_height_map_to_disk<P>(
     chunk_height_data: &SubHeightMapU16, // Adjusted for direct Vec<Vec<u16>> input
-    save_file_path: String,
-) {
+    save_file_path: P,
+) where
+    P: AsRef<Path>,
+{
     let chunk_height_data = chunk_height_data.0.clone();
 
     // Assuming chunk_height_data is a Vec<Vec<u16>>
@@ -863,8 +865,7 @@ pub fn save_chunk_height_map_to_disk(
     let width = chunk_height_data.first().map_or(0, |row| row.len());
 
     // Prepare the file and writer
-    let path = Path::new(&save_file_path);
-    let file = File::create(path).expect("Failed to create file");
+    let file = File::create(save_file_path).expect("Failed to create file");
     let ref mut w = BufWriter::new(file);
 
     // Set up the encoder. Since PNG is the format that supports 16-bit grayscale natively, we use it here.
