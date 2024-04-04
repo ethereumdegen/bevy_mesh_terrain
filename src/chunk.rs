@@ -263,16 +263,15 @@ pub fn initialize_chunk_data(
 
         let chunk_id = chunk.chunk_id;
         let file_name = format!("{}.png", chunk_id);
+
         //default_terrain/diffuse
-        let height_texture_path = terrain_config.height_folder_path.with_file_name(file_name);
+        let height_texture_path = terrain_config.height_folder_path.join(&file_name);
         println!("loading from {}", height_texture_path.display());
 
         let height_map_image_handle: Handle<Image> = asset_server.load(height_texture_path);
 
         //default_terrain/splat
-        let splat_texture_folder_path = &terrain_config.splat_folder_path;
-
-        let splat_texture_path = terrain_config.splat_folder_path.with_file_name(file_name);
+        let splat_texture_path = terrain_config.splat_folder_path.join(&file_name);
         println!("loading from {}", splat_texture_path.display());
 
         let splat_image_handle: Handle<Image> = asset_server.load(splat_texture_path);
@@ -910,7 +909,7 @@ where
             .expect("Failed to create image buffer");
 
         // Save the image to the specified file path
-        img.save(save_file_path).expect("Failed to save splat map");
+        img.save(&save_file_path).expect("Failed to save splat map");
         println!("saved splat image {}", save_file_path.as_ref().display());
     } else {
         eprintln!("Unsupported image format for saving: {:?}", format);

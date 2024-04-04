@@ -52,10 +52,10 @@ impl Default for TerrainConfig {
             use_greedy_mesh: false,
             texture_image_sections: 8,
 
-            diffuse_folder_path: "diffuse".into(),
-            height_folder_path: "height".into(),
-            splat_folder_path: "splat".into(),
-            collider_data_folder_path: "collider".into(),
+            diffuse_folder_path: "diffuse/".into(),
+            height_folder_path: "height/".into(),
+            splat_folder_path: "splat/".into(),
+            collider_data_folder_path: "collider/".into(),
         }
     }
 }
