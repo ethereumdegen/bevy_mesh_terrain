@@ -1,5 +1,5 @@
-use bevy::prelude::*;
 use bevy::time::common_conditions::on_timer;
+use bevy::{asset::load_internal_asset, prelude::*};
 use chunk::{
     build_chunk_height_data, build_chunk_meshes, finish_chunk_build_tasks, initialize_chunk_data,
     reset_chunk_height_data, update_chunk_visibility, ChunkHeightMapResource,
@@ -12,6 +12,7 @@ use std::time::Duration;
 //use collision::spawn_chunk_collision_data;
 
 use crate::chunk::TerrainMaterialExtension;
+use crate::terrain_material::TERRAIN_SHADER_HANDLE;
 use terrain_material::TerrainMaterial;
 
 use edit::{
@@ -41,9 +42,15 @@ impl Default for TerrainMeshPlugin {
         }
     }
 }
-
 impl Plugin for TerrainMeshPlugin {
     fn build(&self, app: &mut App) {
+        // load terrain shader into cache
+        load_internal_asset!(
+            app,
+            TERRAIN_SHADER_HANDLE,
+            "../assets/shaders/terrain.wgsl",
+            Shader::from_wgsl
+        );
         app.add_plugins(MaterialPlugin::<TerrainMaterialExtension>::default());
 
         app.init_state::<terrain_loading_state::TerrainLoadingState>();

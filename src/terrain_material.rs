@@ -10,6 +10,8 @@ use bevy::pbr::StandardMaterialUniform;
 
 use bevy::pbr::MaterialExtension;
 
+pub const TERRAIN_SHADER_HANDLE: Handle<Shader> = Handle::weak_from_u128(5433284082028047579);
+
 #[derive(Clone, ShaderType, Default, Debug)]
 pub struct ChunkMaterialUniforms {
     pub color_texture_expansion_factor: f32,
@@ -46,10 +48,10 @@ pub struct TerrainMaterial {
 
 impl MaterialExtension for TerrainMaterial {
     fn fragment_shader() -> ShaderRef {
-        "shaders/terrain.wgsl".into()
+        ShaderRef::Handle(TERRAIN_SHADER_HANDLE)
     }
 
     fn deferred_fragment_shader() -> ShaderRef {
-        "shaders/terrain.wgsl".into()
+        ShaderRef::Handle(TERRAIN_SHADER_HANDLE)
     }
 }
