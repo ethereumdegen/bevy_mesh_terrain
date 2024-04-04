@@ -888,7 +888,10 @@ pub fn save_chunk_height_map_to_disk<P>(
         .expect("Failed to write PNG data");
 }
 
-pub fn save_chunk_splat_map_to_disk(splat_image: &Image, save_file_path: String) {
+pub fn save_chunk_splat_map_to_disk<P>(splat_image: &Image, save_file_path: P)
+where
+    P: AsRef<Path> + Clone,
+{
     // Attempt to find the image in the Assets<Image> collection
 
     // Assuming the image format is Rgba8, which is common for splat maps
@@ -907,18 +910,17 @@ pub fn save_chunk_splat_map_to_disk(splat_image: &Image, save_file_path: String)
             .expect("Failed to create image buffer");
 
         // Save the image to the specified file path
-        img.save(&save_file_path).expect("Failed to save splat map");
-
-        println!("saved splat image {:?}", save_file_path.clone());
+        img.save(save_file_path).expect("Failed to save splat map");
+        println!("saved splat image {}", save_file_path.as_ref().display());
     } else {
         eprintln!("Unsupported image format for saving: {:?}", format);
     }
 }
 
-pub fn save_chunk_collision_data_to_disk(
-    serialized_collision_data: Vec<u8>,
-    save_file_path: String,
-) {
+pub fn save_chunk_collision_data_to_disk<P>(serialized_collision_data: Vec<u8>, save_file_path: P)
+where
+    P: AsRef<Path>,
+{
     match fs::write(save_file_path, serialized_collision_data) {
         Ok(_) => println!("Successfully saved collision data to file."),
         Err(e) => println!("Failed to save to file: {}", e),
