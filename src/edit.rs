@@ -1,4 +1,5 @@
 use std::ops::{Add, Div, Neg};
+use std::path::PathBuf;
 
 use bevy::ecs::entity::Entity;
 use bevy::math::Vec2;
@@ -118,16 +119,17 @@ pub fn apply_command_events(
 
             match ev {
                 TerrainCommandEvent::SaveAllChunks(save_height, save_splat, save_collision) => {
+                    let file_name = format!("{}.png", chunk.chunk_id);
+                    let asset_folder_path = PathBuf::from("assets");
                     if *save_height {
                         if let Some(chunk_height_data) =
                             chunk_height_maps.chunk_height_maps.get(&chunk.chunk_id)
                         {
                             save_chunk_height_map_to_disk(
                                 chunk_height_data,
-                                format!(
-                                    "assets/{}/{}.png",
-                                    terrain_config.height_folder_path, chunk.chunk_id
-                                ),
+                                asset_folder_path
+                                    .join(&terrain_config.height_folder_path)
+                                    .join(&file_name),
                             );
                         }
                     }
@@ -137,10 +139,9 @@ pub fn apply_command_events(
                             if let Some(splat_image) = images.get(splat_image_handle) {
                                 save_chunk_splat_map_to_disk(
                                     splat_image,
-                                    format!(
-                                        "assets/{}/{}.png",
-                                        terrain_config.splat_folder_path, chunk.chunk_id
-                                    ),
+                                    asset_folder_path
+                                        .join(&terrain_config.splat_folder_path)
+                                        .join(&file_name),
                                 );
                             }
                         }
@@ -212,13 +213,12 @@ pub fn apply_command_events(
 
                                 let collider_data_serialized =
                                     bincode::serialize(&collider).unwrap();
-
+                                let file_name = format!("{}.col", chunk.chunk_id);
                                 save_chunk_collision_data_to_disk(
                                     collider_data_serialized,
-                                    format!(
-                                        "assets/{}/{}.col",
-                                        terrain_config.collider_data_folder_path, chunk.chunk_id
-                                    ),
+                                    asset_folder_path
+                                        .join(&terrain_config.collider_data_folder_path)
+                                        .join(file_name),
                                 );
                                 continue;
                             }

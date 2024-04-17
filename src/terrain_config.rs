@@ -12,6 +12,7 @@ use serde::{Deserialize, Serialize};
 
 use std::fs::File;
 use std::io::Read;
+use std::path::PathBuf;
 
 #[derive(Component, Deserialize, Serialize, Clone)]
 pub struct TerrainConfig {
@@ -29,10 +30,10 @@ pub struct TerrainConfig {
     pub use_greedy_mesh: bool,
 
     pub texture_image_sections: u32,
-    pub diffuse_folder_path: String,
-    pub height_folder_path: String,
-    pub splat_folder_path: String,
-    pub collider_data_folder_path: String,
+    pub diffuse_folder_path: PathBuf,
+    pub height_folder_path: PathBuf,
+    pub splat_folder_path: PathBuf,
+    pub collider_data_folder_path: PathBuf,
 }
 
 impl Default for TerrainConfig {
@@ -51,10 +52,10 @@ impl Default for TerrainConfig {
             use_greedy_mesh: false,
             texture_image_sections: 8,
 
-            diffuse_folder_path: "diffuse".into(),
-            height_folder_path: "height".into(),
-            splat_folder_path: "splat".into(),
-            collider_data_folder_path: "collider".into(),
+            diffuse_folder_path: "diffuse/".into(),
+            height_folder_path: "height/".into(),
+            splat_folder_path: "splat/".into(),
+            collider_data_folder_path: "collider/".into(),
         }
     }
 }

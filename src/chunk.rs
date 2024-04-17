@@ -262,18 +262,17 @@ pub fn initialize_chunk_data(
         let (terrain_config, terrain_data) = terrain_query.get(terrain_entity_id).unwrap();
 
         let chunk_id = chunk.chunk_id;
+        let file_name = format!("{}.png", chunk_id);
 
         //default_terrain/diffuse
-        let height_texture_folder_path = &terrain_config.height_folder_path;
-        let height_texture_path = format!("{}/{}.png", height_texture_folder_path, chunk_id);
-        println!("loading from {}", height_texture_path);
+        let height_texture_path = terrain_config.height_folder_path.join(&file_name);
+        println!("loading from {}", height_texture_path.display());
 
         let height_map_image_handle: Handle<Image> = asset_server.load(height_texture_path);
 
         //default_terrain/splat
-        let splat_texture_folder_path = &terrain_config.splat_folder_path;
-        let splat_texture_path = format!("{}/{}.png", splat_texture_folder_path, chunk_id);
-        println!("loading from {}", splat_texture_path);
+        let splat_texture_path = terrain_config.splat_folder_path.join(&file_name);
+        println!("loading from {}", splat_texture_path.display());
 
         let splat_image_handle: Handle<Image> = asset_server.load(splat_texture_path);
 
@@ -852,10 +851,12 @@ pub fn update_chunk_visibility(
 }
 
 // outputs as R16 grayscale
-pub fn save_chunk_height_map_to_disk(
+pub fn save_chunk_height_map_to_disk<P>(
     chunk_height_data: &SubHeightMapU16, // Adjusted for direct Vec<Vec<u16>> input
-    save_file_path: String,
-) {
+    save_file_path: P,
+) where
+    P: AsRef<Path>,
+{
     let chunk_height_data = chunk_height_data.0.clone();
 
     // Assuming chunk_height_data is a Vec<Vec<u16>>
@@ -863,8 +864,7 @@ pub fn save_chunk_height_map_to_disk(
     let width = chunk_height_data.first().map_or(0, |row| row.len());
 
     // Prepare the file and writer
-    let path = Path::new(&save_file_path);
-    let file = File::create(path).expect("Failed to create file");
+    let file = File::create(save_file_path).expect("Failed to create file");
     let ref mut w = BufWriter::new(file);
 
     // Set up the encoder. Since PNG is the format that supports 16-bit grayscale natively, we use it here.
@@ -887,7 +887,10 @@ pub fn save_chunk_height_map_to_disk(
         .expect("Failed to write PNG data");
 }
 
-pub fn save_chunk_splat_map_to_disk(splat_image: &Image, save_file_path: String) {
+pub fn save_chunk_splat_map_to_disk<P>(splat_image: &Image, save_file_path: P)
+where
+    P: AsRef<Path> + Clone,
+{
     // Attempt to find the image in the Assets<Image> collection
 
     // Assuming the image format is Rgba8, which is common for splat maps
@@ -907,17 +910,16 @@ pub fn save_chunk_splat_map_to_disk(splat_image: &Image, save_file_path: String)
 
         // Save the image to the specified file path
         img.save(&save_file_path).expect("Failed to save splat map");
-
-        println!("saved splat image {:?}", save_file_path.clone());
+        println!("saved splat image {}", save_file_path.as_ref().display());
     } else {
         eprintln!("Unsupported image format for saving: {:?}", format);
     }
 }
 
-pub fn save_chunk_collision_data_to_disk(
-    serialized_collision_data: Vec<u8>,
-    save_file_path: String,
-) {
+pub fn save_chunk_collision_data_to_disk<P>(serialized_collision_data: Vec<u8>, save_file_path: P)
+where
+    P: AsRef<Path>,
+{
     match fs::write(save_file_path, serialized_collision_data) {
         Ok(_) => println!("Successfully saved collision data to file."),
         Err(e) => println!("Failed to save to file: {}", e),

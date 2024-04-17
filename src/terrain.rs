@@ -1,4 +1,4 @@
-use bevy::asset::LoadState;
+use bevy::asset::{AssetPath, LoadState};
 use bevy::prelude::*;
 use bevy::render::render_resource::{
     AddressMode, FilterMode, SamplerDescriptor, TextureDescriptor, TextureFormat,
@@ -135,7 +135,7 @@ pub fn load_terrain_texture_from_image(
         if terrain_data.texture_image_handle.is_none() {
             let array_texture_path = &terrain_config.diffuse_folder_path;
 
-            let tex_image = asset_server.load(array_texture_path);
+            let tex_image = asset_server.load(AssetPath::from_path(array_texture_path));
             terrain_data.texture_image_handle = Some(tex_image);
         }
 
