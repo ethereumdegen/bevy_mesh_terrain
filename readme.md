@@ -7,9 +7,7 @@
 cargo add bevy_mesh_terrain 
 ```
 
-
-NOTE: Make SURE you copy the terrain.wsgl shader into your assets directory properly!  Otherwise your terrain will not render. 
-
+ 
 
 ### Bevy Versions
 
