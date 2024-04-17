@@ -48,7 +48,7 @@ impl Plugin for TerrainMeshPlugin {
         load_internal_asset!(
             app,
             TERRAIN_SHADER_HANDLE,
-            "../assets/shaders/terrain.wgsl",
+            "shaders/terrain.wgsl",
             Shader::from_wgsl
         );
         app.add_plugins(MaterialPlugin::<TerrainMaterialExtension>::default());
