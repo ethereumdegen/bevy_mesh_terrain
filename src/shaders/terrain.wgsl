@@ -102,7 +102,7 @@ var alpha_mask_sampler: sampler;
 
 @fragment
 fn fragment(
-    mesh: VertexOutput,
+    mesh: VertexOutput, 
     @builtin(front_facing) is_front: bool,
 ) -> @location(0) vec4<f32> {
     
@@ -139,14 +139,41 @@ fn fragment(
     let blended_normal = normal_from_texture_0 * (1.0 - blend_amount) +
                         normal_from_texture_1 * (blend_amount)  ;
 
+    
+    let normal_ts = blended_normal.rgb * 2.0 - 1.0;  
+
 
    
   // generate a PbrInput struct from the StandardMaterial bindings
     var pbr_input = pbr_input_from_standard_material(mesh, is_front);
- 
+    
     //hack the material (StandardMaterialUniform)  so the color is from the terrain splat 
     pbr_input.material.base_color =  blended_color;
-   // pbr_input.N = (pbr_input.N * 0.5) +  (blended_normal.rgb*0.5);  // Normalized normal-mapped world normal used for lighting
+
+
+
+
+
+
+
+
+    //NORMAL
+
+     // Transform the blended normal from tangent space to world space
+    var N: vec3<f32> = normalize(pbr_input.world_normal);
+ 
+    var T: vec3<f32> = mesh.tangent.xyz;
+    var B: vec3<f32> = mesh.tangent.w * cross(N, T);
+
+    N = normalize(normal_ts.x * T + Nt.y * B + normal_ts.z * N);
+ 
+    let normal_ws = normalize(mesh.tangent * normal_ts.x + mesh.bitangent * normal_ts.y + mesh.normal * normal_ts.z);
+
+
+
+    pbr_input.N = normal_ws;  // Normalized normal-mapped world normal used for lighting
+
+    // --
 
 
     var pbr_out: FragmentOutput;
