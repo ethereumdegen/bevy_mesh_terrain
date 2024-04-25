@@ -16,6 +16,6 @@ TerrainConfig(
     splat_folder_path: "default_terrain/splat",  
     diffuse_folder_path: "default_terrain/diffuse/array_texture_lg.png",
     normal_folder_path: "default_terrain/diffuse/normal_texture_lg.png",  
-    texture_image_sections: 32
+    texture_image_sections: 8
 
 )

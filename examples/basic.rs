@@ -16,6 +16,7 @@ fn main() {
         .add_systems(Startup, setup)
         .add_systems(Update, update_camera_look)
         .add_systems(Update, update_camera_move)
+        .add_systems(Update, update_directional_light_position)
         .run();
 }
 
@@ -107,5 +108,33 @@ fn update_camera_move(
             let forward = transform.forward();
             transform.translation -= forward * MOVE_SPEED;
         }
+    }
+}
+
+
+fn update_directional_light_position(
+    mut query: Query<&mut Transform, With<DirectionalLight>>,
+   
+    time: Res<Time>,
+) {
+
+    let current_time = time.elapsed();
+
+
+ //   let delta_time = time.delta_seconds();
+    
+    let SECONDS_IN_A_CYCLE = 20.0;
+
+    let angle = (current_time.as_millis() as f32 / (SECONDS_IN_A_CYCLE* 1000.0) ) * std::f32::consts::PI * 2.0; // Convert time to radians
+
+    let radius = 20.0; // Adjust the radius of the sun's orbit
+    let x = angle.cos() * radius;
+    let y = angle.sin() * radius + 10.0; // Adjust the height of the sun
+    let z = 0.0;
+
+    for mut transform in query.iter_mut() {
+
+        transform.translation = Vec3::new(x, y, z);
+        transform.look_at(Vec3::ZERO, Vec3::Y);
     }
 }

@@ -150,10 +150,12 @@ fn fragment(
     let blended_color = color_from_texture_0 * (1.0 - blend_amount) +
                         color_from_texture_1 * (blend_amount)  ;
 
-    let blended_normal = normal_from_texture_0 * (1.0 - blend_amount) +
+    var blended_normal = normal_from_texture_0 * (1.0 - blend_amount) +
                         normal_from_texture_1 * (blend_amount)  ;
-
-
+ 
+     blended_normal = normalize(blended_normal); 
+                    
+   let blended_normal_vec3 = vec3<f32>( blended_normal.r, blended_normal.g, blended_normal.b );         
    
   // generate a PbrInput struct from the StandardMaterial bindings
   //remove this fn to make things faster as it duplicates work in gpu .. 
@@ -163,6 +165,9 @@ fn fragment(
  
     //hack the material (StandardMaterialUniform)  so the color is from the terrain splat 
     pbr_input.material.base_color =  blended_color;
+
+    //test for now 
+   // pbr_input.material.base_color   = vec4(blended_normal_vec3.r,blended_normal_vec3.g,blended_normal_vec3.b,1.0);
     
       let double_sided = (pbr_input.material.flags & STANDARD_MATERIAL_FLAGS_DOUBLE_SIDED_BIT) != 0u;
 
@@ -180,7 +185,7 @@ fn fragment(
         pbr_input.material.flags,
         //mesh.world_normal,
 
-        mix( mesh.world_normal ,  blended_normal.rgb, 0.1 ), //we use our texture for our tangent !! 
+        mix( normalize( mesh.world_normal ) , normalize( blended_normal_vec3 ) , 0.7 ),   //we use our texture for our tangent !! 
 
 
         double_sided,
