@@ -32,8 +32,8 @@ fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
         directional_light: DirectionalLight {
             //shadow_depth_bias: 0.5,
             //shadow_normal_bias: 0.5,
-
-            color: Color::WHITE,
+            illuminance: 700.0,  
+            color: Color::ANTIQUE_WHITE,
 
             ..default()
         },
@@ -43,8 +43,8 @@ fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
     // light
 
     commands.insert_resource(AmbientLight {
-        color: Color::WHITE,
-        brightness: 822.12,
+        color: Color::ANTIQUE_WHITE,
+        brightness: 122.12,
     });
 
     // camera

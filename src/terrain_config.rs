@@ -29,6 +29,8 @@ pub struct TerrainConfig {
 
     pub use_greedy_mesh: bool,
 
+    pub texture_uv_expansion_factor: f32, 
+
     pub texture_image_sections: u32,
     pub diffuse_folder_path: PathBuf,
     pub normal_folder_path: PathBuf,
@@ -47,6 +49,8 @@ impl Default for TerrainConfig {
             lod_distance: 1000.0,
 
             lod_level_offset: 0,
+
+            texture_uv_expansion_factor : 16.0,
 
             height_scale: 0.004, //for building the mesh
 

@@ -7,6 +7,8 @@ TerrainConfig(
     lod_level_offset: 0,
     height_scale: 0.0004,
 
+    texture_uv_expansion_factor: 16.0,
+
     use_greedy_mesh:false, 
     attach_collision_data: true, 
    

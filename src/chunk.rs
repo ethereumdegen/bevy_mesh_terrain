@@ -694,6 +694,7 @@ pub fn finish_chunk_build_tasks(
             }
 
             let (terrain_data, terrain_config) = terrain_query.get(terrain_entity_id).unwrap();
+            let color_texture_expansion_factor =  terrain_config.texture_uv_expansion_factor;
 
             let array_texture = terrain_data.get_array_texture_image().clone();
             let normal_texture = terrain_data.get_normal_texture_image().clone();
@@ -721,7 +722,7 @@ pub fn finish_chunk_build_tasks(
                     },
                     extension: TerrainMaterial {
                         chunk_uniforms: ChunkMaterialUniforms {
-                            color_texture_expansion_factor: 8.0, //why wont this apply to shader properly ?
+                            color_texture_expansion_factor , //why wont this apply to shader properly ?
                             chunk_uv,
                         },
                         tool_preview_uniforms: ToolPreviewUniforms::default(),
