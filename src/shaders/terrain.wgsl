@@ -108,7 +108,6 @@ var alpha_mask_texture: texture_2d<f32>;
 @group(2) @binding(29)
 var alpha_mask_sampler: sampler;
   
-
  
 
 //should consider adding vertex painting to this .. need another binding of course.. performs a color shift 
@@ -117,6 +116,7 @@ var alpha_mask_sampler: sampler;
 fn fragment(
     mesh: VertexOutput,
     
+     
     @builtin(front_facing) is_front: bool,
 ) -> @location(0) vec4<f32> {
     
@@ -172,7 +172,10 @@ fn fragment(
       let double_sided = (pbr_input.material.flags & STANDARD_MATERIAL_FLAGS_DOUBLE_SIDED_BIT) != 0u;
 
 
-     pbr_input.world_position = mesh.world_position;
+
+     
+     
+    pbr_input.world_position = mesh.world_position ;
     pbr_input.world_normal =  prepare_world_normal(
         mesh.world_normal,
         double_sided,
@@ -243,3 +246,10 @@ fn fragment(
     
 }
  
+
+
+
+ //mod the UV using parallax 
+ https://github.com/nicopap/bevy_mod_paramap/blob/main/src/parallax_map.wgsl
+
+ //later ? 
