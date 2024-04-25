@@ -52,7 +52,7 @@ impl Plugin for TerrainMeshPlugin {
             Shader::from_wgsl
         );
         app.add_plugins(MaterialPlugin::<TerrainMaterialExtension>::default());
-
+        
         app.init_state::<terrain_loading_state::TerrainLoadingState>();
 
         app.init_resource::<tool_preview::ToolPreviewResource>();

@@ -86,7 +86,7 @@ impl PreMesh {
         mesh.insert_attribute(Mesh::ATTRIBUTE_NORMAL, self.normals);
         mesh.insert_indices(Indices::U32(self.indices));
 
-        mesh.generate_tangents().unwrap(); 
+       // mesh.generate_tangents().unwrap(); 
         mesh
     }
 

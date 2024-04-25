@@ -1,14 +1,26 @@
  
 //see bindings in terrain_material.rs 
  
- 
+ //https://github.com/nicopap/bevy_mod_paramap/blob/main/src/parallax_map.wgsl
+
+
+
  #import bevy_pbr::{
     forward_io::{VertexOutput, FragmentOutput},
+      mesh_view_bindings::view,
     pbr_functions::alpha_discard,
     pbr_fragment::pbr_input_from_standard_material,
-      pbr_functions::{apply_pbr_lighting, main_pass_post_lighting_processing},
-    pbr_types::STANDARD_MATERIAL_FLAGS_UNLIT_BIT,
+      pbr_functions::{apply_pbr_lighting, main_pass_post_lighting_processing,
+      prepare_world_normal,
+      apply_normal_mapping,
+      calculate_view
+
+      },
+    // we can optionally modify the lit color before post-processing is applied
+    pbr_types::{STANDARD_MATERIAL_FLAGS_DOUBLE_SIDED_BIT,STANDARD_MATERIAL_FLAGS_UNLIT_BIT},
 }
+
+#import bevy_core_pipeline::tonemapping::tone_mapping
   
 struct StandardMaterial {
     time: f32,
@@ -95,14 +107,16 @@ var splat_map_sampler: sampler;
 var alpha_mask_texture: texture_2d<f32>; 
 @group(2) @binding(29)
 var alpha_mask_sampler: sampler;
- 
+  
 
+ 
 
 //should consider adding vertex painting to this .. need another binding of course.. performs a color shift 
 
 @fragment
 fn fragment(
-    mesh: VertexOutput, 
+    mesh: VertexOutput,
+    
     @builtin(front_facing) is_front: bool,
 ) -> @location(0) vec4<f32> {
     
@@ -139,41 +153,44 @@ fn fragment(
     let blended_normal = normal_from_texture_0 * (1.0 - blend_amount) +
                         normal_from_texture_1 * (blend_amount)  ;
 
-    
-    let normal_ts = blended_normal.rgb * 2.0 - 1.0;  
-
 
    
   // generate a PbrInput struct from the StandardMaterial bindings
+  //remove this fn to make things faster as it duplicates work in gpu .. 
     var pbr_input = pbr_input_from_standard_material(mesh, is_front);
+      
     
+ 
     //hack the material (StandardMaterialUniform)  so the color is from the terrain splat 
     pbr_input.material.base_color =  blended_color;
+    
+      let double_sided = (pbr_input.material.flags & STANDARD_MATERIAL_FLAGS_DOUBLE_SIDED_BIT) != 0u;
 
 
+     pbr_input.world_position = mesh.world_position;
+    pbr_input.world_normal =  prepare_world_normal(
+        mesh.world_normal,
+        double_sided,
+        is_front,
+    );
+
+// https://github.com/bevyengine/bevy/blob/main/assets/shaders/array_texture.wgsl 
+   
+    pbr_input.N =  apply_normal_mapping(
+        pbr_input.material.flags,
+        //mesh.world_normal,
+
+        mix( mesh.world_normal ,  blended_normal.rgb, 0.1 ), //we use our texture for our tangent !! 
 
 
-
-
-
-
-    //NORMAL
-
-     // Transform the blended normal from tangent space to world space
-    var N: vec3<f32> = normalize(pbr_input.world_normal);
- 
-    var T: vec3<f32> = mesh.tangent.xyz;
-    var B: vec3<f32> = mesh.tangent.w * cross(N, T);
-
-    N = normalize(normal_ts.x * T + Nt.y * B + normal_ts.z * N);
- 
-    let normal_ws = normalize(mesh.tangent * normal_ts.x + mesh.bitangent * normal_ts.y + mesh.normal * normal_ts.z);
-
-
-
-    pbr_input.N = normal_ws;  // Normalized normal-mapped world normal used for lighting
-
-    // --
+        double_sided,
+        is_front,
+       
+            
+        mesh.uv,
+        view.mip_bias,
+    );
+    pbr_input.V =  calculate_view(mesh.world_position, pbr_input.is_orthographic);
 
 
     var pbr_out: FragmentOutput;
@@ -187,7 +204,7 @@ fn fragment(
     // note this does not include fullscreen postprocessing effects like bloom.
     pbr_out.color = main_pass_post_lighting_processing(pbr_input, pbr_out.color);
 
-
+    pbr_out.color=  tone_mapping(pbr_out.color, view.color_grading);
 
     // -----
 
