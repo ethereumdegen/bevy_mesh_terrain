@@ -35,14 +35,18 @@ pub struct TerrainMaterial {
 
     #[texture(22, dimension = "2d_array")]
     #[sampler(23)]
-    pub array_texture: Option<Handle<Image>>,
+    pub diffuse_texture: Option<Handle<Image>>,
 
-    #[texture(24)]
+    #[texture(24, dimension = "2d_array")]
     #[sampler(25)]
-    pub splat_texture: Option<Handle<Image>>,
+    pub normal_texture: Option<Handle<Image>>,
 
     #[texture(26)]
     #[sampler(27)]
+    pub splat_texture: Option<Handle<Image>>,
+
+    #[texture(28)]
+    #[sampler(29)]
     pub alpha_mask_texture: Option<Handle<Image>>,
 }
 

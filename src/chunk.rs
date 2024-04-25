@@ -696,6 +696,7 @@ pub fn finish_chunk_build_tasks(
             let (terrain_data, terrain_config) = terrain_query.get(terrain_entity_id).unwrap();
 
             let array_texture = terrain_data.get_array_texture_image().clone();
+            let normal_texture = terrain_data.get_normal_texture_image().clone();
 
             let splat_texture = chunk_data.get_splat_texture_image().clone();
             let alpha_mask_texture = chunk_data.get_alpha_mask_texture_image().clone();
@@ -724,7 +725,8 @@ pub fn finish_chunk_build_tasks(
                             chunk_uv,
                         },
                         tool_preview_uniforms: ToolPreviewUniforms::default(),
-                        array_texture: array_texture.clone(),
+                        diffuse_texture: array_texture.clone(),
+                        normal_texture: normal_texture.clone(),
                         splat_texture: splat_texture.clone(),
                         alpha_mask_texture: alpha_mask_texture.clone(),
                         ..default()

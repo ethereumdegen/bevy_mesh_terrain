@@ -72,6 +72,11 @@ var base_color_texture: texture_2d_array<f32>;
 @group(2) @binding(23)
 var base_color_sampler: sampler;
 
+@group(2) @binding(24)
+var normal_texture: texture_2d_array<f32>;
+@group(2) @binding(25)
+var normal_sampler: sampler;
+
 
 
 
@@ -79,16 +84,16 @@ var base_color_sampler: sampler;
 //R tells us the terrain_layer_index 0 per pixel
 //G tells us the terrain_layer_index 1 per pixel
 //B is 0-255 mapped to 0 to 100% telling us how much of R to render versus how much of G to render 
-@group(2) @binding(24)
+@group(2) @binding(26)
  var splat_map_texture: texture_2d<f32>; 
 //var splat_map_texture: texture_2d_array<f32>; //these are control maps and there will be 4 
-@group(2) @binding(25)
+@group(2) @binding(27)
 var splat_map_sampler: sampler;
 
 //works similar to splat mask  -- we use a separate tex for this for NOW to make collision mesh building far easier (only need height map and not splat)
-@group(2) @binding(26)
+@group(2) @binding(28)
 var alpha_mask_texture: texture_2d<f32>; 
-@group(2) @binding(27)
+@group(2) @binding(29)
 var alpha_mask_sampler: sampler;
  
 
@@ -119,6 +124,9 @@ fn fragment(
     //this technique lets us use 255 total textures BUT we can only layer 2 at a time.  
     let color_from_texture_0 = textureSample(base_color_texture, base_color_sampler, tiled_uv, terrain_layer_index_0);
     let color_from_texture_1 = textureSample(base_color_texture, base_color_sampler, tiled_uv, terrain_layer_index_1);
+
+    let normal_from_texture_0 = textureSample(normal_texture, normal_sampler, tiled_uv, terrain_layer_index_0);
+    let normal_from_texture_1 = textureSample(normal_texture, normal_sampler, tiled_uv, terrain_layer_index_1);
     
 
     let blend_amount = splat_values.b;  //comes from B channel -- this pixel 
@@ -128,6 +136,9 @@ fn fragment(
     let blended_color = color_from_texture_0 * (1.0 - blend_amount) +
                         color_from_texture_1 * (blend_amount)  ;
 
+    let blended_normal = normal_from_texture_0 * (1.0 - blend_amount) +
+                        normal_from_texture_1 * (blend_amount)  ;
+
 
    
   // generate a PbrInput struct from the StandardMaterial bindings
@@ -135,6 +146,7 @@ fn fragment(
  
     //hack the material (StandardMaterialUniform)  so the color is from the terrain splat 
     pbr_input.material.base_color =  blended_color;
+   // pbr_input.N = (pbr_input.N * 0.5) +  (blended_normal.rgb*0.5);  // Normalized normal-mapped world normal used for lighting
 
 
     var pbr_out: FragmentOutput;

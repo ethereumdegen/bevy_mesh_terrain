@@ -4,7 +4,7 @@ use chunk::{
     build_chunk_height_data, build_chunk_meshes, finish_chunk_build_tasks, initialize_chunk_data,
     reset_chunk_height_data, update_chunk_visibility, ChunkHeightMapResource,
 };
-use terrain::{initialize_terrain, load_terrain_texture_from_image};
+use terrain::{initialize_terrain, load_terrain_texture_from_image, load_terrain_normal_from_image};
 
 use std::time::Duration;
 
@@ -96,7 +96,7 @@ impl Plugin for TerrainMeshPlugin {
             update_chunk_visibility.run_if(on_timer(self.task_update_rate)),
         );
 
-        app.add_systems(Update, load_terrain_texture_from_image);
+        app.add_systems(Update, (load_terrain_texture_from_image,load_terrain_normal_from_image));
 
         app.add_systems(Update, apply_tool_edits); //put this in a sub plugin ?
         app.add_systems(Update, apply_command_events);
