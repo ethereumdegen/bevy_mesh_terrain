@@ -250,6 +250,6 @@ fn fragment(
 
 
  //mod the UV using parallax 
- https://github.com/nicopap/bevy_mod_paramap/blob/main/src/parallax_map.wgsl
+  // https://github.com/nicopap/bevy_mod_paramap/blob/main/src/parallax_map.wgsl
 
  //later ? 
