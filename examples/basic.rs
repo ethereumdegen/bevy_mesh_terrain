@@ -1,3 +1,9 @@
+use bevy::pbr::wireframe::WireframeConfig;
+use bevy::render::RenderPlugin;
+use bevy::render::settings::WgpuSettings;
+use bevy::render::settings::WgpuFeatures;
+use bevy::render::settings::RenderCreation;
+use bevy::pbr::wireframe::WireframePlugin;
 use bevy::input::mouse::MouseMotion;
 use bevy::{pbr::ShadowFilteringMethod, prelude::*};
 use bevy_mesh_terrain::{
@@ -11,8 +17,31 @@ pub struct TextureLoaderResource {}
 
 fn main() {
     App::new()
-        .add_plugins(DefaultPlugins)
+       .add_plugins((
+            DefaultPlugins.set(RenderPlugin {
+                render_creation: RenderCreation::Automatic(WgpuSettings {
+                    // WARN this is a native only feature. It will not work with webgl or webgpu
+                    features: WgpuFeatures::POLYGON_MODE_LINE,
+                    ..default()
+                }),
+                ..default()
+            }),
+            // You need to add this plugin to enable wireframe rendering
+            WireframePlugin,
+        ))
         .add_plugins(TerrainMeshPlugin::default())
+        
+        .insert_resource(WireframeConfig {
+            // The global wireframe config enables drawing of wireframes on every mesh,
+            // except those with `NoWireframe`. Meshes with `Wireframe` will always have a wireframe,
+            // regardless of the global configuration.
+            global: false,
+            // Controls the default color of all wireframes. Used as the default color for global wireframes.
+            // Can be changed per mesh using the `WireframeColor` component.
+            default_color: Color::WHITE.into(),
+        })
+
+
         .add_systems(Startup, setup)
         .add_systems(Update, update_camera_look)
         .add_systems(Update, update_camera_move)

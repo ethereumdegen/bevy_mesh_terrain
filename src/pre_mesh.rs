@@ -334,17 +334,26 @@ impl PreMesh {
                         let right_front = [fx + step_size as f32, greedy_height, fz];
                         let left_front = [fx, greedy_height, fz];
 
-                        premesh.add_triangle(
-                            [left_front, right_back, left_back],
-                            [uv_lf, uv_rb, uv_lb],
-                        );
-                        premesh.add_triangle(
-                            [right_front, right_back, left_front],
-                            [uv_rf, uv_rb, uv_lf],
-                        );
-
-                        greedy_points_z_start = None;
+                       
+                         if greedy_height >= scaled_min_threshold 
+                        {
+                                   premesh.add_triangle(
+                                        [left_front, right_back, left_back],
+                                        [uv_lf, uv_rb, uv_lb],
+                                    );
+                                    premesh.add_triangle(
+                                        [right_front, right_back, left_front],
+                                        [uv_rf, uv_rb, uv_lf],
+                                    ); 
+                                        
+                        }
+                          greedy_points_z_start = None;
                         current_greedy_height = None;
+
+
+                       
+
+                       
                     }
                 } else {
                     let differences = [
@@ -387,6 +396,15 @@ impl PreMesh {
                 let right_front = [fx + step_size as f32, rf, fz + step_size as f32];
                 let left_front = [fx, lf, fz + step_size as f32];
 
+
+                if lb < scaled_min_threshold
+                    && lf < scaled_min_threshold
+                    && rb < scaled_min_threshold
+                    && rf < scaled_min_threshold
+                {
+                     
+                     continue;
+                }
                 premesh.add_triangle([left_front, right_back, left_back], [uv_lf, uv_rb, uv_lb]);
                 premesh.add_triangle([right_front, right_back, left_front], [uv_rf, uv_rb, uv_lf]);
             } // z loop
@@ -411,6 +429,14 @@ impl PreMesh {
                     let right_back = [fx + step_size as f32, greedy_height, start_fz];
                     let right_front = [fx + step_size as f32, greedy_height, fz];
                     let left_front = [fx, greedy_height, fz];
+
+
+                    if greedy_height < scaled_min_threshold 
+                        {
+                             
+                             continue;
+                        }
+
 
                     premesh
                         .add_triangle([left_front, right_back, left_back], [uv_lf, uv_rb, uv_lb]);
