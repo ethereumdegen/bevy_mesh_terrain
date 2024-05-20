@@ -104,9 +104,9 @@ var splat_map_sampler: sampler;
 
 //works similar to splat mask  -- we use a separate tex for this for NOW to make collision mesh building far easier (only need height map and not splat)
 @group(2) @binding(28)
-var alpha_mask_texture: texture_2d<f32>; 
+var height_map_texture: texture_2d<u32>; 
 @group(2) @binding(29)
-var alpha_mask_sampler: sampler;
+var height_map_sampler: sampler;
   
  
 
@@ -129,7 +129,30 @@ fn fragment(
     let splat_uv = chunk_uniforms.chunk_uv.xy + mesh.uv * (chunk_uniforms.chunk_uv.zw - chunk_uniforms.chunk_uv.xy);
     
     let splat_values = textureSample(splat_map_texture, splat_map_sampler, splat_uv );
-    let alpha_mask_value = textureSample(alpha_mask_texture, alpha_mask_sampler, splat_uv );  //comes from height map atm but COULD come from splat map now 
+   
+
+
+
+
+
+    let height_map_texture_dimensions = textureDimensions(height_map_texture);
+   
+    let height_map_sample_coord  = vec2<i32>(
+        i32(splat_uv.x * f32(height_map_texture_dimensions.x)),
+        i32(splat_uv.y * f32(height_map_texture_dimensions.y))
+    );
+
+          
+     var height_map_value: u32  = textureLoad(height_map_texture,   vec2<i32>(  height_map_sample_coord  ) , 0 ).r;
+
+
+
+
+
+
+
+
+    //let alpha_mask_value = textureSample(alpha_mask_texture, alpha_mask_sampler, splat_uv );  //comes from height map atm but COULD come from splat map now 
     
        //comes from the  control map .. float -> integer 
     let terrain_layer_index_0 = i32( splat_values.r * 255.0 );     ///* 255.0
@@ -231,14 +254,14 @@ fn fragment(
     let within_tool_radius = f32(distance <= tool_radius);
 
     let final_color = mix(
-        vec4(pbr_out.color.rgb, alpha_mask_value.r),
-        vec4(pbr_out.color.rgb * color_from_tool, alpha_mask_value.r),
+        vec4(pbr_out.color.rgb, 1.0),
+        vec4(pbr_out.color.rgb * color_from_tool, 1.0),
         within_tool_radius
     );
           
 
       // Implement alpha masking
-    if (alpha_mask_value.r < 0.1) { // Use your threshold value here
+    if (height_map_value < 8) { // Use your threshold value here
         discard;
     }
     

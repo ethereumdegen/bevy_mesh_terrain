@@ -63,12 +63,18 @@ pub struct ChunkData {
     // pub height_map_data: Option<HeightMapU16>,
     splat_image_handle: Option<Handle<Image>>,
 
-    alpha_mask_image_handle: Option<Handle<Image>>, //built from the height map
+   // alpha_mask_image_handle: Option<Handle<Image>>, //built from the height map
 
     pub material_handle: Option<Handle<TerrainMaterialExtension>>,
 }
 
 impl ChunkData {
+
+    pub fn get_height_map_texture_image(&self) -> &Option<Handle<Image>> {
+        &self.height_map_image_handle
+    }
+
+
     pub fn get_splat_texture_image(&self) -> &Option<Handle<Image>> {
         &self.splat_image_handle
     }
@@ -77,9 +83,9 @@ impl ChunkData {
         self.splat_image_handle = Some(tex_handle);
     }
 
-    pub fn get_alpha_mask_texture_image(&self) -> &Option<Handle<Image>> {
-        &self.alpha_mask_image_handle
-    }
+  //  pub fn get_alpha_mask_texture_image(&self) -> &Option<Handle<Image>> {
+  //      &self.alpha_mask_image_handle
+  //  }
 }
 
 pub type TerrainPbrBundle = MaterialMeshBundle<TerrainMaterialExtension>;
@@ -285,7 +291,7 @@ pub fn initialize_chunk_data(
             height_map_image_data_load_status: TerrainImageDataLoadStatus::NotLoaded,
 
             splat_image_handle: Some(splat_image_handle),
-            alpha_mask_image_handle: None, //gets set later
+           // alpha_mask_image_handle: None, //gets set later
             material_handle: None,         //gets set later
         };
 
@@ -352,12 +358,12 @@ pub fn reset_chunk_height_data(
             chunk_data.chunk_state = ChunkState::Init; // change me ?
                                                        //chunk_data.height_map_image_data_load_status = TerrainImageDataLoadStatus::NotLoaded;
 
-            if let Some(height_map_data) = &chunk_height_maps.chunk_height_maps.get(&chunk.chunk_id)
-            {
-                let alpha_mask_image: Image =
-                    build_alpha_mask_image_from_height_data(&height_map_data);
-                chunk_data.alpha_mask_image_handle = Some(images.add(alpha_mask_image));
-            }
+           //  if let Some(height_map_data) = &chunk_height_maps.chunk_height_maps.get(&chunk.chunk_id)
+           // {
+               // let alpha_mask_image: Image =
+              //      build_alpha_mask_image_from_height_data(&height_map_data);
+              //  chunk_data.alpha_mask_image_handle = Some(images.add(alpha_mask_image));
+           // }
 
             //we can let go of the height map image handle now that we loaded our heightmap data from it
             //terrain_data.height_map_image_handle = None;
@@ -400,9 +406,9 @@ pub fn build_chunk_height_data(
                 Ok(loaded_heightmap_data) => {
                     //take out of box
 
-                    let alpha_mask_image: Image =
-                        build_alpha_mask_image_from_height_data(&*loaded_heightmap_data);
-                    chunk_data.alpha_mask_image_handle = Some(images.add(alpha_mask_image));
+                   // let alpha_mask_image: Image =
+                   //     build_alpha_mask_image_from_height_data(&*loaded_heightmap_data);
+                    //chunk_data.alpha_mask_image_handle = Some(images.add(alpha_mask_image));
 
                     chunk_height_maps
                         .chunk_height_maps
@@ -421,6 +427,7 @@ pub fn build_chunk_height_data(
     }
 }
 
+/*
 pub fn build_alpha_mask_image_from_height_data(height_map_data: &Vec<Vec<u16>>) -> Image {
     // let width = height_map_image.size().x as usize;
     // let height = height_map_image.size().y as usize;
@@ -439,7 +446,7 @@ pub fn build_alpha_mask_image_from_height_data(height_map_data: &Vec<Vec<u16>>) 
     for y in 0..height {
         for x in 0..width {
             //  let index = 2 * (y * width + x); // 2 because of R16Uint
-            let height_value = height_map_data[x][y];
+            let height_value = height_map_data[y][x];
 
             let pixel_value: f32 = if height_value > THRESHOLD { 1.0 } else { 0.0 };
             modified_data.extend_from_slice(&pixel_value.to_le_bytes());
@@ -461,7 +468,9 @@ pub fn build_alpha_mask_image_from_height_data(height_map_data: &Vec<Vec<u16>>) 
         TextureFormat::R32Float,
         RenderAssetUsages::default(),
     )
-}
+}*/
+
+
 /*
 pub fn build_alpha_mask_image(height_map_image: &Image) -> Image {
     let width = height_map_image.size().x as usize;
@@ -526,8 +535,8 @@ pub fn build_chunk_meshes(
                 continue;
             }
 
-            if chunk_data.alpha_mask_image_handle.is_none() {
-                println!("chunk is missing alpha_mask_image_handle .");
+            if chunk_data.height_map_image_handle.is_none() {
+                println!("chunk is missing height map _image_handle .");
                 continue;
             }
 
@@ -700,7 +709,7 @@ pub fn finish_chunk_build_tasks(
             let normal_texture = terrain_data.get_normal_texture_image().clone();
 
             let splat_texture = chunk_data.get_splat_texture_image().clone();
-            let alpha_mask_texture = chunk_data.get_alpha_mask_texture_image().clone();
+            let height_map_texture = chunk_data.get_height_map_texture_image().clone();
 
             let chunk_terrain_material: Handle<TerrainMaterialExtension> =
                 terrain_materials.add(ExtendedMaterial {
@@ -729,7 +738,7 @@ pub fn finish_chunk_build_tasks(
                         diffuse_texture: array_texture.clone(),
                         normal_texture: normal_texture.clone(),
                         splat_texture: splat_texture.clone(),
-                        alpha_mask_texture: alpha_mask_texture.clone(),
+                        height_map_texture: height_map_texture.clone(),
                         ..default()
                     },
                 });
@@ -932,6 +941,9 @@ where
 /*
 
     Attempts to look at adjacent height maps to return stitch data
+
+
+    THIS IS BUSTED 
 */
 pub fn compute_stitch_data(
     chunk_id: u32,
@@ -994,6 +1006,8 @@ pub fn compute_stitch_data(
         stitch_data_x_row = Some(final_vec);
     }
 
+
+// this applies  a stitch along the Y axis 
     if let Some(chunk_height_data) = chunk_height_maps.get(&stitch_chunk_id_pos_y) {
         let mut final_vec = Vec::new();
         for i in 0..chunk_dimensions.y() as usize {

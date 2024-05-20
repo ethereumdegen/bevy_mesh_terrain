@@ -105,12 +105,9 @@ impl HeightMap for HeightMapU16 {
 
     }
 
+//this is more correct datawise 
 
-    fn append_x_row(&mut self, row: Vec<u16>) {
-        self.push(row);
-    }
-
-    fn append_y_col(&mut self, col: Vec<u16>) {
+    fn append_x_row(&mut self, col: Vec<u16>) {
         if col.len() != self.len() {
             println!("WARN: cannot append y col");
             panic!("Column length does not match the number of rows in height data.");
@@ -119,6 +116,14 @@ impl HeightMap for HeightMapU16 {
         for (row, &value) in self.iter_mut().zip(col.iter()) {
             row.push(value);
         }
+    }
+
+    fn append_y_col(&mut self, row: Vec<u16>) {
+       
+
+        self.push(row);
+
+
     }
    
 }

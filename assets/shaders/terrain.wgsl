@@ -87,7 +87,7 @@ var splat_map_sampler: sampler;
 
 //works similar to splat mask  -- we use a separate tex for this for NOW to make collision mesh building far easier (only need height map and not splat)
 @group(2) @binding(26)
-var alpha_mask_texture: texture_2d<f32>; 
+var alpha_mask_texture: texture_2d<u32>; 
 @group(2) @binding(27)
 var alpha_mask_sampler: sampler;
  
