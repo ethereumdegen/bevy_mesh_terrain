@@ -985,10 +985,12 @@ pub fn compute_stitch_data(
         stitch_data_x_y_corner = Some(0);
     }
 
+// chunk_height_data [y][x]
+// this applies  a stitch along the X axis - should pull all values along X axis
     if let Some(chunk_height_data) = chunk_height_maps.get(&stitch_chunk_id_pos_x) {
         let mut final_vec = Vec::new();
         for i in 0..chunk_dimensions.x() as usize {
-            final_vec.push(chunk_height_data [0][i]);
+            final_vec.push(chunk_height_data [i][0]);
         }
         // final_vec.push(stitch_data_x_y_corner.unwrap_or(0)) ;
         stitch_data_x_row = Some(final_vec);
@@ -1011,11 +1013,11 @@ pub fn compute_stitch_data(
     }
 
 
-// this applies  a stitch along the Y axis 
+// this applies  a stitch along the Y axis - should pull all values along y axis
     if let Some(chunk_height_data) = chunk_height_maps.get(&stitch_chunk_id_pos_y) {
         let mut final_vec = Vec::new();
         for i in 0..chunk_dimensions.y() as usize {
-            final_vec.push(chunk_height_data [i][0]);
+            final_vec.push(chunk_height_data [0][i]);
         }
         final_vec.push(stitch_data_x_y_corner.unwrap_or(0)); // the corner corner --gotta fix me some how ?? - try to read diag chunk
         stitch_data_y_col = Some(final_vec);
