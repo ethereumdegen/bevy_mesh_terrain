@@ -1,3 +1,4 @@
+use bevy::log::warn;
 use crate::heightmap::HeightMapU16;
 use bevy::prelude::{Mesh, Vec2};
 use bevy::render::mesh::Indices;
@@ -129,22 +130,22 @@ impl PreMesh {
 
         //there is a weird bug where there are gaps in betweeen each chunk ...
         
-
+         for z in (0..(tex_dim_y as usize - step_size) as usize).step_by(step_size) {
            for x in (0..(tex_dim_x as usize - step_size) as usize).step_by(step_size) {
-            for z in (0..(tex_dim_y as usize - step_size) as usize).step_by(step_size) {
+          //  for z in (0..(tex_dim_y as usize - step_size) as usize).step_by(step_size) {
                 let fx = (x) as f32 * width_scale;
                 let fz = (z) as f32 * width_scale;
 
                 let mut sample_allowed = true;
                 //cant sample so we just continue
-               /* if x + step_size >= sub_heightmap_width as usize {
+               if x + step_size >= sub_heightmap_width as usize {
                     sample_allowed = false;
-                    panic!("x {}", x + step_size);
+                  //  warn!("x {}", x + step_size);
                 }
                 if z + step_size >= sub_heightmap_height as usize {
                     sample_allowed = false;
-                    panic!("z {}", z + step_size);
-                }*/
+                  //  warn!("z {}", z + step_size);
+                }  
 
                 // height data is in format [y][x] 
                 // 1. flipped x and z here ... 

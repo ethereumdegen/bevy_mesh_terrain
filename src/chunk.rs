@@ -990,6 +990,7 @@ pub fn compute_stitch_data(
         for i in 0..chunk_dimensions.x() as usize {
             final_vec.push(chunk_height_data [0][i]);
         }
+         final_vec.push(stitch_data_x_y_corner.unwrap_or(0)) ;
         stitch_data_x_row = Some(final_vec);
     } else {
         println!("WARN no height data for {:?}", stitch_chunk_id_pos_x);
@@ -1003,6 +1004,9 @@ pub fn compute_stitch_data(
             final_vec.push(0);
         }
 
+        final_vec.push(stitch_data_x_y_corner.unwrap_or(0)); // the corner corner --gotta fix me some how ?? - try to read diag chunk
+
+
         stitch_data_x_row = Some(final_vec);
     }
 
@@ -1013,7 +1017,7 @@ pub fn compute_stitch_data(
         for i in 0..chunk_dimensions.y() as usize {
             final_vec.push(chunk_height_data [i][0]);
         }
-        final_vec.push(stitch_data_x_y_corner.unwrap_or(0)); // the corner corner --gotta fix me some how ?? - try to read diag chunk
+       // final_vec.push(stitch_data_x_y_corner.unwrap_or(0)); // the corner corner --gotta fix me some how ?? - try to read diag chunk
         stitch_data_y_col = Some(final_vec);
     } else {
         println!("WARN no height data for {:?}", stitch_chunk_id_pos_y);
@@ -1025,7 +1029,7 @@ pub fn compute_stitch_data(
         for _ in 0..chunk_dimensions.y() as usize {
             final_vec.push(0);
         }
-        final_vec.push(stitch_data_x_y_corner.unwrap_or(0)); // the corner corner --gotta fix me some how ?? - try to read diag chunk
+      //  final_vec.push(stitch_data_x_y_corner.unwrap_or(0)); // the corner corner --gotta fix me some how ?? - try to read diag chunk
 
         stitch_data_y_col = Some(final_vec);
     }
