@@ -1,9 +1,10 @@
+use crate::heightmap::HeightMapU16;
 use bevy::prelude::{Mesh, Vec2};
 use bevy::render::mesh::Indices;
 use bevy::render::render_asset::RenderAssetUsages;
 use bevy::render::render_resource::PrimitiveTopology::TriangleList;
 
-use crate::heightmap::SubHeightMapU16;
+ 
 
 const THRESHOLD: u16 = (0.0001 * 65535.0) as u16;
 
@@ -96,7 +97,7 @@ impl PreMesh {
 
     */
     pub fn from_heightmap_subsection(
-        sub_heightmap: &SubHeightMapU16,
+        sub_heightmap: & HeightMapU16,
 
         height_scale: f32,
         lod_level: u8, // 0 is full quality, higher levels decimate the mesh
@@ -107,18 +108,13 @@ impl PreMesh {
 
         let step_size = 1 << lod_level; // doubles the step for each LOD level using bit shifting
 
-        let height_data = &sub_heightmap.0;
-        //  let start_bound: Vec<usize> = vec![0, 0];
-
-        //   let width = texture_dimensions[0]  ;
-        //   let height = texture_dimensions[1]  ;
-
-        // let bounds_pct = sub_heightmap.bounds_pct;
+        let height_data = &sub_heightmap ;
+        
 
         let bounds_pct: [[f32; 2]; 2] = [[0.0, 0.0], [1.0, 1.0]]; //1.0 is the max right ?
 
-        let sub_heightmap_width = height_data.len();
-        let sub_heightmap_height = height_data[0].len();
+        let sub_heightmap_height = height_data.len();
+        let sub_heightmap_width = height_data[0].len();
 
         println!("sub_heightmap_width {}", sub_heightmap_width);
         println!("sub_heightmap_height {}", sub_heightmap_height);
@@ -132,29 +128,33 @@ impl PreMesh {
         let scaled_min_threshold = (THRESHOLD as f32) * height_scale;
 
         //there is a weird bug where there are gaps in betweeen each chunk ...
-        for x in (0..(tex_dim_x as usize - step_size) as usize).step_by(step_size) {
-            for y in (0..(tex_dim_y as usize - step_size) as usize).step_by(step_size) {
+        
+
+           for x in (0..(tex_dim_x as usize - step_size) as usize).step_by(step_size) {
+            for z in (0..(tex_dim_y as usize - step_size) as usize).step_by(step_size) {
                 let fx = (x) as f32 * width_scale;
-                let fz = (y) as f32 * width_scale;
+                let fz = (z) as f32 * width_scale;
 
                 let mut sample_allowed = true;
                 //cant sample so we just continue
-                if x + step_size >= sub_heightmap_width as usize {
+               /* if x + step_size >= sub_heightmap_width as usize {
                     sample_allowed = false;
                     panic!("x {}", x + step_size);
                 }
-                if y + step_size >= sub_heightmap_height as usize {
+                if z + step_size >= sub_heightmap_height as usize {
                     sample_allowed = false;
-                    panic!("y {}", y + step_size);
-                }
+                    panic!("z {}", z + step_size);
+                }*/
 
-                // println!( "{} {} {} {} ", x , y , x+step_size, y + step_size   );
+                // height data is in format [y][x] 
+                // 1. flipped x and z here ... 
+                // 2. 
                 let (lb, lf, rb, rf) = match sample_allowed {
                     true => {
-                        let lb = height_data[x][y] as f32 * height_scale;
-                        let lf = height_data[x][y + step_size] as f32 * height_scale;
-                        let rb = height_data[x + step_size][y] as f32 * height_scale;
-                        let rf = height_data[x + step_size][y + step_size] as f32 * height_scale;
+                        let lb = height_data[z][x] as f32 * height_scale;
+                        let lf = height_data[z+ step_size][x ] as f32 * height_scale;
+                        let rb = height_data[z][x + step_size] as f32 * height_scale;
+                        let rf = height_data[z + step_size][x + step_size] as f32 * height_scale;
                         (lb, lf, rb, rf)
                     }
                     false => (0.0, 0.0, 0.0, 0.0),
@@ -202,7 +202,7 @@ impl PreMesh {
     }
 
     pub fn from_heightmap_subsection_greedy(
-        sub_heightmap: &SubHeightMapU16,
+        sub_heightmap: & HeightMapU16,
 
         height_scale: f32,
         lod_level: u8, // 0 is full quality, higher levels decimate the mesh
@@ -213,7 +213,7 @@ impl PreMesh {
 
         let step_size = 1 << 2; // doubles the step for each LOD level using bit shifting
 
-        let height_data = &sub_heightmap.0;
+        let height_data = &sub_heightmap ;
         //  let start_bound: Vec<usize> = vec![0, 0];
 
         //   let width = texture_dimensions[0]  ;

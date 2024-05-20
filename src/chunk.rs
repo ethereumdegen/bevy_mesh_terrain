@@ -12,7 +12,7 @@ use bevy::utils::HashMap;
 use futures_lite::future;
 use image::{GrayImage, ImageBuffer, Luma, RgbaImage};
 
-use crate::heightmap::{HeightMap, HeightMapU16, SubHeightMapU16};
+use crate::heightmap::{HeightMap, HeightMapU16   };
 use crate::pre_mesh::PreMesh;
 use crate::terrain::{TerrainData, TerrainImageDataLoadStatus, TerrainViewer};
 use crate::terrain_config::TerrainConfig;
@@ -46,7 +46,7 @@ impl Chunk {
 
 #[derive(Resource, Default)]
 pub struct ChunkHeightMapResource {
-    pub chunk_height_maps: HashMap<u32, SubHeightMapU16>, // Keyed by chunk id
+    pub chunk_height_maps: HashMap<u32,  HeightMapU16>, // Keyed by chunk id
 }
 
 pub type TerrainMaterialExtension = ExtendedMaterial<StandardMaterial, TerrainMaterial>;
@@ -355,7 +355,7 @@ pub fn reset_chunk_height_data(
             if let Some(height_map_data) = &chunk_height_maps.chunk_height_maps.get(&chunk.chunk_id)
             {
                 let alpha_mask_image: Image =
-                    build_alpha_mask_image_from_height_data(&height_map_data.0);
+                    build_alpha_mask_image_from_height_data(&height_map_data);
                 chunk_data.alpha_mask_image_handle = Some(images.add(alpha_mask_image));
             }
 
@@ -406,7 +406,7 @@ pub fn build_chunk_height_data(
 
                     chunk_height_maps
                         .chunk_height_maps
-                        .insert(chunk.chunk_id, SubHeightMapU16(*loaded_heightmap_data));
+                        .insert(chunk.chunk_id,  *loaded_heightmap_data );
                     //    chunk_data.height_map_data = Some(*loaded_heightmap_data);
                 }
                 Err(e) => {
@@ -555,7 +555,7 @@ pub fn build_chunk_meshes(
 
             // might use lots of RAM ? idk ..
             //maybe we subsection first and THEN build the mesh!  oh well... anyways
-            let height_map_data_cloned = (&height_map_data.as_ref().unwrap().0).clone();
+            let height_map_data_cloned = ( height_map_data.as_ref().unwrap()).clone();
 
             let lod_level = chunk_data.lod_level;
 
@@ -588,7 +588,7 @@ pub fn build_chunk_meshes(
             });
 
             //these three LOC really take no time at all
-            let mut sub_heightmap = SubHeightMapU16(height_map_data_cloned);
+            let mut sub_heightmap = (height_map_data_cloned.to_vec());
 
             stitch_data_x_row.map(|x_row| sub_heightmap.append_x_row(x_row));
             stitch_data_y_col.map(|y_col| sub_heightmap.append_y_col(y_col));
@@ -854,7 +854,7 @@ pub fn update_chunk_visibility(
 }
 
 // outputs as R16 grayscale
-pub fn save_chunk_height_map_to_disk<P>(
+/*pub fn save_chunk_height_map_to_disk<P>(
     chunk_height_data: &SubHeightMapU16, // Adjusted for direct Vec<Vec<u16>> input
     save_file_path: P,
 ) where
@@ -888,7 +888,7 @@ pub fn save_chunk_height_map_to_disk<P>(
     writer
         .write_image_data(&buffer)
         .expect("Failed to write PNG data");
-}
+}*/
 
 pub fn save_chunk_splat_map_to_disk<P>(splat_image: &Image, save_file_path: P)
 where
@@ -937,7 +937,7 @@ pub fn compute_stitch_data(
     chunk_id: u32,
     chunk_rows: u32,
     terrain_dimensions: Vec2,
-    chunk_height_maps: &HashMap<u32, SubHeightMapU16>,
+    chunk_height_maps: &HashMap<u32,  HeightMapU16>,
 ) -> (Option<Vec<u16>>, Option<Vec<u16>>) {
     let chunk_coords = ChunkCoords::from_chunk_id(chunk_id, chunk_rows);
 
@@ -968,7 +968,7 @@ pub fn compute_stitch_data(
     ];
 
     if let Some(chunk_height_data) = chunk_height_maps.get(&stitch_chunk_id_pos_x_y_corner) {
-        stitch_data_x_y_corner = Some(chunk_height_data.0[0][0]);
+        stitch_data_x_y_corner = Some(chunk_height_data [0][0]);
     } else {
         stitch_data_x_y_corner = Some(0);
     }
@@ -976,7 +976,7 @@ pub fn compute_stitch_data(
     if let Some(chunk_height_data) = chunk_height_maps.get(&stitch_chunk_id_pos_x) {
         let mut final_vec = Vec::new();
         for i in 0..chunk_dimensions.x() as usize {
-            final_vec.push(chunk_height_data.0[0][i]);
+            final_vec.push(chunk_height_data [0][i]);
         }
         stitch_data_x_row = Some(final_vec);
     } else {
@@ -997,7 +997,7 @@ pub fn compute_stitch_data(
     if let Some(chunk_height_data) = chunk_height_maps.get(&stitch_chunk_id_pos_y) {
         let mut final_vec = Vec::new();
         for i in 0..chunk_dimensions.y() as usize {
-            final_vec.push(chunk_height_data.0[i][0]);
+            final_vec.push(chunk_height_data [i][0]);
         }
         final_vec.push(stitch_data_x_y_corner.unwrap_or(0)); // the corner corner --gotta fix me some how ?? - try to read diag chunk
         stitch_data_y_col = Some(final_vec);
