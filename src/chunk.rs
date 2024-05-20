@@ -338,7 +338,7 @@ pub fn reset_chunk_height_data(
     asset_server: Res<AssetServer>,
     mut images: ResMut<Assets<Image>>,
 
-    mut chunk_height_maps: ResMut<ChunkHeightMapResource>,
+    chunk_height_maps: Res <ChunkHeightMapResource>,
 
     mut chunk_query: Query<(Entity, &Chunk, &mut ChunkData, &Parent, &Children)>,
 ) {

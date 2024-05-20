@@ -105,7 +105,7 @@ impl HeightMap for HeightMapU16 {
         // With the format being R16Uint, each pixel is represented by 2 bytes
         let mut height_map = Vec::with_capacity(height);
 
-        for y in 0..height {
+        for y in 0..height { 
             let mut row = Vec::with_capacity(width);
             for x in 0..width {
                 let index = 2 * (y * width + x); // 2 because of R16Uint
@@ -118,13 +118,5 @@ impl HeightMap for HeightMapU16 {
         Ok(Box::new(height_map))
     }
 
-    /*
-      fn to_collider_heightmap(&self) -> HeightField {
-
-         Collider::heightfield(
-                    heightmap.heightmap.clone(),
-                    heightmap.scale.clone()
-                    )
-
-    }*/
+   
 }
