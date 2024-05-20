@@ -110,7 +110,7 @@ impl HeightMap for HeightMapU16 {
     fn append_x_row(&mut self, col: Vec<u16>) {
         if col.len() != self.len() {
             println!("WARN: cannot append y col");
-            panic!("Column length does not match the number of rows in height data.");
+            panic!("Column length does not match the number of rows in height data. {:?} {:?}", col.len(), self.len()) ;
         }
 
         for (row, &value) in self.iter_mut().zip(col.iter()) {

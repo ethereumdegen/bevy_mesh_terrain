@@ -129,9 +129,9 @@ impl PreMesh {
         let scaled_min_threshold = (THRESHOLD as f32) * height_scale;
 
         //there is a weird bug where there are gaps in betweeen each chunk ...
-        
+        for x in (0..(tex_dim_x as usize - step_size) as usize).step_by(step_size) {
          for z in (0..(tex_dim_y as usize - step_size) as usize).step_by(step_size) {
-           for x in (0..(tex_dim_x as usize - step_size) as usize).step_by(step_size) {
+          
           //  for z in (0..(tex_dim_y as usize - step_size) as usize).step_by(step_size) {
                 let fx = (x) as f32 * width_scale;
                 let fz = (z) as f32 * width_scale;
@@ -224,8 +224,8 @@ impl PreMesh {
 
         let bounds_pct: [[f32; 2]; 2] = [[0.0, 0.0], [1.0, 1.0]]; //1.0 is the max right ?
 
-        let sub_heightmap_width = height_data.len();
-        let sub_heightmap_height = height_data[0].len();
+        let sub_heightmap_height = height_data.len();
+        let sub_heightmap_width = height_data[0].len();
 
         println!("sub_heightmap_width {}", sub_heightmap_width);
         println!("sub_heightmap_height {}", sub_heightmap_height);
@@ -256,20 +256,22 @@ impl PreMesh {
                 //cant sample so we just continue
                 if x + step_size >= sub_heightmap_width as usize {
                     sample_allowed = false;
-                    panic!("x {}", x + step_size);
+                    warn!("x {}", x + step_size);
+                    continue;
                 }
                 if y + step_size >= sub_heightmap_height as usize {
                     sample_allowed = false;
-                    panic!("y {}", y + step_size);
+                    warn!("y {}", y + step_size);
+                    continue; 
                 }
 
                 // println!( "{} {} {} {} ", x , y , x+step_size, y + step_size   );
                 let (mut lb, mut lf, mut rb, mut rf) = match sample_allowed {
                     true => {
-                        let lb = height_data[x][y] as f32 * height_scale;
-                        let lf = height_data[x][y + step_size] as f32 * height_scale;
-                        let rb = height_data[x + step_size][y] as f32 * height_scale;
-                        let rf = height_data[x + step_size][y + step_size] as f32 * height_scale;
+                        let lb = height_data[y][x] as f32 * height_scale;
+                        let lf = height_data[y+ step_size][x ] as f32 * height_scale;
+                        let rb = height_data[y][x + step_size] as f32 * height_scale;
+                        let rf = height_data[y + step_size][x + step_size] as f32 * height_scale;
                         (lb, lf, rb, rf)
                     }
                     false => (0.0, 0.0, 0.0, 0.0),
