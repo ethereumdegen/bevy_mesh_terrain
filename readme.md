@@ -61,7 +61,8 @@ Splat map A channel - not used.
 
  
 
- 
+### Sample textures
+Sample textures from Lynoc (itch.io)
 
 ### Reference Shader Material 
 see https://github.com/bevyengine/bevy/blob/main/examples/shader/shader_material.rs

@@ -925,7 +925,7 @@ dependencies = [
 
 [[package]]
 name = "bevy_mesh_terrain"
-version = "0.13.17"
+version = "0.13.22"
 dependencies = [
  "anyhow",
  "bevy 0.13.0",

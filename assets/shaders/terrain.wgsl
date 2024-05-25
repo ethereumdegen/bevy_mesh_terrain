@@ -36,7 +36,6 @@ struct ToolPreviewUniforms {
     tool_color: vec3<f32>    
 };
 
-//https://github.com/DGriffin91/bevy_mod_standard_material/blob/main/assets/shaders/pbr.wgsl
 
 
 @group(1) @binding(1)
@@ -74,6 +73,7 @@ var base_color_sampler: sampler;
 
 
 
+//  github.com/DGriffin91/bevy_mod_standard_material/blob/main/assets/shaders/pbr.wgsl
 
 //the splat map texture has 3 channels: R, G, B
 //R tells us the terrain_layer_index 0 per pixel
@@ -87,7 +87,7 @@ var splat_map_sampler: sampler;
 
 //works similar to splat mask  -- we use a separate tex for this for NOW to make collision mesh building far easier (only need height map and not splat)
 @group(2) @binding(26)
-var alpha_mask_texture: texture_2d<f32>; 
+var alpha_mask_texture: texture_2d<u32>; 
 @group(2) @binding(27)
 var alpha_mask_sampler: sampler;
  

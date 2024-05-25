@@ -12,7 +12,7 @@ use bevy::utils::HashMap;
 use futures_lite::future;
 use image::{GrayImage, ImageBuffer, Luma, RgbaImage};
 
-use crate::heightmap::{HeightMap, HeightMapU16, SubHeightMapU16};
+use crate::heightmap::{HeightMap, HeightMapU16   };
 use crate::pre_mesh::PreMesh;
 use crate::terrain::{TerrainData, TerrainImageDataLoadStatus, TerrainViewer};
 use crate::terrain_config::TerrainConfig;
@@ -46,7 +46,7 @@ impl Chunk {
 
 #[derive(Resource, Default)]
 pub struct ChunkHeightMapResource {
-    pub chunk_height_maps: HashMap<u32, SubHeightMapU16>, // Keyed by chunk id
+    pub chunk_height_maps: HashMap<u32,  HeightMapU16>, // Keyed by chunk id
 }
 
 pub type TerrainMaterialExtension = ExtendedMaterial<StandardMaterial, TerrainMaterial>;
@@ -63,12 +63,18 @@ pub struct ChunkData {
     // pub height_map_data: Option<HeightMapU16>,
     splat_image_handle: Option<Handle<Image>>,
 
-    alpha_mask_image_handle: Option<Handle<Image>>, //built from the height map
+   // alpha_mask_image_handle: Option<Handle<Image>>, //built from the height map
 
     pub material_handle: Option<Handle<TerrainMaterialExtension>>,
 }
 
 impl ChunkData {
+
+    pub fn get_height_map_texture_image(&self) -> &Option<Handle<Image>> {
+        &self.height_map_image_handle
+    }
+
+
     pub fn get_splat_texture_image(&self) -> &Option<Handle<Image>> {
         &self.splat_image_handle
     }
@@ -77,9 +83,9 @@ impl ChunkData {
         self.splat_image_handle = Some(tex_handle);
     }
 
-    pub fn get_alpha_mask_texture_image(&self) -> &Option<Handle<Image>> {
-        &self.alpha_mask_image_handle
-    }
+  //  pub fn get_alpha_mask_texture_image(&self) -> &Option<Handle<Image>> {
+  //      &self.alpha_mask_image_handle
+  //  }
 }
 
 pub type TerrainPbrBundle = MaterialMeshBundle<TerrainMaterialExtension>;
@@ -285,7 +291,7 @@ pub fn initialize_chunk_data(
             height_map_image_data_load_status: TerrainImageDataLoadStatus::NotLoaded,
 
             splat_image_handle: Some(splat_image_handle),
-            alpha_mask_image_handle: None, //gets set later
+           // alpha_mask_image_handle: None, //gets set later
             material_handle: None,         //gets set later
         };
 
@@ -338,7 +344,7 @@ pub fn reset_chunk_height_data(
     asset_server: Res<AssetServer>,
     mut images: ResMut<Assets<Image>>,
 
-    mut chunk_height_maps: ResMut<ChunkHeightMapResource>,
+    chunk_height_maps: Res <ChunkHeightMapResource>,
 
     mut chunk_query: Query<(Entity, &Chunk, &mut ChunkData, &Parent, &Children)>,
 ) {
@@ -352,12 +358,12 @@ pub fn reset_chunk_height_data(
             chunk_data.chunk_state = ChunkState::Init; // change me ?
                                                        //chunk_data.height_map_image_data_load_status = TerrainImageDataLoadStatus::NotLoaded;
 
-            if let Some(height_map_data) = &chunk_height_maps.chunk_height_maps.get(&chunk.chunk_id)
-            {
-                let alpha_mask_image: Image =
-                    build_alpha_mask_image_from_height_data(&height_map_data.0);
-                chunk_data.alpha_mask_image_handle = Some(images.add(alpha_mask_image));
-            }
+           //  if let Some(height_map_data) = &chunk_height_maps.chunk_height_maps.get(&chunk.chunk_id)
+           // {
+               // let alpha_mask_image: Image =
+              //      build_alpha_mask_image_from_height_data(&height_map_data);
+              //  chunk_data.alpha_mask_image_handle = Some(images.add(alpha_mask_image));
+           // }
 
             //we can let go of the height map image handle now that we loaded our heightmap data from it
             //terrain_data.height_map_image_handle = None;
@@ -400,13 +406,13 @@ pub fn build_chunk_height_data(
                 Ok(loaded_heightmap_data) => {
                     //take out of box
 
-                    let alpha_mask_image: Image =
-                        build_alpha_mask_image_from_height_data(&*loaded_heightmap_data);
-                    chunk_data.alpha_mask_image_handle = Some(images.add(alpha_mask_image));
+                   // let alpha_mask_image: Image =
+                   //     build_alpha_mask_image_from_height_data(&*loaded_heightmap_data);
+                    //chunk_data.alpha_mask_image_handle = Some(images.add(alpha_mask_image));
 
                     chunk_height_maps
                         .chunk_height_maps
-                        .insert(chunk.chunk_id, SubHeightMapU16(*loaded_heightmap_data));
+                        .insert(chunk.chunk_id,  *loaded_heightmap_data );
                     //    chunk_data.height_map_data = Some(*loaded_heightmap_data);
                 }
                 Err(e) => {
@@ -421,6 +427,7 @@ pub fn build_chunk_height_data(
     }
 }
 
+/*
 pub fn build_alpha_mask_image_from_height_data(height_map_data: &Vec<Vec<u16>>) -> Image {
     // let width = height_map_image.size().x as usize;
     // let height = height_map_image.size().y as usize;
@@ -439,7 +446,7 @@ pub fn build_alpha_mask_image_from_height_data(height_map_data: &Vec<Vec<u16>>) 
     for y in 0..height {
         for x in 0..width {
             //  let index = 2 * (y * width + x); // 2 because of R16Uint
-            let height_value = height_map_data[x][y];
+            let height_value = height_map_data[y][x];
 
             let pixel_value: f32 = if height_value > THRESHOLD { 1.0 } else { 0.0 };
             modified_data.extend_from_slice(&pixel_value.to_le_bytes());
@@ -461,7 +468,9 @@ pub fn build_alpha_mask_image_from_height_data(height_map_data: &Vec<Vec<u16>>) 
         TextureFormat::R32Float,
         RenderAssetUsages::default(),
     )
-}
+}*/
+
+
 /*
 pub fn build_alpha_mask_image(height_map_image: &Image) -> Image {
     let width = height_map_image.size().x as usize;
@@ -526,8 +535,8 @@ pub fn build_chunk_meshes(
                 continue;
             }
 
-            if chunk_data.alpha_mask_image_handle.is_none() {
-                println!("chunk is missing alpha_mask_image_handle .");
+            if chunk_data.height_map_image_handle.is_none() {
+                println!("chunk is missing height map _image_handle .");
                 continue;
             }
 
@@ -555,7 +564,7 @@ pub fn build_chunk_meshes(
 
             // might use lots of RAM ? idk ..
             //maybe we subsection first and THEN build the mesh!  oh well... anyways
-            let height_map_data_cloned = (&height_map_data.as_ref().unwrap().0).clone();
+            let height_map_data_cloned = ( height_map_data.as_ref().unwrap()).clone();
 
             let lod_level = chunk_data.lod_level;
 
@@ -588,7 +597,7 @@ pub fn build_chunk_meshes(
             });
 
             //these three LOC really take no time at all
-            let mut sub_heightmap = SubHeightMapU16(height_map_data_cloned);
+            let mut sub_heightmap = (height_map_data_cloned.to_vec());
 
             stitch_data_x_row.map(|x_row| sub_heightmap.append_x_row(x_row));
             stitch_data_y_col.map(|y_col| sub_heightmap.append_y_col(y_col));
@@ -694,12 +703,13 @@ pub fn finish_chunk_build_tasks(
             }
 
             let (terrain_data, terrain_config) = terrain_query.get(terrain_entity_id).unwrap();
+            let color_texture_expansion_factor =  terrain_config.texture_uv_expansion_factor;
 
             let array_texture = terrain_data.get_array_texture_image().clone();
             let normal_texture = terrain_data.get_normal_texture_image().clone();
 
             let splat_texture = chunk_data.get_splat_texture_image().clone();
-            let alpha_mask_texture = chunk_data.get_alpha_mask_texture_image().clone();
+            let height_map_texture = chunk_data.get_height_map_texture_image().clone();
 
             let chunk_terrain_material: Handle<TerrainMaterialExtension> =
                 terrain_materials.add(ExtendedMaterial {
@@ -721,14 +731,14 @@ pub fn finish_chunk_build_tasks(
                     },
                     extension: TerrainMaterial {
                         chunk_uniforms: ChunkMaterialUniforms {
-                            color_texture_expansion_factor: 8.0, //why wont this apply to shader properly ?
+                            color_texture_expansion_factor , //why wont this apply to shader properly ?
                             chunk_uv,
                         },
                         tool_preview_uniforms: ToolPreviewUniforms::default(),
                         diffuse_texture: array_texture.clone(),
                         normal_texture: normal_texture.clone(),
                         splat_texture: splat_texture.clone(),
-                        alpha_mask_texture: alpha_mask_texture.clone(),
+                        height_map_texture: height_map_texture.clone(),
                         ..default()
                     },
                 });
@@ -853,7 +863,7 @@ pub fn update_chunk_visibility(
 }
 
 // outputs as R16 grayscale
-pub fn save_chunk_height_map_to_disk<P>(
+/*pub fn save_chunk_height_map_to_disk<P>(
     chunk_height_data: &SubHeightMapU16, // Adjusted for direct Vec<Vec<u16>> input
     save_file_path: P,
 ) where
@@ -887,7 +897,7 @@ pub fn save_chunk_height_map_to_disk<P>(
     writer
         .write_image_data(&buffer)
         .expect("Failed to write PNG data");
-}
+}*/
 
 pub fn save_chunk_splat_map_to_disk<P>(splat_image: &Image, save_file_path: P)
 where
@@ -931,12 +941,15 @@ where
 /*
 
     Attempts to look at adjacent height maps to return stitch data
+
+
+    THIS IS BUSTED 
 */
 pub fn compute_stitch_data(
     chunk_id: u32,
     chunk_rows: u32,
     terrain_dimensions: Vec2,
-    chunk_height_maps: &HashMap<u32, SubHeightMapU16>,
+    chunk_height_maps: &HashMap<u32,  HeightMapU16>,
 ) -> (Option<Vec<u16>>, Option<Vec<u16>>) {
     let chunk_coords = ChunkCoords::from_chunk_id(chunk_id, chunk_rows);
 
@@ -967,16 +980,19 @@ pub fn compute_stitch_data(
     ];
 
     if let Some(chunk_height_data) = chunk_height_maps.get(&stitch_chunk_id_pos_x_y_corner) {
-        stitch_data_x_y_corner = Some(chunk_height_data.0[0][0]);
+        stitch_data_x_y_corner = Some(chunk_height_data [0][0]);
     } else {
         stitch_data_x_y_corner = Some(0);
     }
 
+// chunk_height_data [y][x]
+// this applies  a stitch along the X axis - should pull all values along X axis
     if let Some(chunk_height_data) = chunk_height_maps.get(&stitch_chunk_id_pos_x) {
         let mut final_vec = Vec::new();
         for i in 0..chunk_dimensions.x() as usize {
-            final_vec.push(chunk_height_data.0[0][i]);
+            final_vec.push(chunk_height_data [i][0]);
         }
+        // final_vec.push(stitch_data_x_y_corner.unwrap_or(0)) ;
         stitch_data_x_row = Some(final_vec);
     } else {
         println!("WARN no height data for {:?}", stitch_chunk_id_pos_x);
@@ -990,13 +1006,18 @@ pub fn compute_stitch_data(
             final_vec.push(0);
         }
 
+        //final_vec.push(stitch_data_x_y_corner.unwrap_or(0)); // the corner corner --gotta fix me some how ?? - try to read diag chunk
+
+
         stitch_data_x_row = Some(final_vec);
     }
 
+
+// this applies  a stitch along the Y axis - should pull all values along y axis
     if let Some(chunk_height_data) = chunk_height_maps.get(&stitch_chunk_id_pos_y) {
         let mut final_vec = Vec::new();
         for i in 0..chunk_dimensions.y() as usize {
-            final_vec.push(chunk_height_data.0[i][0]);
+            final_vec.push(chunk_height_data [0][i]);
         }
         final_vec.push(stitch_data_x_y_corner.unwrap_or(0)); // the corner corner --gotta fix me some how ?? - try to read diag chunk
         stitch_data_y_col = Some(final_vec);

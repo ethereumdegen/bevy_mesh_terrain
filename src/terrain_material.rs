@@ -45,9 +45,9 @@ pub struct TerrainMaterial {
     #[sampler(27)]
     pub splat_texture: Option<Handle<Image>>,
 
-    #[texture(28)]
+    #[texture(28, dimension = "2d",sample_type = "u_int")]  //rgba8uint
     #[sampler(29)]
-    pub alpha_mask_texture: Option<Handle<Image>>,
+    pub height_map_texture: Option<Handle<Image>>,
 }
 
 impl MaterialExtension for TerrainMaterial {

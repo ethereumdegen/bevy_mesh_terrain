@@ -1,3 +1,4 @@
+use crate::heightmap::HeightMap;
 use std::ops::{Add, Div, Neg};
 use std::path::PathBuf;
 
@@ -18,15 +19,14 @@ use crate::TerrainMaterialExtension;
 use core::fmt::{self, Display, Formatter};
 
 use crate::chunk::{
-    compute_stitch_data, save_chunk_collision_data_to_disk, save_chunk_height_map_to_disk,
+    compute_stitch_data, save_chunk_collision_data_to_disk,   
     save_chunk_splat_map_to_disk, Chunk, ChunkCoordinates, ChunkCoords, ChunkData,
     ChunkHeightMapResource,
 };
 use crate::terrain::{TerrainData, TerrainImageDataLoadStatus};
 use crate::terrain_config::TerrainConfig;
 use crate::terrain_material::TerrainMaterial;
-
-use crate::heightmap::SubHeightMapU16;
+ 
 
 use bevy_xpbd_3d::prelude::Collider;
 
@@ -125,12 +125,14 @@ pub fn apply_command_events(
                         if let Some(chunk_height_data) =
                             chunk_height_maps.chunk_height_maps.get(&chunk.chunk_id)
                         {
-                            save_chunk_height_map_to_disk(
-                                chunk_height_data,
+
+                            chunk_height_data.save_heightmap_to_image(
                                 asset_folder_path
                                     .join(&terrain_config.height_folder_path)
-                                    .join(&file_name),
-                            );
+                                    .join(&file_name)
+                                    );
+
+                          
                         }
                     }
 
@@ -166,8 +168,8 @@ pub fn apply_command_events(
                                 let height_map_data =
                                     chunk_height_maps.chunk_height_maps.get(&chunk.chunk_id); // &chunk_data.height_map_data.clone();
                                 let height_map_data_cloned =
-                                    (&height_map_data.as_ref().unwrap().0).clone();
-                                let mut sub_heightmap = SubHeightMapU16(height_map_data_cloned);
+                                    ( height_map_data.as_ref().unwrap()) ;
+                                let mut sub_heightmap : Vec<Vec<u16>> =   height_map_data_cloned.to_vec() ;
 
                                 let chunk_id_clone = chunk.chunk_id.clone();
 
@@ -322,7 +324,7 @@ pub fn apply_tool_edits(
                         let tool_coords_local = tool_coords.add(chunk_transform_vec2.neg());
 
                         //need to make an array of all of the data indices of the terrain that will be set .. hm ?
-                        let img_data_length = height_map_data.0.len();
+                        let img_data_length = height_map_data.len();
 
                         //let mut height_changed = false;
                         let radius = &ev.radius;
@@ -333,7 +335,7 @@ pub fn apply_tool_edits(
                             for y in 0..img_data_length {
                                 let local_coords = Vec2::new(x as f32, y as f32);
                                 if tool_coords_local.distance(local_coords) < *radius {
-                                    let original_height = height_map_data.0[x][y];
+                                    let original_height = height_map_data[y][x];
                                     total_height += original_height as f32;
                                     heights_len += 1;
                                 }
@@ -375,7 +377,7 @@ pub fn apply_tool_edits(
                                 let tool_coords_local = tool_coords.add(chunk_transform_vec2.neg());
 
                                 //need to make an array of all of the data indices of the terrain that will be set .. hm ?
-                                let img_data_length = height_map_data.0.len();
+                                let img_data_length = height_map_data.len();
 
                                 let mut height_changed = false;
 
@@ -392,13 +394,13 @@ pub fn apply_tool_edits(
                                                     radius_clone,
                                                     *brush_hardness,
                                                 );
-                                                let original_height = height_map_data.0[x][y];
+                                                let original_height = height_map_data[y][x];
 
                                                 if tool_coords_local.distance(local_coords)
                                                     < radius_clone
                                                 {
                                                     let new_height = height.clone();
-                                                    height_map_data.0[x][y] =
+                                                    height_map_data[y][x] =
                                                         apply_hardness_multiplier(
                                                             original_height as f32,
                                                             new_height as f32,
@@ -426,14 +428,14 @@ pub fn apply_tool_edits(
                                                             *brush_hardness,
                                                         );
 
-                                                    let original_height = height_map_data.0[x][y];
+                                                    let original_height = height_map_data[y][x];
                                                     // Gather heights of the current point and its neighbors within the brush radius
 
                                                     let new_height = ((average_height
                                                         + original_height as f32)
                                                         / 2.0)
                                                         as u16;
-                                                    height_map_data.0[x][y] =
+                                                    height_map_data[y][x] =
                                                         apply_hardness_multiplier(
                                                             original_height as f32,
                                                             new_height as f32,
@@ -454,7 +456,7 @@ pub fn apply_tool_edits(
                                                 if tool_coords_local.distance(local_coords)
                                                     < *radius
                                                 {
-                                                    let original_height = height_map_data.0[x][y];
+                                                    let original_height = height_map_data[y][x];
                                                     let hardness_multiplier =
                                                         get_hardness_multiplier(
                                                             tool_coords_local
@@ -468,7 +470,7 @@ pub fn apply_tool_edits(
                                                     let noise_scaled = noise * *height as f32; // Adjust *height to control the scale of the noise
                                                     let new_height = noise_scaled as u16;
 
-                                                    height_map_data.0[x][y] =
+                                                    height_map_data[y][x] =
                                                         apply_hardness_multiplier(
                                                             original_height as f32,
                                                             new_height as f32,
@@ -498,7 +500,7 @@ pub fn apply_tool_edits(
                                             let y = tool_coords_local.y as usize;
 
                                             if x < img_data_length && y < img_data_length {
-                                                let local_height = height_map_data.0[x][y];
+                                                let local_height = height_map_data[y][x];
                                                 evt_writer.send(
                                                     TerrainBrushEvent::EyeDropTerrainHeight {
                                                         height: local_height,
