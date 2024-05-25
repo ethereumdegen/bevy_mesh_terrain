@@ -718,9 +718,11 @@ pub fn finish_chunk_build_tasks(
                         opaque_render_method: OpaqueRendererMethod::Auto,
                         alpha_mode: AlphaMode::Opaque,
 
-                        reflectance: 0.0,
-                        perceptual_roughness: 0.9,
-                        specular_transmission: 0.1,
+                        reflectance: 0.2,
+                        perceptual_roughness: 0.8,
+                        specular_transmission: 0.2,
+
+                    
 
                         // in deferred mode, only the PbrInput can be modified (uvs, color and other material properties),
                         // in forward mode, the output can also be modified after lighting is applied.

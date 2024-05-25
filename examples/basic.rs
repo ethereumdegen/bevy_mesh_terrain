@@ -1,4 +1,10 @@
+use bevy::core_pipeline::prepass::MotionVectorPrepass;
+use bevy_mesh_terrain::show_prepass_material::ShowPrepassOutputMaterial;
+use bevy::pbr::ExtendedMaterial;
+use bevy::core_pipeline::prepass::DepthPrepass;
+use bevy::core_pipeline::prepass::NormalPrepass;
 use bevy::pbr::wireframe::WireframeConfig;
+use bevy::pbr::MaterialExtension;
 use bevy::render::RenderPlugin;
 use bevy::render::settings::WgpuSettings;
 use bevy::render::settings::WgpuFeatures;
@@ -30,6 +36,10 @@ fn main() {
             WireframePlugin,
         ))
         .add_plugins(TerrainMeshPlugin::default())
+
+
+          .add_plugins(MaterialPlugin::<ShowPrepassOutputMaterial>::default()) 
+      
         
         .insert_resource(WireframeConfig {
             // The global wireframe config enables drawing of wireframes on every mesh,
@@ -50,7 +60,21 @@ fn main() {
 }
 
 /// set up a simple 3D scene
-fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
+fn setup(
+    mut commands: Commands, 
+    asset_server: Res<AssetServer>,
+
+    mut meshes: ResMut<Assets<Mesh>>,
+
+
+   mut materials: ResMut<Assets<    StandardMaterial>  >,
+    mut show_prepass_materials: ResMut<Assets<    ShowPrepassOutputMaterial>  >,
+
+    ) {
+
+
+
+
     commands
         .spawn(SpatialBundle::default())
         .insert(TerrainConfig::load_from_file("assets/default_terrain/terrain_config.ron").unwrap())
@@ -79,13 +103,41 @@ fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
     // camera
     commands
         .spawn(Camera3dBundle {
+            camera: Camera {
+                hdr: true, 
+                ..default()
+            },
             transform: Transform::from_xyz(20.0, 162.5, 20.0)
                 .looking_at(Vec3::new(900.0, 0.0, 900.0), Vec3::Y),
             ..default()
         })
         .insert(TerrainViewer::default())
+        .insert(DepthPrepass)
+        .insert(NormalPrepass)
+        .insert(MotionVectorPrepass)
        // .insert(ShadowFilteringMethod::Jimenez14)
        ;
+    
+
+     commands.spawn(MaterialMeshBundle {
+        mesh: meshes.add(Cuboid::new(22.0, 1.0, 22.0)),
+        material: materials.add(  
+            StandardMaterial::default()
+         ),
+        transform: Transform::from_xyz(52.0, 18.0, 52.0),
+        ..default()
+    });
+
+
+    commands.spawn(MaterialMeshBundle {
+        mesh: meshes.add(Cuboid::new(44.0, 1.0, 44.0)),
+        material: show_prepass_materials.add(  
+            ShowPrepassOutputMaterial::default()
+         ),
+        transform: Transform::from_xyz(52.0, 24.0, 52.0),
+        ..default()
+    });
+
 }
 
 fn update_camera_look(

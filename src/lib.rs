@@ -31,6 +31,8 @@ pub mod terrain_loading_state;
 pub mod terrain_material;
 pub mod tool_preview;
 
+pub mod show_prepass_material;
+
 pub struct TerrainMeshPlugin {
     task_update_rate: Duration,
 }
@@ -51,7 +53,12 @@ impl Plugin for TerrainMeshPlugin {
             "shaders/terrain.wgsl",
             Shader::from_wgsl
         );
-        app.add_plugins(MaterialPlugin::<TerrainMaterialExtension>::default());
+        app.add_plugins(MaterialPlugin::<TerrainMaterialExtension> {
+
+            prepass_enabled:true, 
+
+            ..default()
+        });
         
         app.init_state::<terrain_loading_state::TerrainLoadingState>();
 
