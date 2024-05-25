@@ -706,7 +706,7 @@ pub fn finish_chunk_build_tasks(
                     base: StandardMaterial {
                         // can be used in forward or deferred mode.
                         opaque_render_method: OpaqueRendererMethod::Auto,
-                        alpha_mode: AlphaMode::Mask(0.1),
+                        alpha_mode: AlphaMode::Opaque,
 
                         reflectance: 0.0,
                         perceptual_roughness: 0.9,
