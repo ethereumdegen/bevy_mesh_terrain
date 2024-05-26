@@ -2,7 +2,7 @@
 name = "bevy_mesh_terrain"
 description = "A simple and ergonomic heightmap terrain plugin for Bevy game engine"
  
-version = "0.13.23"
+version = "0.13.24"
  
  
 edition = "2021"
