@@ -715,8 +715,8 @@ pub fn finish_chunk_build_tasks(
                 terrain_materials.add(ExtendedMaterial {
                     base: StandardMaterial {
                         // can be used in forward or deferred mode.
- 
-
+                        //alpha_mode: AlphaMode::Mask(0.1), 
+                       // opaque_render_method: OpaqueRendererMethod::Deferred ,
                         reflectance: 0.2,
                         perceptual_roughness: 0.8,
                         specular_transmission: 0.2,

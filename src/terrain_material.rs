@@ -55,7 +55,15 @@ impl MaterialExtension for TerrainMaterial {
         ShaderRef::Handle(TERRAIN_SHADER_HANDLE)
     }
 
-    fn deferred_fragment_shader() -> ShaderRef {
-        ShaderRef::Handle(TERRAIN_SHADER_HANDLE)
+   // fn deferred_fragment_shader() -> ShaderRef {
+   //     ShaderRef::Handle(TERRAIN_SHADER_HANDLE)
+   // }
+
+
+   fn prepass_fragment_shader() -> ShaderRef {
+    ShaderRef::Default
+   //   ShaderRef::Handle(TERRAIN_SHADER_HANDLE)
     }
+
+
 }

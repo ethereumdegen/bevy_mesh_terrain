@@ -6,6 +6,8 @@
 
 
  #import bevy_pbr::{
+  pbr_deferred_functions::deferred_output,
+ prepass_bindings,
     forward_io::{VertexOutput, FragmentOutput},
       mesh_view_bindings::view,
     pbr_functions::alpha_discard,
@@ -112,15 +114,16 @@ var height_map_sampler: sampler;
 
 //should consider adding vertex painting to this .. need another binding of course.. performs a color shift 
 
+ 
 @fragment
 fn fragment(
     mesh: VertexOutput,
     
      
     @builtin(front_facing) is_front: bool,
-) -> @location(0) vec4<f32> {
-    
-   
+) -> FragmentOutput {
+
+
     //let tiled_uv = chunk_uniforms.color_texture_expansion_factor*mesh.uv;  //cannot get this binding to work !? 
     let tiled_uv =  chunk_uniforms.color_texture_expansion_factor*mesh.uv;
     
@@ -227,6 +230,18 @@ fn fragment(
     var pbr_out: FragmentOutput;
  
     
+
+
+
+    #ifdef PREPASS_PIPELINE
+        // in deferred mode we can't modify anything after that, as lighting is run in a separate fullscreen shader.
+        pbr_out = deferred_output(mesh, pbr_input);
+    #else
+
+    
+
+
+
     // apply lighting
     pbr_out.color = apply_pbr_lighting(pbr_input);
     // we can optionally modify the lit color before post-processing is applied
@@ -261,18 +276,21 @@ fn fragment(
           
 
       // Implement alpha masking
-    if (height_map_value < 8) { // Use your threshold value here
-        discard;
-    }
+   // if (height_map_value < 8) { // Use your threshold value here
+  //      discard;
+   // }
+
+
+ 
+    pbr_out.color = final_color;
+
+    #endif
     
-    return final_color;
+    return pbr_out;
     
 }
  
 
+ 
 
-
- //mod the UV using parallax 
-  // https://github.com/nicopap/bevy_mod_paramap/blob/main/src/parallax_map.wgsl
-
- //later ? 
+ 
