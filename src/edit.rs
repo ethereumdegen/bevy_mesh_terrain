@@ -96,7 +96,7 @@ pub fn apply_command_events(
     mut chunk_query: Query<(&Chunk, &mut ChunkData, &Parent, &Children)>, //chunks parent should have terrain data
 
     mut images: ResMut<Assets<Image>>,
-    mut terrain_materials: ResMut<Assets<TerrainMaterialExtension>>,
+   // mut terrain_materials: ResMut<Assets<TerrainMaterialExtension>>,
 
     mut chunk_height_maps: ResMut<ChunkHeightMapResource>,
 

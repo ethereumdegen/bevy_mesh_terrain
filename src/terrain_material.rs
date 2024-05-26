@@ -52,6 +52,7 @@ pub struct TerrainMaterial {
 
 impl MaterialExtension for TerrainMaterial {
     fn fragment_shader() -> ShaderRef {
+         
         ShaderRef::Handle(TERRAIN_SHADER_HANDLE)
     }
 

@@ -670,6 +670,8 @@ pub fn finish_chunk_build_tasks(
 
     terrain_query: Query<(&TerrainData, &TerrainConfig)>,
     mut terrain_materials: ResMut<Assets<TerrainMaterialExtension>>,
+
+    mut standard_materials: ResMut<Assets<StandardMaterial>>,
 ) {
     //chunk, mut chunk_data,  terrain_entity,
 
@@ -717,9 +719,11 @@ pub fn finish_chunk_build_tasks(
                         // can be used in forward or deferred mode.
                         //alpha_mode: AlphaMode::Mask(0.1), 
                        // opaque_render_method: OpaqueRendererMethod::Deferred ,
+                      
+
                         reflectance: 0.2,
                         perceptual_roughness: 0.8,
-                        specular_transmission: 0.2,
+                        // specular_transmission: 0.2,
 
                     
 
@@ -758,6 +762,12 @@ pub fn finish_chunk_build_tasks(
                 splat_texture: splat_texture.clone(),
                 alpha_mask_texture: alpha_mask_texture.clone(),
             });*/
+
+
+            let standard_mat = standard_materials.add(
+                     StandardMaterial ::default()
+
+                );
 
             let terrain_mesh_handle = meshes.add(mesh);
 
