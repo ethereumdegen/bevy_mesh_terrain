@@ -282,9 +282,13 @@ pub fn initialize_chunk_data(
 
         let splat_image_handle: Handle<Image> = asset_server.load(splat_texture_path);
 
+
+        let chunk_base_lod = 0; // hmm might cause issues .. base this off distance properly ? 
+        let lod_level_offset = terrain_config.lod_level_offset;
+
         let chunk_data_component = ChunkData {
             chunk_state: ChunkState::Init,
-            lod_level: 0, // hmm might cause issues ..
+            lod_level: chunk_base_lod + lod_level_offset,
 
             height_map_image_handle: Some(height_map_image_handle),
             //     height_map_data: None, //make this its own component ?

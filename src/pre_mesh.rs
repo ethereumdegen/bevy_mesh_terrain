@@ -1,11 +1,13 @@
-use bevy::log::warn;
+ 
 use crate::heightmap::HeightMapU16;
 use bevy::prelude::{Mesh, Vec2};
 use bevy::render::mesh::Indices;
 use bevy::render::render_asset::RenderAssetUsages;
 use bevy::render::render_resource::PrimitiveTopology::TriangleList;
 
- 
+ /*
+   using INFO or WARN in here will cause a segfault since it is in an async thread 
+ */
 
 const THRESHOLD: u16 = (0.0001 * 65535.0) as u16;
 
@@ -107,6 +109,8 @@ impl PreMesh {
     ) -> Self {
         let mut premesh = Self::new();
 
+        println!("using lod level {:?}", lod_level);
+
         let step_size = 1 << lod_level; // doubles the step for each LOD level using bit shifting
 
         let height_data = &sub_heightmap ;
@@ -117,8 +121,8 @@ impl PreMesh {
         let sub_heightmap_height = height_data.len();
         let sub_heightmap_width = height_data[0].len();
 
-        println!("sub_heightmap_width {}", sub_heightmap_width);
-        println!("sub_heightmap_height {}", sub_heightmap_height);
+        //println!("sub_heightmap_width {}", sub_heightmap_width);
+        //println!("sub_heightmap_height {}", sub_heightmap_height);
 
         let tex_dim_x = texture_dimensions.get(0).unwrap().clone();
         let tex_dim_y = texture_dimensions.get(1).unwrap().clone();
@@ -227,8 +231,8 @@ impl PreMesh {
         let sub_heightmap_height = height_data.len();
         let sub_heightmap_width = height_data[0].len();
 
-        println!("sub_heightmap_width {}", sub_heightmap_width);
-        println!("sub_heightmap_height {}", sub_heightmap_height);
+        //println!("sub_heightmap_width {}", sub_heightmap_width);
+        //println!("sub_heightmap_height {}", sub_heightmap_height);
 
         let tex_dim_x = texture_dimensions.get(0).unwrap().clone();
         let tex_dim_y = texture_dimensions.get(1).unwrap().clone();
@@ -256,12 +260,12 @@ impl PreMesh {
                 //cant sample so we just continue
                 if x + step_size >= sub_heightmap_width as usize {
                     sample_allowed = false;
-                    warn!("x {}", x + step_size);
+                    //warn!("x {}", x + step_size);
                     continue;
                 }
                 if y + step_size >= sub_heightmap_height as usize {
                     sample_allowed = false;
-                    warn!("y {}", y + step_size);
+                    //warn!("y {}", y + step_size);
                     continue; 
                 }
 
