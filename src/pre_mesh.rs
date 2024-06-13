@@ -109,7 +109,7 @@ impl PreMesh {
     ) -> Self {
         let mut premesh = Self::new();
 
-        println!("using lod level {:?}", lod_level);
+       // println!("using lod level {:?}", lod_level);
 
         let step_size = 1 << lod_level; // doubles the step for each LOD level using bit shifting
 
