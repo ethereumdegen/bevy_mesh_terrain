@@ -5,7 +5,9 @@ use bevy::render::settings::WgpuFeatures;
 use bevy::render::settings::RenderCreation;
 use bevy::pbr::wireframe::WireframePlugin;
 use bevy::input::mouse::MouseMotion;
-use bevy::{pbr::ShadowFilteringMethod, prelude::*};
+use bevy::prelude::*;
+use bevy::color::palettes;
+
 use bevy_mesh_terrain::{
     terrain::{TerrainData, TerrainViewer},
     terrain_config::TerrainConfig,
@@ -62,7 +64,7 @@ fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
             //shadow_depth_bias: 0.5,
             //shadow_normal_bias: 0.5,
             illuminance: 700.0,  
-            color: Color::ANTIQUE_WHITE,
+            color: Color::Srgba(palettes::css::ANTIQUE_WHITE),
 
             ..default()
         },
@@ -72,7 +74,7 @@ fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
     // light
 
     commands.insert_resource(AmbientLight {
-        color: Color::ANTIQUE_WHITE,
+        color: Color::Srgba(palettes::css::ANTIQUE_WHITE),
         brightness: 122.12,
     });
 

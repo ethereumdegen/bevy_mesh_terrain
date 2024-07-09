@@ -319,26 +319,22 @@ pub fn update_splat_image_formats(
     mut chunk_query: Query<(Entity, &Chunk, &ChunkData)>,
 ) {
     for ev in ev_asset.read() {
-        match ev {
-            AssetEvent::LoadedWithDependencies { id } => {
-                let mut image_is_splat = false;
+        if let AssetEvent::LoadedWithDependencies { id } = ev {
+            let mut image_is_splat = false;
 
-                let handle = Handle::Weak(*id);
+            let handle = Handle::Weak(*id);
 
-                for (entity, chunk, chunk_data) in chunk_query.iter() {
-                    if chunk_data.splat_image_handle == Some(handle.clone()) {
-                        image_is_splat = true
-                    }
-                }
-
-                if image_is_splat {
-                    let img = images.get_mut(handle).unwrap();
-                    println!("splat image format is {:?}", img.texture_descriptor.format);
-                    img.texture_descriptor.format = TextureFormat::Rgba8Unorm;
+            for (entity, chunk, chunk_data) in chunk_query.iter() {
+                if chunk_data.splat_image_handle == Some(handle.clone()) {
+                    image_is_splat = true
                 }
             }
 
-            _ => {}
+            if image_is_splat {
+                let img = images.get_mut(&handle).unwrap();
+                println!("splat image format is {:?}", img.texture_descriptor.format);
+                img.texture_descriptor.format = TextureFormat::Rgba8Unorm;
+            }
         }
     }
 }
