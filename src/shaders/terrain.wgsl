@@ -216,10 +216,11 @@ fn fragment(
 
      let TBN = calculate_tbn_mikktspace(normalize( normal_mixed ), vec4(tangent,1.0 )  ) ;  //for anistropy ??
 
-    //let TBN =  mix( normalize( mesh.world_normal ) , normalize( tangent ) , 0.7 );    //we use our texture for our tangent !!  // this is TBN  
-
+ 
 
     let Nt = textureSampleBias(pbr_bindings::normal_map_texture, pbr_bindings::normal_map_sampler, mesh.uv, view.mip_bias).rgb;
+
+    
 
     pbr_input.N =  apply_normal_mapping(
         pbr_input.material.flags,
