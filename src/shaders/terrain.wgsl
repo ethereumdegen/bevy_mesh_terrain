@@ -8,6 +8,8 @@
  #import bevy_pbr::{
     forward_io::{VertexOutput, FragmentOutput},
       mesh_view_bindings::view,
+
+      pbr_bindings,
     
     pbr_fragment::pbr_input_from_standard_material,
       pbr_functions::{alpha_discard,calculate_tbn_mikktspace,apply_pbr_lighting, main_pass_post_lighting_processing,
@@ -206,27 +208,28 @@ fn fragment(
     );
 
 // https://github.com/bevyengine/bevy/blob/main/assets/shaders/array_texture.wgsl 
-   
+    
+    let tangent = normalize( blended_normal_vec3 );
 
-     let TBN = calculate_tbn_mikktspace(mesh.world_normal, mesh.world_tangent);
-  
+     let TBN = calculate_tbn_mikktspace(normalize(mesh.world_normal), vec4(tangent,1.0 )  ) ;  //for anistropy ??
+
+    //let TBN =  mix( normalize( mesh.world_normal ) , normalize( tangent ) , 0.7 );    //we use our texture for our tangent !!  // this is TBN  
 
 
+    let Nt = textureSampleBias(pbr_bindings::normal_map_texture, pbr_bindings::normal_map_sampler, mesh.uv, view.mip_bias).rgb;
 
     pbr_input.N =  apply_normal_mapping(
         pbr_input.material.flags,
-        //mesh.world_normal,
-
-        mix( normalize( mesh.world_normal ) , normalize( blended_normal_vec3 ) , 0.7 ),   //we use our texture for our tangent !! 
-
-        TBN,
+       
+       TBN, 
+        
         double_sided,
         is_front,
-       
-            
-        mesh.uv,
-        view.mip_bias,
+        
+        Nt
     );
+
+    
     pbr_input.V =  calculate_view(mesh.world_position, pbr_input.is_orthographic);
 
 
