@@ -62,7 +62,7 @@ fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
             //shadow_depth_bias: 0.5,
             //shadow_normal_bias: 0.5,
             illuminance: 700.0,  
-            color: Color::ANTIQUE_WHITE,
+            color: Color::srgba(1.0, 1.0, 1.0, 1.0),
 
             ..default()
         },
@@ -72,7 +72,7 @@ fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
     // light
 
     commands.insert_resource(AmbientLight {
-        color: Color::ANTIQUE_WHITE,
+        color: Color::srgba(1.0, 1.0, 1.0, 1.0),
         brightness: 122.12,
     });
 

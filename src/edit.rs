@@ -27,8 +27,9 @@ use crate::terrain::{TerrainData, TerrainImageDataLoadStatus};
 use crate::terrain_config::TerrainConfig;
 use crate::terrain_material::TerrainMaterial;
  
+use avian3d::prelude::Collider;
 
-use bevy_xpbd_3d::prelude::Collider;
+ 
 
 use crate::chunk::TerrainChunkMesh;
 use anyhow::{Context, Result};

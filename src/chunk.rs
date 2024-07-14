@@ -323,7 +323,7 @@ pub fn update_splat_image_formats(
             AssetEvent::LoadedWithDependencies { id } => {
                 let mut image_is_splat = false;
 
-                let handle = Handle::Weak(*id);
+                let mut handle = Handle::Weak(*id);
 
                 for (entity, chunk, chunk_data) in chunk_query.iter() {
                     if chunk_data.splat_image_handle == Some(handle.clone()) {
@@ -332,7 +332,7 @@ pub fn update_splat_image_formats(
                 }
 
                 if image_is_splat {
-                    let img = images.get_mut(handle).unwrap();
+                    let img = images.get_mut(&mut handle).unwrap();
                     println!("splat image format is {:?}", img.texture_descriptor.format);
                     img.texture_descriptor.format = TextureFormat::Rgba8Unorm;
                 }

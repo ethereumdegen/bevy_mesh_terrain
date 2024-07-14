@@ -8,9 +8,9 @@
  #import bevy_pbr::{
     forward_io::{VertexOutput, FragmentOutput},
       mesh_view_bindings::view,
-    pbr_functions::alpha_discard,
+    
     pbr_fragment::pbr_input_from_standard_material,
-      pbr_functions::{apply_pbr_lighting, main_pass_post_lighting_processing,
+      pbr_functions::{alpha_discard,calculate_tbn_mikktspace,apply_pbr_lighting, main_pass_post_lighting_processing,
       prepare_world_normal,
       apply_normal_mapping,
       calculate_view
@@ -207,13 +207,19 @@ fn fragment(
 
 // https://github.com/bevyengine/bevy/blob/main/assets/shaders/array_texture.wgsl 
    
+
+      let TBN = calculate_tbn_mikktspace(mesh.world_normal, mesh.world_tangent);
+
+
+
+
     pbr_input.N =  apply_normal_mapping(
         pbr_input.material.flags,
         //mesh.world_normal,
 
         mix( normalize( mesh.world_normal ) , normalize( blended_normal_vec3 ) , 0.7 ),   //we use our texture for our tangent !! 
 
-
+        TBN,
         double_sided,
         is_front,
        
