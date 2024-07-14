@@ -208,8 +208,8 @@ fn fragment(
 // https://github.com/bevyengine/bevy/blob/main/assets/shaders/array_texture.wgsl 
    
 
-      let TBN = calculate_tbn_mikktspace(mesh.world_normal, mesh.world_tangent);
-
+     let TBN = calculate_tbn_mikktspace(mesh.world_normal, mesh.world_tangent);
+  
 
 
 
