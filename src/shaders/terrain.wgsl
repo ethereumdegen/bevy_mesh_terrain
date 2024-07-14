@@ -211,7 +211,10 @@ fn fragment(
     
     let tangent = normalize( blended_normal_vec3 );
 
-     let TBN = calculate_tbn_mikktspace(normalize(mesh.world_normal), vec4(tangent,1.0 )  ) ;  //for anistropy ??
+    //we mix the normal with our sample so shadows are affected by the normal map ! 
+    let normal_mixed = mix( normalize( mesh.world_normal ) , normalize( tangent ) , 0.7 );
+
+     let TBN = calculate_tbn_mikktspace(normalize( normal_mixed ), vec4(tangent,1.0 )  ) ;  //for anistropy ??
 
     //let TBN =  mix( normalize( mesh.world_normal ) , normalize( tangent ) , 0.7 );    //we use our texture for our tangent !!  // this is TBN  
 
@@ -229,7 +232,7 @@ fn fragment(
         Nt
     );
 
-    
+
     pbr_input.V =  calculate_view(mesh.world_position, pbr_input.is_orthographic);
 
 
