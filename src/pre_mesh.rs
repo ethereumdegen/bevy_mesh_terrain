@@ -116,7 +116,7 @@ impl PreMesh {
         let height_data = &sub_heightmap ;
         
 
-        let bounds_pct: [[f32; 2]; 2] = [[0.0, 0.0], [1.0, 1.0]]; //1.0 is the max right ?
+      //  let bounds_pct: [[f32; 2]; 2] = [[0.0, 0.0], [1.0, 1.0]]; //1.0 is the max right ?
 
         let sub_heightmap_height = height_data.len();
         let sub_heightmap_width = height_data[0].len();
@@ -181,15 +181,15 @@ impl PreMesh {
                 let rb = height_data[x + step_size][y] as f32 * height_scale;
                 let rf = height_data[x + step_size][y + step_size] as f32 * height_scale;*/
 
-                let uv_lb = compute_uv(fx, fz, bounds_pct, texture_dimensions);
-                let uv_rb = compute_uv(fx + step_size as f32, fz, bounds_pct, texture_dimensions);
+                let uv_lb = compute_uv(fx, fz, texture_dimensions);
+                let uv_rb = compute_uv(fx + step_size as f32, fz,  texture_dimensions);
                 let uv_rf = compute_uv(
                     fx + step_size as f32,
                     fz + step_size as f32,
-                    bounds_pct,
+                    
                     texture_dimensions,
                 );
-                let uv_lf = compute_uv(fx, fz + step_size as f32, bounds_pct, texture_dimensions);
+                let uv_lf = compute_uv(fx, fz + step_size as f32,  texture_dimensions);
 
                 let left_back = [fx, lb, fz];
                 let right_back = [fx + step_size as f32, rb, fz];
@@ -226,7 +226,7 @@ impl PreMesh {
 
         // let bounds_pct = sub_heightmap.bounds_pct;
 
-        let bounds_pct: [[f32; 2]; 2] = [[0.0, 0.0], [1.0, 1.0]]; //1.0 is the max right ?
+    //    let bounds_pct: [[f32; 2]; 2] = [[0.0, 0.0], [1.0, 1.0]]; //1.0 is the max right ?
 
         let sub_heightmap_height = height_data.len();
         let sub_heightmap_width = height_data[0].len();
@@ -316,23 +316,23 @@ impl PreMesh {
 
                         let start_fz = greedy_points_z_start.unwrap();
 
-                        let uv_lb = compute_uv(fx, start_fz, bounds_pct, texture_dimensions);
+                        let uv_lb = compute_uv(fx, start_fz, texture_dimensions);
                         let uv_rb = compute_uv(
                             fx + step_size as f32,
                             start_fz,
-                            bounds_pct,
+                           
                             texture_dimensions,
                         );
                         let uv_rf = compute_uv(
                             fx + step_size as f32,
                             start_fz + step_size as f32,
-                            bounds_pct,
+                             
                             texture_dimensions,
                         );
                         let uv_lf = compute_uv(
                             fx,
                             start_fz + step_size as f32,
-                            bounds_pct,
+                            
                             texture_dimensions,
                         );
 
@@ -388,15 +388,15 @@ impl PreMesh {
                 //greedy counter and continue .   lf and rf will be way out, the others will be saved.
 
                 //add normal mini tris here
-                let uv_lb = compute_uv(fx, fz, bounds_pct, texture_dimensions);
-                let uv_rb = compute_uv(fx + step_size as f32, fz, bounds_pct, texture_dimensions);
+                let uv_lb = compute_uv(fx, fz, texture_dimensions);
+                let uv_rb = compute_uv(fx + step_size as f32, fz,   texture_dimensions);
                 let uv_rf = compute_uv(
                     fx + step_size as f32,
                     fz + step_size as f32,
-                    bounds_pct,
+                     
                     texture_dimensions,
                 );
-                let uv_lf = compute_uv(fx, fz + step_size as f32, bounds_pct, texture_dimensions);
+                let uv_lf = compute_uv(fx, fz + step_size as f32,   texture_dimensions);
 
                 let left_back = [fx, lb, fz];
                 let right_back = [fx + step_size as f32, rb, fz];
@@ -421,16 +421,16 @@ impl PreMesh {
                 if let Some(fz) = greedy_points_z_start {
                     let start_fz = greedy_points_z_start.unwrap();
 
-                    let uv_lb = compute_uv(fx, start_fz, bounds_pct, texture_dimensions);
+                    let uv_lb = compute_uv(fx, start_fz,  texture_dimensions);
                     let uv_rb = compute_uv(
                         fx + step_size as f32,
                         start_fz,
-                        bounds_pct,
+                       
                         texture_dimensions,
                     );
                     let uv_rf =
-                        compute_uv(fx + step_size as f32, fz, bounds_pct, texture_dimensions);
-                    let uv_lf = compute_uv(fx, fz, bounds_pct, texture_dimensions);
+                        compute_uv(fx + step_size as f32, fz,  texture_dimensions);
+                    let uv_lf = compute_uv(fx, fz,  texture_dimensions);
 
                     let left_back = [fx, greedy_height, start_fz];
                     let right_back = [fx + step_size as f32, greedy_height, start_fz];
@@ -475,27 +475,38 @@ fn compute_normal(v0: [f32; 3], v1: [f32; 3], v2: [f32; 3]) -> [f32; 3] {
     [normal[0], normal[1], normal[2]] //is this busted ?
 }
 
-//is this right !!??
-fn compute_uv(x: f32, y: f32, bounds: [[f32; 2]; 2], texture_dimensions: [f32; 2]) -> [f32; 2] {
-    let start_bounds_x = bounds[0][0];
-    let end_bounds_x = bounds[1][0];
-
-    let start_bounds_y = bounds[0][1];
-    let end_bounds_y = bounds[1][1];
+fn compute_uv(x: f32, y: f32,   texture_dimensions: [f32; 2]) -> [f32; 2] {
+    
 
     //x and y are the origin coords
 
-    let uv_worldspace = [
-        (x) / (end_bounds_x - start_bounds_x),
-        (y) / (end_bounds_y - start_bounds_y),
-    ];
+   
 
     let uv = [
-        uv_worldspace[0] / texture_dimensions[0],
-        uv_worldspace[1] / texture_dimensions[1],
+        x / texture_dimensions[0],
+        y / texture_dimensions[1],
     ];
 
     // println!("uv {:?}", uv);
 
     uv
 }
+
+/*
+fn compute_uvs(  fx :f32, fz: f32, step_size: usize,   texture_dimensions: [f32; 2] ) -> [[f32; 2];4] {
+
+
+                let uv_lb = compute_uv(fx, fz,  texture_dimensions);
+                let uv_rb = compute_uv(fx + step_size as f32, fz,   texture_dimensions);
+                let uv_rf = compute_uv(
+                    fx + step_size as f32,
+                    fz + step_size as f32,
+                     
+                    texture_dimensions,
+                );
+                let uv_lf = compute_uv(fx, fz + step_size as f32,  texture_dimensions);
+
+
+                [uv_lb, uv_rb, uv_rf, uv_lf]
+}
+*/
