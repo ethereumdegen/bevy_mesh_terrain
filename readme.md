@@ -31,6 +31,7 @@ cargo run --example basic
  In this way, it works similarly to a voxel chunking system ( a la minecraft) except using heightfields (2d) instead of voxels (3d). 
  
  
+![image](https://github.com/user-attachments/assets/a1f040f7-9a48-4ecb-8157-67705060e266)
 
  
  ![image](https://github.com/ethereumdegen/bevy_mesh_terrain/assets/6249263/492f8212-8d08-460c-ae54-7d7a0022eb95)
