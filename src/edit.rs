@@ -257,7 +257,7 @@ pub fn apply_tool_edits(
     mut evt_writer: EventWriter<TerrainBrushEvent>,
 ) {
     for ev in ev_reader.read() {
-        eprintln!("-- {:?} -- terrain edit event!", &ev.tool);
+        info!("-- {:?} -- terrain edit event!", &ev.tool);
 
         let intersected_entity = &ev.entity;
 
@@ -589,15 +589,20 @@ pub fn apply_tool_edits(
                                                     }
                                                 }
 
-                                                let updated_image = img.clone();
 
-                                                let updated_image_handle =
-                                                    asset_server.add(updated_image);
+                                                //since we have directly edited the proper texture mut , we dont need to do anything else !
 
-                                                chunk_data.set_splat_texture_image(
+
+                                                // -----
+
+                                               // let updated_image = img.clone();
+
+                                               // let updated_image_handle = asset_server.add(updated_image);
+
+                                             /*   chunk_data.set_splat_texture_image(
                                                     updated_image_handle.clone(),
-                                                ); //is this necessary? i think so in case the height is modified
-
+                                                );*/ //is this necessary? i think so in case the height is modified
+                                                            /*
                                                 if let Some(material_handle) =
                                                     &chunk_data.material_handle
                                                 {
@@ -610,6 +615,7 @@ pub fn apply_tool_edits(
                                                         println!("rewrote splat tex in terrain material ");
                                                     }
                                                 }
+                                                */
 
                                             //mark  material as needing reload !!
                                             } else {
