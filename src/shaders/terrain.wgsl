@@ -214,7 +214,7 @@ fn fragment(
     //we mix the normal with our sample so shadows are affected by the normal map ! 
     let normal_mixed = mix( normalize( mesh.world_normal ) , normalize( tangent ) , 0.7 );
 
-     let TBN = calculate_tbn_mikktspace(normalize( normal_mixed ), vec4(tangent,1.0 )  ) ;  //for anistropy ??
+   /*  let TBN = calculate_tbn_mikktspace(normalize( normal_mixed ), vec4(tangent,1.0 )  ) ;  //for anistropy ??
 
  
 
@@ -231,7 +231,9 @@ fn fragment(
         is_front,
         
         Nt
-    );
+    );*/
+
+    pbr_input.N  = normal_mixed;
 
 
     pbr_input.V =  calculate_view(mesh.world_position, pbr_input.is_orthographic);
