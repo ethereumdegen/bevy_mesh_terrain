@@ -1,0 +1,17 @@
+[package]
+name = "scene_converter_tool"
+version.workspace = true
+edition.workspace = true
+license.workspace = true 
+keywords = ["bevy", "editor"]
+categories = ["game-development", "gui", "visualization"]
+exclude = ["assets"]
+
+ 
+[dependencies]
+bevy_mesh_terrain.workspace = true 
+ 
+bevy.workspace=true
+serde.workspace=true
+spirit_edit_core.workspace=true
+ron.workspace=true

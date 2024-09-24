@@ -39,3 +39,9 @@ rand = "0.8.5"
 name = "basic"
 path = "examples/basic.rs"
 
+
+
+[[bin]]
+name = "scene_converter"
+path = "tools/scene_converter/src/main.rs"
+
