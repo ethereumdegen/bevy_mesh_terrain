@@ -30,6 +30,7 @@ pub mod terrain_config;
 pub mod terrain_loading_state;
 pub mod terrain_material;
 pub mod tool_preview;
+pub mod terrain_scene;
 
 pub struct TerrainMeshPlugin {
     task_update_rate: Duration,

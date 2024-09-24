@@ -1,4 +1,6 @@
  
+use serde::Serialize;
+use serde::Deserialize;
 use crate::heightmap::HeightMapU16;
 use bevy::prelude::{Mesh, Vec2};
 use bevy::render::mesh::Indices;
@@ -11,6 +13,7 @@ use bevy::render::render_resource::PrimitiveTopology::TriangleList;
 
 const THRESHOLD: u16 = (0.0001 * 65535.0) as u16;
 
+#[derive(Serialize,Deserialize,Clone,Debug)]
 pub struct PreMesh {
     positions: Vec<[f32; 3]>,
     uvs: Vec<[f32; 2]>,
