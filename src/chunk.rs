@@ -959,7 +959,7 @@ where
     Attempts to look at adjacent height maps to return stitch data
 
 
-    THIS IS BUSTED 
+   
 */
 pub fn compute_stitch_data(
     chunk_id: u32,

@@ -2,7 +2,7 @@
 use bevy::time::common_conditions::on_timer;
 use bevy::{asset::load_internal_asset, prelude::*};
 use chunk::{
-    build_chunk_height_data, build_chunk_meshes, finish_chunk_build_tasks, initialize_chunk_data,
+     build_chunk_meshes, finish_chunk_build_tasks, initialize_chunk_data,
      update_chunk_visibility,
 };
 use terrain::{initialize_terrain, load_terrain_texture_from_image, load_terrain_normal_from_image};
@@ -65,7 +65,7 @@ impl Plugin for TerrainMeshPlugin {
         app.add_event::<TerrainBrushEvent>();
        // app.insert_resource(TerrainSceneDataResource::default());
 
-        app.add_systems(Update, chunk::update_splat_image_formats);
+        //app.add_systems(Update, chunk::update_splat_image_formats);
         app.add_systems(Update, chunk::update_tool_uniforms);
 
         app.add_systems(
@@ -77,10 +77,10 @@ impl Plugin for TerrainMeshPlugin {
             Update,
             reset_chunk_height_data.run_if(on_timer(self.task_update_rate)),
         );*/
-        app.add_systems(
+        /*app.add_systems(
             Update,
             build_chunk_height_data.run_if(on_timer(self.task_update_rate)),
-        );
+        );*/
         app.add_systems(
             Update,
             finish_chunk_build_tasks.run_if(on_timer(self.task_update_rate)),

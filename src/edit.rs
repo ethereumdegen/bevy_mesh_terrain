@@ -1,3 +1,4 @@
+use crate::terrain_scene::TerrainScene;
 use crate::heightmap::HeightMap;
 use std::ops::{Add, Div, Neg};
 use std::path::PathBuf;
@@ -21,7 +22,7 @@ use core::fmt::{self, Display, Formatter};
 use crate::chunk::{
     compute_stitch_data, save_chunk_collision_data_to_disk,   
     save_chunk_splat_map_to_disk, Chunk, ChunkCoordinates, ChunkCoords, ChunkData,
-    ChunkHeightMapResource,
+   // ChunkHeightMapResource,
 };
 use crate::terrain::{TerrainData, TerrainImageDataLoadStatus};
 use crate::terrain_config::TerrainConfig;
@@ -99,9 +100,9 @@ pub fn apply_command_events(
     mut images: ResMut<Assets<Image>>,
     mut terrain_materials: ResMut<Assets<TerrainMaterialExtension>>,
 
-    mut chunk_height_maps: ResMut<ChunkHeightMapResource>,
+    //mut chunk_height_maps: ResMut<ChunkHeightMapResource>,
 
-    terrain_query: Query<(&TerrainData, &TerrainConfig)>,
+    mut terrain_query: Query<(&TerrainData, &TerrainConfig, &mut TerrainScene)>,
 
     chunk_mesh_query: Query<(Entity, &Handle<Mesh>, &GlobalTransform), With<TerrainChunkMesh>>,
     meshes: Res<Assets<Mesh>>,
@@ -116,14 +117,14 @@ pub fn apply_command_events(
                 continue;
             }
 
-            let (terrain_data, terrain_config) = terrain_query.get(terrain_entity_id).unwrap();
+            let (terrain_data, terrain_config, terrain_scene) = terrain_query.get_mut(terrain_entity_id).unwrap();
 
             match ev {
                 TerrainCommandEvent::SaveAllChunks(save_height, save_splat, save_collision) => {
                     let file_name = format!("{}.png", chunk.chunk_id);
                     let asset_folder_path = PathBuf::from("assets");
-                    if *save_height {
-                        if let Some(chunk_height_data) =
+                    if *save_height || * save_splat {
+                        /*if let Some(chunk_height_data) =
                             chunk_height_maps.chunk_height_maps.get(&chunk.chunk_id)
                         {
 
@@ -134,22 +135,12 @@ pub fn apply_command_events(
                                     );
 
                           
-                        }
+                        }*/
+
+                        //save the terrain scene to disk ? 
                     }
 
-                    if *save_splat {
-                        if let Some(splat_image_handle) = chunk_data.get_splat_texture_image() {
-                            if let Some(splat_image) = images.get(splat_image_handle) {
-                                save_chunk_splat_map_to_disk(
-                                    splat_image,
-                                    asset_folder_path
-                                        .join(&terrain_config.splat_folder_path)
-                                        .join(&file_name),
-                                );
-                            }
-                        }
-                    }
-
+                   
                     if *save_collision {
                         println!("Generating and saving collision data.. please wait..");
                         for chunk_child in chunk_children {
@@ -248,9 +239,9 @@ pub fn apply_tool_edits(
     mut images: ResMut<Assets<Image>>,
     mut terrain_materials: ResMut<Assets<TerrainMaterialExtension>>,
 
-    mut chunk_height_maps: ResMut<ChunkHeightMapResource>,
+   // mut chunk_height_maps: ResMut<ChunkHeightMapResource>,
 
-    terrain_query: Query<(&TerrainData, &TerrainConfig)>,
+    mut terrain_query: Query<(&TerrainData, &TerrainConfig, &mut TerrainScene)>,
 
     mut ev_reader: EventReader<EditTerrainEvent>,
 
@@ -269,8 +260,8 @@ pub fn apply_tool_edits(
             if let Some((_, _, _, terrain_entity, _)) =
                 chunk_query.get_mut(chunk_entity.get().clone()).ok()
             {
-                if let Some((terrain_data, terrain_config)) =
-                    terrain_query.get(terrain_entity.get().clone()).ok()
+                if let Some((terrain_data, terrain_config, mut terrain_scene)) =
+                    terrain_query.get_mut(terrain_entity.get().clone()).ok()
                 {
                     let chunk_rows = terrain_config.chunk_rows;
                     let terrain_dimensions = terrain_config.terrain_dimensions;
