@@ -194,7 +194,7 @@ fn fragment(
     //test for now 
    // pbr_input.material.base_color   = vec4(blended_normal_vec3.r,blended_normal_vec3.g,blended_normal_vec3.b,1.0);
     
-      let double_sided = (pbr_input.material.flags & STANDARD_MATERIAL_FLAGS_DOUBLE_SIDED_BIT) != 0u;
+    let double_sided = (pbr_input.material.flags & STANDARD_MATERIAL_FLAGS_DOUBLE_SIDED_BIT) != 0u;
 
 
 

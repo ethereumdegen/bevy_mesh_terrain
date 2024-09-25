@@ -24,6 +24,7 @@ pub struct TerrainConfig {
     pub lod_distance: f32,
 
     pub lod_level_offset: u8,
+    pub collider_lod_level: u8,
 
     pub height_scale: f32,
 
@@ -49,6 +50,7 @@ impl Default for TerrainConfig {
             lod_distance: 1000.0,
 
             lod_level_offset: 0,
+            collider_lod_level: 0,
 
             texture_uv_expansion_factor : 16.0,
 

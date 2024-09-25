@@ -160,7 +160,10 @@ pub fn apply_command_events(
                                 .get(mesh_handle)
                                 .expect("No mesh found for terrain chunk");*/
 
-                                let lod_level = 1; // can customize lod level of colliders here
+
+                                let lod_level = terrain_config.collider_lod_level;
+
+                               // let lod_level = 1; // can customize lod level of colliders here
                                 let use_greedy_mesh = true;
 
                                 let chunk_rows = terrain_config.chunk_rows;
