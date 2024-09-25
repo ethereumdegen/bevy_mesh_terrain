@@ -59,6 +59,9 @@ pub fn chunks_plugin(app: &mut App){
 
 }
 
+
+const LOWEST_LOW_LEVEL: u8 = 2; 
+
 #[derive(Default, Eq, PartialEq)]
 enum ChunkState {
     #[default]
@@ -323,8 +326,8 @@ pub fn initialize_chunk_data(
 
 
          
-
-        let chunk_base_lod = 0; // hmm might cause issues .. base this off distance properly ? 
+            //to start off, render at low LOD 
+        let chunk_base_lod = LOWEST_LOW_LEVEL; // hmm might cause issues .. base this off distance properly ? 
         let lod_level_offset = terrain_config.lod_level_offset;
 
         let chunk_data_component = ChunkData {
@@ -401,7 +404,7 @@ pub fn add_render_chunk_at_lod_component(
 
 ){
 
-    let Some(terrain_viewer_entity) = terrain_viewer.get_single().ok() else {return};
+    let  terrain_viewer_entity  = terrain_viewer.get_single().ok() ;
 
 
     for  chunk_entity in chunk_query.iter(){
@@ -414,18 +417,17 @@ pub fn add_render_chunk_at_lod_component(
         let Some(chunk_xform) = global_transform_query.get(chunk_entity).ok() else {
             continue;
         };
-        let Some(viewer_xform) = global_transform_query.get(terrain_viewer_entity).ok() else {
-            continue;
-        };
-
+ 
 
         let chunk_dimensions  = terrain_config.get_chunk_dimensions() ;
 
         let chunk_center = chunk_xform.translation() 
             + Vec3::new(chunk_dimensions.x / 2.0, 0.0 , chunk_dimensions.y / 2.0  ) ; // add offset ? 
 
-        let viewer_translation = viewer_xform.translation();
-
+        
+        let Some(viewer_translation) = terrain_viewer_entity.map(|ent|  global_transform_query.get(ent).ok() ) 
+        .flatten().map(|xform| xform.translation() ) else {continue};
+ 
 
         let chunk_distance = viewer_translation.distance(chunk_center);
 
@@ -433,8 +435,8 @@ pub fn add_render_chunk_at_lod_component(
 
         let mut lod_level = (chunk_distance / lod_distance) as i32;
 
-        if lod_level > 2 {
-            lod_level = 2;
+        if lod_level > LOWEST_LOW_LEVEL as i32 {
+            lod_level = LOWEST_LOW_LEVEL as i32;
         }
         if lod_level < 0 {
             lod_level = 0;
@@ -555,7 +557,7 @@ pub fn build_chunk_meshes(
     mut commands: Commands,
     terrain_query: Query<(&TerrainConfig, &TerrainData)>,
 
-    mut chunk_query: Query<(Entity, &Chunk, &mut ChunkData, &Parent, &Visibility, &RenderChunkAtLod)>,
+    mut chunk_query: Query<(Entity, &Chunk, &mut ChunkData, &Parent, &Visibility, Option<&RenderChunkAtLod> )>,
 
     chunk_height_maps: ResMut<ChunkHeightMapResource>,
     // mut chunk_data_query: Query<( &mut ChunkData )>,
