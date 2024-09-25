@@ -32,11 +32,14 @@ pub struct TerrainConfig {
     pub texture_uv_expansion_factor: f32, 
 
     pub texture_image_sections: u32,
+
+    pub terrain_scene_path: PathBuf,
+
     pub diffuse_folder_path: PathBuf,
     pub normal_folder_path: PathBuf,
-    pub height_folder_path: PathBuf,
-    pub splat_folder_path: PathBuf,
-    pub collider_data_folder_path: PathBuf,
+   // pub height_folder_path: PathBuf,
+  //  pub splat_folder_path: PathBuf,
+  //  pub collider_data_folder_path: PathBuf,
 }
 
 impl Default for TerrainConfig {
@@ -58,10 +61,15 @@ impl Default for TerrainConfig {
             texture_image_sections: 8,
 
             diffuse_folder_path: "diffuse/".into(),
-            height_folder_path: "height/".into(),
-            splat_folder_path: "splat/".into(),
+
             normal_folder_path: "normal/".into(),
-            collider_data_folder_path: "collider/".into(),
+
+
+            terrain_scene_path: "terrain_scene".into(),
+
+            //height_folder_path: "height/".into(),
+            //splat_folder_path: "splat/".into(),
+            //collider_data_folder_path: "collider/".into(),
         }
     }
 }

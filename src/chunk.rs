@@ -1,5 +1,4 @@
 use std::fs::File;
-use std::io::BufWriter;
 use std::path::Path;
 
 use bevy::asset::LoadState;
@@ -17,6 +16,7 @@ use crate::pre_mesh::PreMesh;
 use crate::terrain::{TerrainData, TerrainImageDataLoadStatus, TerrainViewer};
 use crate::terrain_config::TerrainConfig;
 use crate::terrain_material::{ChunkMaterialUniforms, TerrainMaterial, ToolPreviewUniforms};
+use crate::terrain_scene::TerrainScene;
 use crate::tool_preview::ToolPreviewResource;
 
 use bevy::pbr::ExtendedMaterial;
@@ -44,10 +44,15 @@ impl Chunk {
     }
 }
 
+//use terrain scene data resource 
+/*
 #[derive(Resource, Default)]
 pub struct ChunkHeightMapResource {
     pub chunk_height_maps: HashMap<u32,  HeightMapU16>, // Keyed by chunk id
 }
+*/
+
+
 
 pub type TerrainMaterialExtension = ExtendedMaterial<StandardMaterial, TerrainMaterial>;
 
@@ -56,12 +61,13 @@ pub struct ChunkData {
     chunk_state: ChunkState,
     lod_level: u8,
 
+    /*
     //shouldnt be overly large or else lag
     pub height_map_image_handle: Option<Handle<Image>>,
     pub height_map_image_data_load_status: TerrainImageDataLoadStatus,
 
     // pub height_map_data: Option<HeightMapU16>,
-    splat_image_handle: Option<Handle<Image>>,
+    splat_image_handle: Option<Handle<Image>>,  */
 
    // alpha_mask_image_handle: Option<Handle<Image>>, //built from the height map
 
@@ -105,10 +111,12 @@ pub struct BuiltChunkMeshData {
 #[derive(Component)]
 pub struct TerrainChunkMesh {}
 
+/*
 #[derive(Component)]
 pub struct CachedHeightmapData {
     pub heightmap_data: Vec<Vec<u16>>,
 }
+*/
 
 pub trait ChunkCoordinates {
     fn new(x: u32, y: u32) -> Self;
@@ -251,6 +259,8 @@ fn calculate_chunk_coords(
     return [chunk_x, chunk_z];
 }
 
+
+// deprecated 
 pub fn initialize_chunk_data(
     mut commands: Commands,
 
@@ -268,20 +278,7 @@ pub fn initialize_chunk_data(
         let (terrain_config, terrain_data) = terrain_query.get(terrain_entity_id).unwrap();
 
         let chunk_id = chunk.chunk_id;
-        let file_name = format!("{}.png", chunk_id);
-
-        //default_terrain/diffuse
-        let height_texture_path = terrain_config.height_folder_path.join(&file_name);
-        println!("loading from {}", height_texture_path.display());
-
-        let height_map_image_handle: Handle<Image> = asset_server.load(height_texture_path);
-
-        //default_terrain/splat
-        let splat_texture_path = terrain_config.splat_folder_path.join(&file_name);
-        println!("loading from {}", splat_texture_path.display());
-
-        let splat_image_handle: Handle<Image> = asset_server.load(splat_texture_path);
-
+         
 
         let chunk_base_lod = 0; // hmm might cause issues .. base this off distance properly ? 
         let lod_level_offset = terrain_config.lod_level_offset;
@@ -290,13 +287,16 @@ pub fn initialize_chunk_data(
             chunk_state: ChunkState::Init,
             lod_level: chunk_base_lod + lod_level_offset,
 
-            height_map_image_handle: Some(height_map_image_handle),
+            //height_map_image_handle: Some(height_map_image_handle),
             //     height_map_data: None, //make this its own component ?
-            height_map_image_data_load_status: TerrainImageDataLoadStatus::NotLoaded,
+            //height_map_image_data_load_status: TerrainImageDataLoadStatus::NotLoaded,
 
-            splat_image_handle: Some(splat_image_handle),
+            //splat_image_handle: Some(splat_image_handle),
            // alpha_mask_image_handle: None, //gets set later
             material_handle: None,         //gets set later
+
+
+            //use height map and splat map data from TerrainScene
         };
 
         commands
@@ -312,6 +312,8 @@ Have to do this hack since bevy is not correctly detecting the format
 
 */
 
+//deprecated
+/*
 pub fn update_splat_image_formats(
     mut ev_asset: EventReader<AssetEvent<Image>>,
     mut images: ResMut<Assets<Image>>,
@@ -342,7 +344,10 @@ pub fn update_splat_image_formats(
         }
     }
 }
+*/
 
+/*
+//deprecated
 pub fn reset_chunk_height_data(
     mut commands: Commands,
     asset_server: Res<AssetServer>,
@@ -354,20 +359,9 @@ pub fn reset_chunk_height_data(
 ) {
     for (chunk_entity, chunk, mut chunk_data, terrain_entity, children) in chunk_query.iter_mut() {
         if chunk_data.height_map_image_data_load_status == TerrainImageDataLoadStatus::NeedsReload {
-            //remove the built mesh
-            // for &child in children.iter() {
-            //     commands.entity(child).despawn_recursive();
-            // }
-
+            
             chunk_data.chunk_state = ChunkState::Init; // change me ?
-                                                       //chunk_data.height_map_image_data_load_status = TerrainImageDataLoadStatus::NotLoaded;
-
-           //  if let Some(height_map_data) = &chunk_height_maps.chunk_height_maps.get(&chunk.chunk_id)
-           // {
-               // let alpha_mask_image: Image =
-              //      build_alpha_mask_image_from_height_data(&height_map_data);
-              //  chunk_data.alpha_mask_image_handle = Some(images.add(alpha_mask_image));
-           // }
+    
 
             //we can let go of the height map image handle now that we loaded our heightmap data from it
             //terrain_data.height_map_image_handle = None;
@@ -375,15 +369,21 @@ pub fn reset_chunk_height_data(
         }
     }
 }
+*/
 
+
+//deprecated
+/* 
 pub fn build_chunk_height_data(
     mut commands: Commands,
     asset_server: Res<AssetServer>,
     mut images: ResMut<Assets<Image>>,
 
-    mut chunk_height_maps: ResMut<ChunkHeightMapResource>,
+    //mut chunk_height_maps: ResMut<ChunkHeightMapResource>,
 
     mut chunk_query: Query<(Entity, &Chunk, &mut ChunkData, &Parent)>,
+
+
 ) {
     for (chunk_entity, chunk, mut chunk_data, terrain_entity) in chunk_query.iter_mut() {
         if chunk_data.height_map_image_data_load_status == TerrainImageDataLoadStatus::NotLoaded {
@@ -429,7 +429,7 @@ pub fn build_chunk_height_data(
             chunk_data.height_map_image_data_load_status = TerrainImageDataLoadStatus::Loaded;
         }
     }
-}
+}*/
 
 /*
 pub fn build_alpha_mask_image_from_height_data(height_map_data: &Vec<Vec<u16>>) -> Image {
@@ -520,7 +520,9 @@ pub fn build_chunk_meshes(
 
     mut chunk_query: Query<(Entity, &Chunk, &mut ChunkData, &Parent, &Visibility)>,
 
-    chunk_height_maps: ResMut<ChunkHeightMapResource>,
+    //chunk_height_maps: ResMut<ChunkHeightMapResource>,
+
+    terrain_data_query: Query<(&TerrainData,&TerrainScene)>,
     // mut chunk_data_query: Query<( &mut ChunkData )>,
 ) {
     for (chunk_entity, chunk, mut chunk_data, terrain_entity, visibility) in chunk_query.iter_mut()
@@ -532,6 +534,11 @@ pub fn build_chunk_meshes(
             }
             let (terrain_config, terrain_data) = terrain_query.get(terrain_entity_id).unwrap();
 
+            let Some((terrain_data,terrain_scene)) = terrain_data_query.get(terrain_entity.get()).ok() else{
+                continue;
+            };
+
+            /*
             let height_map_data = chunk_height_maps.chunk_height_maps.get(&chunk.chunk_id); // &chunk_data.height_map_data.clone();
 
             if height_map_data.is_none() {
@@ -548,6 +555,7 @@ pub fn build_chunk_meshes(
                 println!("chunk is missing splat_image_handle .");
                 continue;
             }
+            */
 
             if visibility == Visibility::Hidden {
                 //do not do the intensive calculations to build a chunk mesh until it is 'visible' -- this speeds up initial map loading
@@ -568,7 +576,7 @@ pub fn build_chunk_meshes(
 
             // might use lots of RAM ? idk ..
             //maybe we subsection first and THEN build the mesh!  oh well... anyways
-            let height_map_data_cloned = ( height_map_data.as_ref().unwrap()).clone();
+            //let height_map_data_cloned = ( height_map_data.as_ref().unwrap()).clone();
 
             let lod_level = chunk_data.lod_level;
 
@@ -596,12 +604,16 @@ pub fn build_chunk_meshes(
             }
 
             //for now, add the unstitched data..
-            commands.entity(chunk_entity).insert(CachedHeightmapData {
+            //why? 
+          /*  commands.entity(chunk_entity).insert(CachedHeightmapData {
                 heightmap_data: height_map_data_cloned.clone(),
-            });
+            }); */
 
             //these three LOC really take no time at all
             let mut sub_heightmap = (height_map_data_cloned.to_vec());
+
+
+            //need to add stitch meshes later .. !? esp if LOD changes 
 
             stitch_data_x_row.map(|x_row| sub_heightmap.append_x_row(x_row));
             stitch_data_y_col.map(|y_col| sub_heightmap.append_y_col(y_col));

@@ -13,6 +13,7 @@ use crate::heightmap::{HeightMap, HeightMapU16};
 use crate::terrain_material::{ChunkMaterialUniforms, TerrainMaterial};
 
 use crate::terrain_config::TerrainConfig;
+use crate::terrain_scene::TerrainScene;
 
 /*
 
@@ -38,6 +39,12 @@ pub enum TerrainImageDataLoadStatus {
     NeedsReload,
 }
 
+
+#[derive(Component,Clone,Debug)]
+pub struct TerrainDataLoaded;
+
+
+/*
 #[derive(Default, PartialEq, Eq)]
 pub enum TerrainDataStatus {
     //us this for texture image and splat image and alpha mask .. ?
@@ -45,12 +52,21 @@ pub enum TerrainDataStatus {
     NotLoaded,
     Loaded,
 }
+*/
+
+/*
+//make this a component on the terrain root ! 
+#[derive(Resource, Default)]
+pub struct TerrainSceneDataResource {
+    pub terrain_scene: Option<TerrainScene>
+}
+*/
 
 #[derive(Component, Default)]
 pub struct TerrainData {
     // pub chunk_entity_lookup: HashMap<u32,Entity>,  //why is this necessary  ??
     // pub terrain_config: TerrainConfig,
-    pub terrain_data_status: TerrainDataStatus,
+    //pub terrain_data_status: TerrainDataStatus,
 
     texture_image_handle: Option<Handle<Image>>,
     normal_image_handle: Option<Handle<Image>>,
@@ -69,12 +85,15 @@ impl TerrainData {
     }
 }
 
+/*
+    So after this, TerrainScene should be attached as a component 
+*/
 pub fn initialize_terrain(
     mut commands: Commands,
-    mut terrain_query: Query<(Entity, &mut TerrainData, &TerrainConfig)>,
+    mut terrain_query: Query<(Entity, &mut TerrainData, &TerrainConfig), Without<TerrainDataLoaded>>,
 ) {
     for (terrain_entity, mut terrain_data, terrain_config) in terrain_query.iter_mut() {
-        if terrain_data.terrain_data_status == TerrainDataStatus::NotLoaded {
+       // if terrain_data.terrain_data_status == TerrainDataStatus::NotLoaded {
             let max_chunks = terrain_config.chunk_rows * terrain_config.chunk_rows;
 
             for chunk_id in 0..max_chunks {
@@ -98,14 +117,36 @@ pub fn initialize_terrain(
                     })
                     .id();
 
-                let mut terrain_entity_commands = commands.get_entity(terrain_entity).unwrap();
+                if let Some(mut terrain_entity_commands) = commands.get_entity(terrain_entity) {
+
+                        terrain_entity_commands.add_child(chunk_entity);
+                }
 
                 //terrain_data.chunk_entity_lookup.insert(chunk_id,chunk_entity.clone());
-                terrain_entity_commands.add_child(chunk_entity);
+                
             }
 
-            terrain_data.terrain_data_status = TerrainDataStatus::Loaded
-        }
+
+
+            // Load or create a TerrainScene component and attach
+
+
+
+                if let Some(mut terrain_entity_commands) = commands.get_entity(terrain_entity) {
+
+                        terrain_entity_commands.try_insert(TerrainDataLoaded);
+
+                        terrain_entity_commands.try_insert(
+                            TerrainScene::create_or_load( 
+                                &terrain_config.terrain_scene_path
+                             )
+                            );
+                }
+            
+
+
+           //  terrain_data.terrain_data_status = TerrainDataStatus::Loaded
+        //}
     }
 }
 

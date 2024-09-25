@@ -1,8 +1,9 @@
+//use crate::terrain::TerrainSceneDataResource;
 use bevy::time::common_conditions::on_timer;
 use bevy::{asset::load_internal_asset, prelude::*};
 use chunk::{
     build_chunk_height_data, build_chunk_meshes, finish_chunk_build_tasks, initialize_chunk_data,
-    reset_chunk_height_data, update_chunk_visibility, ChunkHeightMapResource,
+     update_chunk_visibility,
 };
 use terrain::{initialize_terrain, load_terrain_texture_from_image, load_terrain_normal_from_image};
 
@@ -62,7 +63,7 @@ impl Plugin for TerrainMeshPlugin {
         app.add_event::<EditTerrainEvent>();
         app.add_event::<TerrainCommandEvent>();
         app.add_event::<TerrainBrushEvent>();
-        app.insert_resource(ChunkHeightMapResource::default());
+       // app.insert_resource(TerrainSceneDataResource::default());
 
         app.add_systems(Update, chunk::update_splat_image_formats);
         app.add_systems(Update, chunk::update_tool_uniforms);
@@ -72,10 +73,10 @@ impl Plugin for TerrainMeshPlugin {
             initialize_chunk_data.run_if(on_timer(self.task_update_rate)),
         );
 
-        app.add_systems(
+       /* app.add_systems(
             Update,
             reset_chunk_height_data.run_if(on_timer(self.task_update_rate)),
-        );
+        );*/
         app.add_systems(
             Update,
             build_chunk_height_data.run_if(on_timer(self.task_update_rate)),
@@ -97,6 +98,7 @@ impl Plugin for TerrainMeshPlugin {
             update_chunk_visibility.run_if(on_timer(self.task_update_rate)),
         );
 
+        //this is for the diffuse and normal 
         app.add_systems(Update, (load_terrain_texture_from_image,load_terrain_normal_from_image));
 
         app.add_systems(Update, apply_tool_edits); //put this in a sub plugin ?
