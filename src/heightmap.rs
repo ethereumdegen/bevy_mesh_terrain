@@ -26,8 +26,14 @@ pub trait HeightMap {
     fn load_from_image(image: &Image) -> Result<Box<Self>, HeightMapError>;
     fn save_heightmap_to_image<P>(&self,  save_file_path: P ) where  P:AsRef<Path>;
 
-      fn append_x_row(&mut self, row: Vec<u16>);
+    fn append_x_row(&mut self, row: Vec<u16>);
     fn append_y_col(&mut self, col: Vec<u16>);
+
+    fn compute_sub_heightmap(
+        &self,
+        chunk_coords: [u32;2],
+        chunk_rows: u32
+    ) -> Self ;
 
 }
 
@@ -125,5 +131,21 @@ impl HeightMap for HeightMapU16 {
 
 
     }
+
+     fn compute_sub_heightmap(
+        &self,
+        chunk_coords: [u32;2],
+        chunk_rows: u32
+    ) -> Self {
+
+        let mut sub_heightmap = Self::new();
+
+        //add to it ..
+
+
+        sub_heightmap
+
+
+     }
    
 }

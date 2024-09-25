@@ -76,6 +76,7 @@ pub struct ChunkData {
 
 impl ChunkData {
 
+    /* 
     pub fn get_height_map_texture_image(&self) -> &Option<Handle<Image>> {
         &self.height_map_image_handle
     }
@@ -87,7 +88,7 @@ impl ChunkData {
 
     pub fn set_splat_texture_image(&mut self, tex_handle: Handle<Image>) {
         self.splat_image_handle = Some(tex_handle);
-    }
+    }  */
 
   //  pub fn get_alpha_mask_texture_image(&self) -> &Option<Handle<Image>> {
   //      &self.alpha_mask_image_handle
@@ -557,6 +558,10 @@ pub fn build_chunk_meshes(
             }
             */
 
+            let height_map_data_complete = &terrain_scene.height_map_array;
+          //  let height_map_data = terrain_scene.height_map_array.get(&chunk.chunk_id); // &chunk_data.height_map_data.clone();
+
+
             if visibility == Visibility::Hidden {
                 //do not do the intensive calculations to build a chunk mesh until it is 'visible' -- this speeds up initial map loading
                 continue;
@@ -588,20 +593,26 @@ pub fn build_chunk_meshes(
                 height_map_subsection_pct[1][1],
             );
 
-            let chunk_id_clone = chunk.chunk_id.clone();
+            let chunk_id = chunk.chunk_id.clone();
+
+
+           // let height_data_complete = &terrain_scene.height_map_array;
 
             //  let chunk_coords = ChunkCoords::from_chunk_id(chunk_id_clone, chunk_rows);
 
-            let (stitch_data_x_row, stitch_data_y_col) = compute_stitch_data(
+            //need to do stitching later !! 
+
+
+            /* let (stitch_data_x_row, stitch_data_y_col) = compute_stitch_data(
                 chunk_id_clone,
                 chunk_rows,
                 terrain_dimensions,
-                &chunk_height_maps.chunk_height_maps,
+                &height_data_complete,
             );
 
             if stitch_data_x_row.is_none() || stitch_data_y_col.is_none() {
                 return;
-            }
+            } */
 
             //for now, add the unstitched data..
             //why? 
@@ -610,13 +621,13 @@ pub fn build_chunk_meshes(
             }); */
 
             //these three LOC really take no time at all
-            let mut sub_heightmap = (height_map_data_cloned.to_vec());
+         //   let mut sub_heightmap = height_map_data_cloned.to_vec();
 
 
             //need to add stitch meshes later .. !? esp if LOD changes 
 
-            stitch_data_x_row.map(|x_row| sub_heightmap.append_x_row(x_row));
-            stitch_data_y_col.map(|y_col| sub_heightmap.append_y_col(y_col));
+          //  stitch_data_x_row.map(|x_row| sub_heightmap.append_x_row(x_row));
+         //   stitch_data_y_col.map(|y_col| sub_heightmap.append_y_col(y_col));
 
             /*
             commands.entity(chunk_entity).insert(
@@ -626,6 +637,19 @@ pub fn build_chunk_meshes(
             );  */
 
             // This is not right for some of the edge chunks -- their
+
+
+            let sub_heightmap = HeightMapU16::compute_sub_heightmap(
+
+                height_map_data_complete,
+                ChunkCoords::from_chunk_id(chunk_id, chunk_rows),
+                chunk_rows
+
+
+                );
+
+
+
 
             chunk_data.chunk_state = ChunkState::Building;
 
@@ -724,8 +748,8 @@ pub fn finish_chunk_build_tasks(
             let array_texture = terrain_data.get_array_texture_image().clone();
             let normal_texture = terrain_data.get_normal_texture_image().clone();
 
-            let splat_texture = chunk_data.get_splat_texture_image().clone();
-            let height_map_texture = chunk_data.get_height_map_texture_image().clone();
+        //    let splat_texture = chunk_data.get_splat_texture_image().clone();
+        //    let height_map_texture = chunk_data.get_height_map_texture_image().clone();
 
             let chunk_terrain_material: Handle<TerrainMaterialExtension> =
                 terrain_materials.add(ExtendedMaterial {

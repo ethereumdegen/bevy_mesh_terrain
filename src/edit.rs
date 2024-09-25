@@ -42,6 +42,21 @@ use rand::Rng;
 
 use core::cmp::{max, min};
 
+
+fn terrain_edit_plugin(app: &mut App){
+
+
+
+         app.add_event::<EditTerrainEvent>();
+        app.add_event::<TerrainCommandEvent>();
+        app.add_event::<TerrainBrushEvent>();
+        app.add_systems(Update, apply_tool_edits); //put this in a sub plugin ?
+        app.add_systems(Update, apply_command_events);
+
+
+
+}
+
 #[derive(Debug, Clone)]
 pub enum EditingTool {
     SetHeightMap { height: u16 },        // height, radius, save to disk

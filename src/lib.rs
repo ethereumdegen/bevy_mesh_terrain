@@ -16,14 +16,17 @@ use crate::chunk::TerrainMaterialExtension;
 use crate::terrain_material::TERRAIN_SHADER_HANDLE;
 use terrain_material::TerrainMaterial;
 
+
+/*
 use edit::{
     apply_command_events, apply_tool_edits, EditTerrainEvent, TerrainBrushEvent,
     TerrainCommandEvent,
 };
+*/
 
 pub mod chunk;
 //pub mod collision;
-pub mod edit;
+//pub mod edit;
 pub mod heightmap;
 pub mod pre_mesh;
 pub mod terrain;
@@ -54,15 +57,17 @@ impl Plugin for TerrainMeshPlugin {
             Shader::from_wgsl
         );
         app.add_plugins(MaterialPlugin::<TerrainMaterialExtension>::default());
+
+    //    app.add_plugins(edit::terrain_edit_plugin) ;
         
         app.init_state::<terrain_loading_state::TerrainLoadingState>();
 
         app.init_resource::<tool_preview::ToolPreviewResource>();
 
+
+
         //app.add_event::<ChunkEvent>();
-        app.add_event::<EditTerrainEvent>();
-        app.add_event::<TerrainCommandEvent>();
-        app.add_event::<TerrainBrushEvent>();
+       
        // app.insert_resource(TerrainSceneDataResource::default());
 
         //app.add_systems(Update, chunk::update_splat_image_formats);
@@ -100,8 +105,6 @@ impl Plugin for TerrainMeshPlugin {
 
         //this is for the diffuse and normal 
         app.add_systems(Update, (load_terrain_texture_from_image,load_terrain_normal_from_image));
-
-        app.add_systems(Update, apply_tool_edits); //put this in a sub plugin ?
-        app.add_systems(Update, apply_command_events);
+ 
     }
 }
