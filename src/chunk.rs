@@ -1,3 +1,5 @@
+use std::time::Duration;
+use bevy::time::common_conditions::on_timer;
 use std::fs::File;
 use std::io::BufWriter;
 use std::path::Path;
@@ -22,7 +24,40 @@ use crate::tool_preview::ToolPreviewResource;
 use bevy::pbr::ExtendedMaterial;
 use bevy::pbr::OpaqueRendererMethod;
 
+
 use std::fs;
+
+
+
+pub fn chunks_plugin(app: &mut App){
+
+
+        let task_update_rate = Duration::from_millis(250);
+
+    app.insert_resource(ChunkHeightMapResource::default()) 
+
+      .add_systems(Update,
+
+        (update_splat_image_formats,update_tool_uniforms).chain()
+        ) 
+
+      .add_systems(Update,
+
+        (initialize_chunk_data,
+            reset_chunk_height_data,
+            
+            add_render_chunk_at_lod_component,
+            rebuild_chunk_from_lod, 
+            build_chunk_height_data,
+            finish_chunk_build_tasks,
+            build_chunk_meshes,
+            update_chunk_visibility,
+
+            ).chain().run_if(on_timer( task_update_rate))
+        );
+
+
+}
 
 #[derive(Default, Eq, PartialEq)]
 enum ChunkState {
@@ -50,6 +85,10 @@ pub struct ChunkHeightMapResource {
 }
 
 pub type TerrainMaterialExtension = ExtendedMaterial<StandardMaterial, TerrainMaterial>;
+
+
+#[derive(Component)]
+pub struct RenderChunkAtLod(u8);
 
 #[derive(Component)]
 pub struct ChunkData {
@@ -283,6 +322,8 @@ pub fn initialize_chunk_data(
         let splat_image_handle: Handle<Image> = asset_server.load(splat_texture_path);
 
 
+         
+
         let chunk_base_lod = 0; // hmm might cause issues .. base this off distance properly ? 
         let lod_level_offset = terrain_config.lod_level_offset;
 
@@ -343,6 +384,95 @@ pub fn update_splat_image_formats(
     }
 }
 
+
+
+pub fn add_render_chunk_at_lod_component(
+        mut commands: Commands,
+        chunk_query: Query<Entity, With<Chunk>>,
+        terrain_viewer: Query<Entity, With<TerrainViewer>>,
+
+        parent_query: Query<&Parent>,
+
+        terrain_query: Query<(&TerrainData, &TerrainConfig)>,
+ 
+
+        global_transform_query: Query<&GlobalTransform> 
+
+
+){
+
+    let Some(terrain_viewer_entity) = terrain_viewer.get_single().ok() else {return};
+
+
+    for  chunk_entity in chunk_query.iter(){
+        let Some(chunk_parent) = parent_query.get(chunk_entity).ok() else {continue};
+
+         let Some((terrain_data,terrain_config)) = terrain_query.get(chunk_parent.get()).ok() else {continue};
+
+
+
+        let Some(chunk_xform) = global_transform_query.get(chunk_entity).ok() else {
+            continue;
+        };
+        let Some(viewer_xform) = global_transform_query.get(terrain_viewer_entity).ok() else {
+            continue;
+        };
+
+
+        let chunk_dimensions  = terrain_config.get_chunk_dimensions() ;
+
+        let chunk_center = chunk_xform.translation() 
+            + Vec3::new(chunk_dimensions.x / 2.0, 0.0 , chunk_dimensions.y / 2.0  ) ; // add offset ? 
+
+        let viewer_translation = viewer_xform.translation();
+
+
+        let chunk_distance = viewer_translation.distance(chunk_center);
+
+        let lod_distance = terrain_config.lod_distance; 
+
+        let mut lod_level = (chunk_distance / lod_distance) as i32;
+
+        if lod_level > 2 {
+            lod_level = 2;
+        }
+        if lod_level < 0 {
+            lod_level = 0;
+        }
+
+        commands.entity(chunk_entity).try_insert( RenderChunkAtLod(lod_level as u8) );
+
+    }
+
+
+
+
+}
+
+
+pub fn rebuild_chunk_from_lod(
+    mut chunk_query: Query<(&Chunk, &mut ChunkData, &RenderChunkAtLod) >,
+){
+
+
+    for (chunk, mut chunk_data,  render_at_lod) in chunk_query.iter_mut(){
+
+        let render_lod = render_at_lod.0;
+
+        if chunk_data.lod_level != render_lod { 
+          
+            info!("redrawing chunk with new LOD {} {}",chunk_data.lod_level,render_lod);
+              chunk_data.lod_level = render_lod;
+               chunk_data.chunk_state = ChunkState::Init;  //flag the chunk as needing rebuild
+        }
+
+
+    }
+
+
+
+}
+
 pub fn reset_chunk_height_data(
     mut commands: Commands,
     asset_server: Res<AssetServer>,
@@ -354,32 +484,20 @@ pub fn reset_chunk_height_data(
 ) {
     for (chunk_entity, chunk, mut chunk_data, terrain_entity, children) in chunk_query.iter_mut() {
         if chunk_data.height_map_image_data_load_status == TerrainImageDataLoadStatus::NeedsReload {
-            //remove the built mesh
-            // for &child in children.iter() {
-            //     commands.entity(child).despawn_recursive();
-            // }
+            
 
             chunk_data.chunk_state = ChunkState::Init; // change me ?
                                                        //chunk_data.height_map_image_data_load_status = TerrainImageDataLoadStatus::NotLoaded;
-
-           //  if let Some(height_map_data) = &chunk_height_maps.chunk_height_maps.get(&chunk.chunk_id)
-           // {
-               // let alpha_mask_image: Image =
-              //      build_alpha_mask_image_from_height_data(&height_map_data);
-              //  chunk_data.alpha_mask_image_handle = Some(images.add(alpha_mask_image));
-           // }
-
-            //we can let go of the height map image handle now that we loaded our heightmap data from it
-            //terrain_data.height_map_image_handle = None;
+ 
             chunk_data.height_map_image_data_load_status = TerrainImageDataLoadStatus::Loaded;
         }
     }
 }
 
 pub fn build_chunk_height_data(
-    mut commands: Commands,
+    //mut commands: Commands,
     asset_server: Res<AssetServer>,
-    mut images: ResMut<Assets<Image>>,
+     images: Res <Assets<Image>>,
 
     mut chunk_height_maps: ResMut<ChunkHeightMapResource>,
 
@@ -408,16 +526,12 @@ pub fn build_chunk_height_data(
 
             match loaded_heightmap_data_result {
                 Ok(loaded_heightmap_data) => {
-                    //take out of box
-
-                   // let alpha_mask_image: Image =
-                   //     build_alpha_mask_image_from_height_data(&*loaded_heightmap_data);
-                    //chunk_data.alpha_mask_image_handle = Some(images.add(alpha_mask_image));
-
+                    
+                 
                     chunk_height_maps
                         .chunk_height_maps
                         .insert(chunk.chunk_id,  *loaded_heightmap_data );
-                    //    chunk_data.height_map_data = Some(*loaded_heightmap_data);
+                   
                 }
                 Err(e) => {
                     println!("{}", e);
@@ -430,85 +544,8 @@ pub fn build_chunk_height_data(
         }
     }
 }
-
-/*
-pub fn build_alpha_mask_image_from_height_data(height_map_data: &Vec<Vec<u16>>) -> Image {
-    // let width = height_map_image.size().x as usize;
-    // let height = height_map_image.size().y as usize;
-    let height = height_map_data.len();
-    let width = if height > 0 {
-        height_map_data[0].len()
-    } else {
-        0
-    };
-
-    const THRESHOLD: u16 = (0.001 * 65535.0) as u16;
-
-    // With the format being R16Uint, each pixel is represented by 2 bytes
-    let mut modified_data = Vec::with_capacity(height * width * 4); // 2 bytes per pixelfr R1
-
-    for y in 0..height {
-        for x in 0..width {
-            //  let index = 2 * (y * width + x); // 2 because of R16Uint
-            let height_value = height_map_data[y][x];
-
-            let pixel_value: f32 = if height_value > THRESHOLD { 1.0 } else { 0.0 };
-            modified_data.extend_from_slice(&pixel_value.to_le_bytes());
-        }
-    }
-
-    // Assuming Image has a method from_data for creating an instance from raw data
-    let size = Extent3d {
-        width: width as u32,
-        height: height as u32,
-        depth_or_array_layers: 1,
-    };
-    let dimension = TextureDimension::D2;
-
-    Image::new(
-        size, //height_map_image.texture_descriptor.size,
-        dimension,
-        modified_data,
-        TextureFormat::R32Float,
-        RenderAssetUsages::default(),
-    )
-}*/
-
-
-/*
-pub fn build_alpha_mask_image(height_map_image: &Image) -> Image {
-    let width = height_map_image.size().x as usize;
-    let height = height_map_image.size().y as usize;
-
-    const THRESHOLD: u16 = (0.05 * 65535.0) as u16;
-
-    // With the format being R16Uint, each pixel is represented by 2 bytes
-    let mut modified_data = Vec::with_capacity(height * width * 2); // 2 bytes per pixel
-
-    for y in 0..height {
-        for x in 0..width {
-            let index = 2 * (y * width + x); // 2 because of R16Uint
-            let height_value = u16::from_le_bytes([
-                height_map_image.data[index],
-                height_map_image.data[index + 1],
-            ]);
-
-            let pixel_value: f32 = if height_value > THRESHOLD { 1.0 } else { 0.0 };
-            modified_data.extend_from_slice(&pixel_value.to_le_bytes());
-        }
-    }
-
-    // Assuming Image has a method from_data for creating an instance from raw data
-
-    Image::new(
-        height_map_image.texture_descriptor.size,
-        height_map_image.texture_descriptor.dimension,
-        modified_data,
-        TextureFormat::R32Float,
-         RenderAssetUsages::default()
-    )
-}
-*/
+ 
+ 
 /*
 On initialization of terrain entity, the chunk entities should be spawned and they should just remain there forever !!!
  */
@@ -518,12 +555,12 @@ pub fn build_chunk_meshes(
     mut commands: Commands,
     terrain_query: Query<(&TerrainConfig, &TerrainData)>,
 
-    mut chunk_query: Query<(Entity, &Chunk, &mut ChunkData, &Parent, &Visibility)>,
+    mut chunk_query: Query<(Entity, &Chunk, &mut ChunkData, &Parent, &Visibility, &RenderChunkAtLod)>,
 
     chunk_height_maps: ResMut<ChunkHeightMapResource>,
     // mut chunk_data_query: Query<( &mut ChunkData )>,
 ) {
-    for (chunk_entity, chunk, mut chunk_data, terrain_entity, visibility) in chunk_query.iter_mut()
+    for (chunk_entity, chunk, mut chunk_data, terrain_entity, visibility, render_at_lod) in chunk_query.iter_mut()
     {
         if chunk_data.chunk_state == ChunkState::Init {
             let terrain_entity_id = terrain_entity.get();
@@ -569,6 +606,8 @@ pub fn build_chunk_meshes(
             // might use lots of RAM ? idk ..
             //maybe we subsection first and THEN build the mesh!  oh well... anyways
             let height_map_data_cloned = ( height_map_data.as_ref().unwrap()).clone();
+
+            //chunk_data.lod_level = render_at_lod.0;
 
             let lod_level = chunk_data.lod_level;
 
@@ -852,7 +891,7 @@ pub fn update_chunk_visibility(
                 }
             } + lod_level_offset;*/
 
-            chunk_data.lod_level = lod_level_offset; // for now
+           // chunk_data.lod_level = lod_level_offset; // for now
 
             let max_render_distance = terrain_config.get_max_render_distance();
 
