@@ -61,6 +61,7 @@ pub fn chunks_plugin(app: &mut App){
 
 
 const LOWEST_LOW_LEVEL: u8 = 2; 
+const MAX_CONCURRENT_CHUNK_BUILD_TASKS:usize = 8; 
 
 #[derive(Default, Eq, PartialEq)]
 enum ChunkState {
@@ -560,8 +561,24 @@ pub fn build_chunk_meshes(
     mut chunk_query: Query<(Entity, &Chunk, &mut ChunkData, &Parent, &Visibility, Option<&RenderChunkAtLod> )>,
 
     chunk_height_maps: ResMut<ChunkHeightMapResource>,
+
+    chunk_build_tasks_query: Query<Entity,With<MeshBuilderTask>>
     // mut chunk_data_query: Query<( &mut ChunkData )>,
 ) {
+
+      let mut chunk_build_tasks_count = 0;
+
+    for _build_task_entity  in chunk_build_tasks_query.iter() {
+        chunk_build_tasks_count  += 1;
+    }
+
+    if chunk_build_tasks_count > MAX_CONCURRENT_CHUNK_BUILD_TASKS {
+        return;
+    }
+
+
+
+
     for (chunk_entity, chunk, mut chunk_data, terrain_entity, visibility, render_at_lod) in chunk_query.iter_mut()
     {
         if chunk_data.chunk_state == ChunkState::Init {
