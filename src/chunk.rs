@@ -586,8 +586,8 @@ pub fn build_chunk_meshes(
     for (chunk_entity, chunk, mut chunk_data, terrain_entity, visibility, render_at_lod) in chunk_query.iter_mut()
     {
 
-         if chunk_mesh_build_task_counter_resource.active_build_tasks > MAX_CONCURRENT_CHUNK_BUILD_TASKS {
-            return;
+         if chunk_mesh_build_task_counter_resource.active_build_tasks >= MAX_CONCURRENT_CHUNK_BUILD_TASKS {
+            continue;
         }
 
 
