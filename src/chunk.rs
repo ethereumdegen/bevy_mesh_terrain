@@ -34,7 +34,9 @@ pub fn chunks_plugin(app: &mut App){
 
         let task_update_rate = Duration::from_millis(250);
 
-    app.insert_resource(ChunkHeightMapResource::default()) 
+    app
+    .insert_resource(ChunkHeightMapResource::default()) 
+    .insert_resource(ChunkMeshBuildTaskCounterResource::default())
 
       .add_systems(Update,
 
@@ -63,6 +65,7 @@ pub fn chunks_plugin(app: &mut App){
 const LOWEST_LOW_LEVEL: u8 = 2; 
 const MAX_CONCURRENT_CHUNK_BUILD_TASKS:usize = 8; 
 
+
 #[derive(Default, Eq, PartialEq)]
 enum ChunkState {
     #[default]
@@ -87,6 +90,13 @@ impl Chunk {
 pub struct ChunkHeightMapResource {
     pub chunk_height_maps: HashMap<u32,  HeightMapU16>, // Keyed by chunk id
 }
+
+#[derive(Resource, Default)]
+pub struct ChunkMeshBuildTaskCounterResource {
+    pub active_build_tasks:usize  
+}
+
+
 
 pub type TerrainMaterialExtension = ExtendedMaterial<StandardMaterial, TerrainMaterial>;
 
@@ -562,25 +572,26 @@ pub fn build_chunk_meshes(
 
     chunk_height_maps: ResMut<ChunkHeightMapResource>,
 
+    mut chunk_mesh_build_task_counter_resource: ResMut<ChunkMeshBuildTaskCounterResource>,
     chunk_build_tasks_query: Query<Entity,With<MeshBuilderTask>>
     // mut chunk_data_query: Query<( &mut ChunkData )>,
 ) {
 
-      let mut chunk_build_tasks_count = 0;
-
-    for _build_task_entity  in chunk_build_tasks_query.iter() {
-        chunk_build_tasks_count  += 1;
-    }
-
-    if chunk_build_tasks_count > MAX_CONCURRENT_CHUNK_BUILD_TASKS {
-        return;
-    }
+   
+   
 
 
 
 
     for (chunk_entity, chunk, mut chunk_data, terrain_entity, visibility, render_at_lod) in chunk_query.iter_mut()
     {
+
+         if chunk_mesh_build_task_counter_resource.active_build_tasks > MAX_CONCURRENT_CHUNK_BUILD_TASKS {
+            return;
+        }
+
+
+
         if chunk_data.chunk_state == ChunkState::Init {
             let terrain_entity_id = terrain_entity.get();
             if terrain_query.get(terrain_entity_id).is_ok() == false {
@@ -716,6 +727,8 @@ pub fn build_chunk_meshes(
 
             // Spawn new entity and add our new task as a component
             commands.spawn(MeshBuilderTask(task));
+
+            chunk_mesh_build_task_counter_resource.active_build_tasks += 1 ;
         }
     }
 }
@@ -732,6 +745,8 @@ pub fn finish_chunk_build_tasks(
 
     terrain_query: Query<(&TerrainData, &TerrainConfig)>,
     mut terrain_materials: ResMut<Assets<TerrainMaterialExtension>>,
+
+     mut chunk_mesh_build_task_counter_resource: ResMut<ChunkMeshBuildTaskCounterResource>,
 ) {
     //chunk, mut chunk_data,  terrain_entity,
 
@@ -843,6 +858,8 @@ pub fn finish_chunk_build_tasks(
             println!("chunk fully built ");
 
             commands.entity(entity).despawn();
+
+             chunk_mesh_build_task_counter_resource.active_build_tasks -= 1 ;
         }
     }
 }
