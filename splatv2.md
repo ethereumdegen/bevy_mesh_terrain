@@ -13,3 +13,13 @@ SplatV2 is a big redesign of how the 'splat' control maps data works.  It will b
 2. There will be a special processing stage which will 
 
   he raw painted splat data will consist of a grayscale image for EACH layer    
+
+
+
+
+
+## LOADING 
+
+Try to build the ChunkSplatData by using the  splat folder 
+
+If there are missing images, assume they are 'blank' , there is no data there . 

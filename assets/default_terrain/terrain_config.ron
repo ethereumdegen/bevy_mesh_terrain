@@ -18,7 +18,7 @@ TerrainConfig(
      
     
      height_folder_path: "default_terrain/height", 
-     splat_folder_path: "default_terrain/splat", 
+     splat_folder_path: "default_terrain/splatv2", 
      diffuse_folder_path: "default_terrain/diffuse/array_texture_lg.tga", 
      normal_folder_path: "default_terrain/diffuse/normal_texture_lg.tga", 
      collider_data_folder_path: "default_terrain/collision",  

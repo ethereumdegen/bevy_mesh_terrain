@@ -97,7 +97,7 @@ var normal_sampler: sampler;
 
 // see hypersplat.rs 
 @group(2) @binding(26)
-var splat_index_map_texture: texture_2d<f32>; 
+var splat_index_map_texture: texture_2d<u32>; 
  @group(2) @binding(27)
 var splat_index_map_sampler: sampler;
 
@@ -119,7 +119,7 @@ var height_map_sampler: sampler;
 //should consider adding vertex painting to this .. need another binding of course.. performs a color shift 
 // this could be used for baked shadows !! THIS IS PROB HOW TIRISFALL GLADES WORKS 
 @group(2) @binding(32)
-var vertex_color_tint_texture: texture_2d<u32>; 
+var vertex_color_tint_texture: texture_2d<f32>; 
 @group(2) @binding(33)
 var vertex_color_tint_sampler: sampler;
 
@@ -187,6 +187,12 @@ fn fragment(
     //let terrain_layer_index_1 = i32( splat_values.g * 255.0 );
 
  
+
+    // Initialize an array to store the splat strength values and the index values
+    var splat_strength_array: array<f32, 4> = array<f32, 4>(splat_strength_values_at_pixel.x, splat_strength_values_at_pixel.y, splat_strength_values_at_pixel.z, splat_strength_values_at_pixel.w);
+    var splat_index_array: array<u32, 4> = array<u32, 4>(splat_index_values_at_pixel.x, splat_index_values_at_pixel.y, splat_index_values_at_pixel.z, splat_index_values_at_pixel.w);
+
+
   
 
       // Initialize texture_layers_used and blended color
@@ -197,8 +203,8 @@ fn fragment(
     // Loop through each layer (max 4 layers)
     for (var i: u32 = 0u; i < 4u; i = i + 1u) {
         let splat_strength = splat_strength_array[i];
-        if (splat_strength > 0.0) {
-            texture_layers_used += 1;
+        if (splat_strength > 0.001) {
+            texture_layers_used += 1u;
 
             // Look up the terrain layer index and sample the corresponding texture
             let terrain_layer_index = i32(splat_index_array[i]);

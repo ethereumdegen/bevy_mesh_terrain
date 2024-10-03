@@ -59,6 +59,10 @@ impl Plugin for TerrainMeshPlugin {
 
         app.add_plugins(MaterialPlugin::<TerrainMaterialExtension>::default());
         app.add_plugins(chunk::chunks_plugin);
+
+      //  app.add_plugins(hypersplat::hypersplat_plugin);
+
+
         app.init_state::<terrain_loading_state::TerrainLoadingState>();
 
         app.init_resource::<tool_preview::ToolPreviewResource>();

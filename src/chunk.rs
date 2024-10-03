@@ -1,3 +1,4 @@
+use crate::hypersplat::ChunkSplatDataRaw;
 use std::time::Duration;
 use bevy::time::common_conditions::on_timer;
 use std::fs::File;
@@ -36,6 +37,7 @@ pub fn chunks_plugin(app: &mut App){
 
     app
     .insert_resource(ChunkHeightMapResource::default()) 
+    .insert_resource(ChunkSplatMapResource::default())
     .insert_resource(ChunkMeshBuildTaskCounterResource::default())
 
       .add_systems(Update,
@@ -92,6 +94,12 @@ pub struct ChunkHeightMapResource {
 }
 
 #[derive(Resource, Default)]
+pub struct ChunkSplatMapResource {
+    pub chunk_splat_maps: HashMap<u32,  ChunkSplatDataRaw>, // Keyed by chunk id
+}
+
+
+#[derive(Resource, Default)]
 pub struct ChunkMeshBuildTaskCounterResource {
     pub active_build_tasks:usize  
 }
@@ -111,14 +119,19 @@ pub struct ChunkData {
 
     //shouldnt be overly large or else lag
     pub height_map_image_handle: Option<Handle<Image>>,
-    pub height_map_image_data_load_status: TerrainImageDataLoadStatus,
+    pub height_map_image_data_load_status: TerrainImageDataLoadStatus,  
 
     // pub height_map_data: Option<HeightMapU16>,
-    splat_image_handle: Option<Handle<Image>>,
+    pub splat_index_texture_handle: Option<Handle<Image>>, //rgba8uint
+    pub splat_strength_texture_handle:Option<Handle<Image>>, //rgba f32
 
    // alpha_mask_image_handle: Option<Handle<Image>>, //built from the height map
 
     pub material_handle: Option<Handle<TerrainMaterialExtension>>,
+
+
+    //add to me later.. 
+    pub vertex_color_tint_texture: Option<Handle<Image>>
 }
 
 impl ChunkData {
@@ -129,20 +142,17 @@ impl ChunkData {
 
 
     pub fn get_splat_index_texture_image(&self) -> &Option<Handle<Image>> {
-        &self.splat_image_handle
+        &self.splat_index_texture_handle
     }
 
 
 
     pub fn get_splat_strength_texture_image(&self) -> &Option<Handle<Image>> {
-        &self.splat_image_handle
+        &self.splat_strength_texture_handle
     }
 
 
-
-    pub fn set_splat_texture_image(&mut self, tex_handle: Handle<Image>) {
-        self.splat_image_handle = Some(tex_handle);
-    }
+ 
 
   //  pub fn get_alpha_mask_texture_image(&self) -> &Option<Handle<Image>> {
   //      &self.alpha_mask_image_handle
@@ -337,12 +347,21 @@ pub fn initialize_chunk_data(
 
         let height_map_image_handle: Handle<Image> = asset_server.load(height_texture_path);
 
+
+
+        let temp_file_name :String = "0.png" .into();   //JUST FOR NOW 
+
         //default_terrain/splat
-        let splat_texture_path = terrain_config.splat_folder_path.join(&file_name);
-        println!("loading from {}", splat_texture_path.display());
+        let splat_index_texture_path = terrain_config.splat_folder_path.join("index_maps").join(&temp_file_name);
+        println!("loading from {}", splat_index_texture_path.display());
 
-        let splat_image_handle: Handle<Image> = asset_server.load(splat_texture_path);
+        let splat_index_texture_handle: Handle<Image> = asset_server.load(splat_index_texture_path);
 
+
+        let splat_strength_texture_path = terrain_config.splat_folder_path.join("strength_maps").join(&temp_file_name);
+        println!("loading from {}", splat_strength_texture_path.display());
+
+        let splat_strength_texture_handle: Handle<Image> = asset_server.load(splat_strength_texture_path);
 
          
             //to start off, render at low LOD 
@@ -357,9 +376,12 @@ pub fn initialize_chunk_data(
             //     height_map_data: None, //make this its own component ?
             height_map_image_data_load_status: TerrainImageDataLoadStatus::NotLoaded,
 
-            splat_image_handle: Some(splat_image_handle),
+            splat_index_texture_handle:  Some(splat_index_texture_handle),
+            splat_strength_texture_handle:  Some(splat_strength_texture_handle),
            // alpha_mask_image_handle: None, //gets set later
             material_handle: None,         //gets set later
+
+            vertex_color_tint_texture: None, 
         };
 
         commands
@@ -389,7 +411,7 @@ pub fn update_splat_image_formats(
                 let mut handle = Handle::Weak(*id);
 
                 for (entity, chunk, chunk_data) in chunk_query.iter() {
-                    if chunk_data.splat_image_handle == Some(handle.clone()) {
+                    if chunk_data.splat_index_texture_handle == Some(handle.clone()) {
                         image_is_splat = true
                     }
                 }
@@ -397,7 +419,7 @@ pub fn update_splat_image_formats(
                 if image_is_splat {
                     let img = images.get_mut(&mut handle).unwrap();
                     println!("splat image format is {:?}", img.texture_descriptor.format);
-                    img.texture_descriptor.format = TextureFormat::Rgba8Unorm;
+                    img.texture_descriptor.format = TextureFormat::Rgba8Uint;
                 }
             }
 
@@ -619,7 +641,7 @@ pub fn build_chunk_meshes(
                 continue;
             }
 
-            if chunk_data.splat_image_handle.is_none() {
+            if chunk_data.splat_index_texture_handle.is_none() {
                 println!("chunk is missing splat_image_handle .");
                 continue;
             }

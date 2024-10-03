@@ -5,18 +5,19 @@ use bevy::prelude::*;
 use bevy::utils::HashMap;
 
 
-#[derive(Serialize,Deserialize,Clone,Debug)]
+//this is what is loaded into memory as you are painting !! For less CPU effort
+/*#[derive( Clone,Debug)]
 pub struct LevelSplatDataRaw {
 
 	//chunk id -> 
 	pub splat_chunks: HashMap<u32, ChunkSplatDataRaw>
 
-}
+}*/
 
 
 
 //like a super PNG essentially 
-#[derive(Serialize,Deserialize,Clone,Debug)]
+#[derive( Clone,Debug)]
 pub struct ChunkSplatDataRaw {
 
 	//pixel id -> 
@@ -28,7 +29,7 @@ pub struct ChunkSplatDataRaw {
 
 //this can actually describe how a great number of materials (more than 4)
 // are applied to the terrain - thus better than a .PNG pixel 
-#[derive(Serialize,Deserialize,Clone,Debug)]
+#[derive( Clone,Debug)]
 pub struct SplatPixelDataRaw {
 
  //	material_layer_id -> 
@@ -66,13 +67,14 @@ B) MaterialStrengthControlMap : The second control map will tell the GPU how muc
 
 */
 
+/*
 #[derive(Serialize,Deserialize,Clone,Debug)]
 pub struct LevelSplatData {
 
 	//chunk id -> 
 	pub splat_chunks: HashMap<u32, ChunkSplatData>
 
-}
+}*/
 
 
 #[derive(Serialize,Deserialize,Clone,Debug)]
