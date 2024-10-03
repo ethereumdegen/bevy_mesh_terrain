@@ -33,17 +33,28 @@ pub mod tool_preview;
 
 pub mod hypersplat;
 
-pub struct TerrainMeshPlugin ;
+#[derive(Default, Hash,Eq,PartialEq,States,Debug,Clone )] 
+pub enum TerrainEditMode {
 
-impl Default for TerrainMeshPlugin {
-    fn default() -> Self {
-        Self  
-    }
+    #[default]
+    TerrainReadOnly,
+    TerrainEditable
+
+
 }
+
+#[derive(Default)]
+pub struct TerrainMeshPlugin {
+    pub terrain_edit_mode: TerrainEditMode
+}  
+ 
+
+
+
 impl Plugin for TerrainMeshPlugin {
     fn build(&self, app: &mut App) {
 
-          let task_update_rate = Duration::from_millis(250);
+        let task_update_rate = Duration::from_millis(250);
 
 
 
@@ -55,12 +66,12 @@ impl Plugin for TerrainMeshPlugin {
             Shader::from_wgsl
         );
 
-      
-
+        app.insert_state( self.terrain_edit_mode.clone() ) ;
+        
         app.add_plugins(MaterialPlugin::<TerrainMaterialExtension>::default());
         app.add_plugins(chunk::chunks_plugin);
 
-      //  app.add_plugins(hypersplat::hypersplat_plugin);
+        app.add_plugins(hypersplat::hypersplat_plugin);
 
 
         app.init_state::<terrain_loading_state::TerrainLoadingState>();

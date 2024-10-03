@@ -6,6 +6,7 @@ use bevy::render::settings::RenderCreation;
 use bevy::pbr::wireframe::WireframePlugin;
 use bevy::input::mouse::MouseMotion;
 use bevy::{pbr::ShadowFilteringMethod, prelude::*};
+use bevy_mesh_terrain::TerrainEditMode;
 use bevy_mesh_terrain::{
     terrain::{TerrainData, TerrainViewer},
     terrain_config::TerrainConfig,
@@ -29,7 +30,9 @@ fn main() {
             // You need to add this plugin to enable wireframe rendering
             WireframePlugin,
         ))
-        .add_plugins(TerrainMeshPlugin::default())
+        .add_plugins(TerrainMeshPlugin {
+            terrain_edit_mode: TerrainEditMode::TerrainEditable
+        })
         
         .insert_resource(WireframeConfig {
             // The global wireframe config enables drawing of wireframes on every mesh,

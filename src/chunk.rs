@@ -1,3 +1,4 @@
+use crate::TerrainEditMode;
 use crate::hypersplat::ChunkSplatDataRaw;
 use std::time::Duration;
 use bevy::time::common_conditions::on_timer;
@@ -33,7 +34,7 @@ use std::fs;
 pub fn chunks_plugin(app: &mut App){
 
 
-        let task_update_rate = Duration::from_millis(250);
+    let task_update_rate = Duration::from_millis(250);
 
     app
     .insert_resource(ChunkHeightMapResource::default()) 
@@ -42,15 +43,26 @@ pub fn chunks_plugin(app: &mut App){
 
       .add_systems(Update,
 
-        (
+            (
             update_splat_image_formats,
-            update_tool_uniforms).chain()
+            update_tool_uniforms
+            ).chain()
+        ) 
+
+       .add_systems(Update,
+
+            (
+            add_chunk_splat_data_raw 
+            ).chain().run_if( in_state( TerrainEditMode::TerrainEditable ) )
         ) 
 
       .add_systems(Update,
 
-        (   initialize_chunk_data,
+        (   
+            initialize_chunk_data,
             reset_chunk_height_data,
+
+
             
             add_render_chunk_at_lod_component,
             rebuild_chunk_from_lod, 
@@ -119,11 +131,14 @@ pub struct ChunkData {
     pub height_map_image_data_load_status: TerrainImageDataLoadStatus, //this is so we can rebuild chunk+premesh based on height changing  
 
         //need to initialize this on boot using the textures 
-    pub chunk_splat_data_raw: Option<ChunkSplatDataRaw>, //move to its own component ? more ECS-adjacent if so ..
+  //  pub chunk_splat_data_raw: Option<ChunkSplatDataRaw>, //move to its own component ? more ECS-adjacent if so ..
 
     // pub height_map_data: Option<HeightMapU16>,
     pub splat_index_texture_handle: Option<Handle<Image>>, //rgba8uint
     pub splat_strength_texture_handle:Option<Handle<Image>>, //rgba f32
+
+    splat_index_texture_is_loaded: bool,
+    splat_strength_texture_is_loaded: bool, 
 
    // alpha_mask_image_handle: Option<Handle<Image>>, //built from the height map
 
@@ -150,14 +165,14 @@ impl ChunkData {
     pub fn get_splat_strength_texture_image(&self) -> &Option<Handle<Image>> {
         &self.splat_strength_texture_handle
     }
-
-
  
 
   //  pub fn get_alpha_mask_texture_image(&self) -> &Option<Handle<Image>> {
   //      &self.alpha_mask_image_handle
   //  }
 }
+
+
 
 pub type TerrainPbrBundle = MaterialMeshBundle<TerrainMaterialExtension>;
 
@@ -349,16 +364,16 @@ pub fn initialize_chunk_data(
 
 
 
-        let temp_file_name :String = "0.png" .into();   //JUST FOR NOW 
+       // let temp_file_name :String = "0.png" .into();   //JUST FOR NOW 
 
         //default_terrain/splat
-        let splat_index_texture_path = terrain_config.splat_folder_path.join("index_maps").join(&temp_file_name);
+        let splat_index_texture_path = terrain_config.splat_folder_path.join("index_maps").join(&file_name);
         println!("loading from {}", splat_index_texture_path.display());
 
         let splat_index_texture_handle: Handle<Image> = asset_server.load(splat_index_texture_path);
 
 
-        let splat_strength_texture_path = terrain_config.splat_folder_path.join("strength_maps").join(&temp_file_name);
+        let splat_strength_texture_path = terrain_config.splat_folder_path.join("strength_maps").join(&file_name);
         println!("loading from {}", splat_strength_texture_path.display());
 
         let splat_strength_texture_handle: Handle<Image> = asset_server.load(splat_strength_texture_path);
@@ -370,7 +385,8 @@ pub fn initialize_chunk_data(
 
         let chunk_data_component = ChunkData {
             chunk_state: ChunkState::Init,
-            lod_level: chunk_base_lod + lod_level_offset,
+            lod_level: chunk_base_lod + lod_level_offset, 
+             
 
             height_map_image_handle: Some(height_map_image_handle),
             //     height_map_data: None, //make this its own component ?
@@ -382,12 +398,59 @@ pub fn initialize_chunk_data(
             material_handle: None,         //gets set later
 
             vertex_color_tint_texture: None, 
+
+            splat_index_texture_is_loaded: false,
+            splat_strength_texture_is_loaded: false, 
         };
 
         commands
             .get_entity(chunk_entity)
             .unwrap()
             .insert(chunk_data_component);
+    }
+}
+
+
+pub fn add_chunk_splat_data_raw(
+
+    mut commands:Commands,
+    mut images: ResMut<Assets<Image>>,
+
+    chunk_query: Query<(Entity, &Chunk, & ChunkData), Without< ChunkSplatDataRaw >>,
+
+
+){
+
+
+
+     for (entity, _chunk, chunk_data) in chunk_query.iter() {
+
+        if chunk_data.chunk_state != ChunkState::FullyBuilt { continue ; }; 
+
+            //not rly necessary? 
+        if chunk_data.splat_index_texture_is_loaded && chunk_data.splat_strength_texture_is_loaded {
+
+
+            if let Some(mut cmd) = commands.get_entity(  entity ) {
+
+                let Some(splat_index_texture_handle) = &chunk_data.splat_index_texture_handle else {continue};
+                let Some(splat_strength_texture_handle) = &chunk_data.splat_strength_texture_handle else {continue};
+                
+
+                let Some(splat_index_texture_image) = images.get(  splat_index_texture_handle ) else {continue};
+                let Some(splat_strength_texture_image) = images.get(  splat_strength_texture_handle ) else {continue};
+
+
+                cmd.try_insert( 
+                    ChunkSplatDataRaw::build_from_images(
+                        splat_index_texture_image,
+                        splat_strength_texture_image
+                    ) 
+                 );
+            }
+
+        }
+
     }
 }
 
@@ -401,25 +464,40 @@ pub fn update_splat_image_formats(
     mut ev_asset: EventReader<AssetEvent<Image>>,
     mut images: ResMut<Assets<Image>>,
 
-    mut chunk_query: Query<(Entity, &Chunk, &ChunkData)>,
+    mut chunk_query: Query<(Entity, &Chunk, &mut ChunkData)>,
 ) {
     for ev in ev_asset.read() {
         match ev {
             AssetEvent::LoadedWithDependencies { id } => {
-                let mut image_is_splat = false;
+                let mut image_is_splat_index_texture = false;
+                let mut image_is_splat_strength_texture = false; 
 
                 let mut handle = Handle::Weak(*id);
 
-                for (entity, chunk, chunk_data) in chunk_query.iter() {
+                for (entity, chunk, mut chunk_data) in chunk_query.iter_mut() {
                     if chunk_data.splat_index_texture_handle == Some(handle.clone()) {
-                        image_is_splat = true
+                        image_is_splat_index_texture = true
+                    } 
+                    if chunk_data.splat_strength_texture_handle == Some(handle.clone()) {
+                        image_is_splat_strength_texture = true
                     }
-                }
 
-                if image_is_splat {
-                    let img = images.get_mut(&mut handle).unwrap();
-                    println!("splat image format is {:?}", img.texture_descriptor.format);
-                    img.texture_descriptor.format = TextureFormat::Rgba8Uint;
+                
+
+                    if image_is_splat_index_texture {
+                        let img = images.get_mut(&mut handle).unwrap();
+                        println!("splat image format is {:?}", img.texture_descriptor.format);
+                        img.texture_descriptor.format = TextureFormat::Rgba8Uint;
+
+                        chunk_data.splat_index_texture_is_loaded = true;
+                    }
+
+
+                      if image_is_splat_strength_texture {
+                         
+                        chunk_data.splat_strength_texture_is_loaded = true;
+                    }
+
                 }
             }
 
@@ -1014,7 +1092,7 @@ pub fn update_chunk_visibility(
         .write_image_data(&buffer)
         .expect("Failed to write PNG data");
 }*/
-
+/*
 pub fn save_chunk_splat_map_to_disk<P>(splat_image: &Image, save_file_path: P)
 where
     P: AsRef<Path> + Clone,
@@ -1043,6 +1121,7 @@ where
         eprintln!("Unsupported image format for saving: {:?}", format);
     }
 }
+*/
 
 pub fn save_chunk_collision_data_to_disk<P>(serialized_collision_data: Vec<u8>, save_file_path: P)
 where

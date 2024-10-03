@@ -1,4 +1,8 @@
+use crate::hypersplat::save_chunk_splat_index_map_to_disk;
+use crate::hypersplat::save_chunk_splat_strength_map_to_disk;
+use crate::hypersplat::ChunkSplatData;
 use crate::heightmap::HeightMap;
+use crate::hypersplat::ChunkSplatDataRaw;
 use std::ops::{Add, Div, Neg};
 use std::path::PathBuf;
 
@@ -20,7 +24,7 @@ use core::fmt::{self, Display, Formatter};
 
 use crate::chunk::{
     compute_stitch_data, save_chunk_collision_data_to_disk,   
-    save_chunk_splat_map_to_disk, Chunk, ChunkCoordinates, ChunkCoords, ChunkData,
+     Chunk, ChunkCoordinates, ChunkCoords, ChunkData,
     ChunkHeightMapResource,
 };
 use crate::terrain::{TerrainData, TerrainImageDataLoadStatus};
@@ -94,7 +98,7 @@ pub enum TerrainCommandEvent {
 pub fn apply_command_events(
     asset_server: Res<AssetServer>,
 
-    mut chunk_query: Query<(&Chunk, &mut ChunkData, &Parent, &Children)>, //chunks parent should have terrain data
+      chunk_query: Query<(&Chunk, & ChunkData, &ChunkSplatData, &Parent, &Children)>, //chunks parent should have terrain data
 
     mut images: ResMut<Assets<Image>>,
     mut terrain_materials: ResMut<Assets<TerrainMaterialExtension>>,
@@ -109,7 +113,7 @@ pub fn apply_command_events(
     mut ev_reader: EventReader<TerrainCommandEvent>,
 ) {
     for ev in ev_reader.read() {
-        for (chunk, chunk_data, parent_terrain_entity, chunk_children) in chunk_query.iter() {
+        for (chunk, chunk_data, chunk_splat_data, parent_terrain_entity, chunk_children) in chunk_query.iter() {
             let terrain_entity_id = parent_terrain_entity.get();
 
             if terrain_query.get(terrain_entity_id).is_ok() == false {
@@ -138,18 +142,30 @@ pub fn apply_command_events(
                     }
 
                     //need to rewrite this !! 
-                    /*if *save_splat {
-                        if let Some(splat_image_handle) = chunk_data.get_splat_texture_image() {
-                            if let Some(splat_image) = images.get(splat_image_handle) {
-                                save_chunk_splat_map_to_disk(
-                                    splat_image,
+                     if *save_splat {
+ 
+                        let (chunk_splat_index_map_image,chunk_splat_strength_map_image) 
+                                = chunk_splat_data.build_images();
+                         
+                           
+                            save_chunk_splat_index_map_to_disk(
+                                &chunk_splat_index_map_image,
+                                asset_folder_path
+                                    .join(&terrain_config.splat_folder_path)
+                                    .join("index_maps")
+                                    .join(&file_name),
+                            );
+
+                              save_chunk_splat_strength_map_to_disk(
+                                    &chunk_splat_index_map_image,
                                     asset_folder_path
                                         .join(&terrain_config.splat_folder_path)
+                                        .join("index_maps")
                                         .join(&file_name),
                                 );
-                            }
-                        }
-                    }*/
+                             
+                        
+                    } 
 
                     if *save_collision {
                         println!("Generating and saving collision data.. please wait..");
@@ -246,7 +262,7 @@ pub fn apply_command_events(
 pub fn apply_tool_edits(
     mut asset_server: Res<AssetServer>,
 
-    mut chunk_query: Query<(Entity, &Chunk, &mut ChunkData, &Parent, &GlobalTransform)>, //chunks parent should have terrain data
+    mut chunk_query: Query<(Entity, &Chunk, &mut ChunkData, &Parent, &GlobalTransform, Option<&mut ChunkSplatDataRaw>)>, //chunks parent should have terrain data
     chunk_mesh_query: Query<(&Parent, &GlobalTransform)>,
 
     mut images: ResMut<Assets<Image>>,
@@ -270,7 +286,7 @@ pub fn apply_tool_edits(
             let mut chunk_entities_within_range: Vec<Entity> = Vec::new();
 
             let mut chunk_dimensions = [256, 256]; //compute me from terrain config
-            if let Some((_, _, _, terrain_entity, _)) =
+            if let Some((_, _, _, terrain_entity, _, _ )) =
                 chunk_query.get_mut(chunk_entity.get().clone()).ok()
             {
                 if let Some((terrain_data, terrain_config)) =
@@ -287,7 +303,7 @@ pub fn apply_tool_edits(
             }
 
             //populate chunk_entities_within_range
-            for (chunk_entity, _, _, _, chunk_transform) in chunk_query.iter() {
+            for (chunk_entity, _, _, _, chunk_transform, _) in chunk_query.iter() {
                 let tool_coords: &Vec2 = &ev.coordinates;
                 let chunk_transform = chunk_transform.translation();
                 let chunk_transform_vec2: Vec2 = Vec2::new(chunk_transform.x, chunk_transform.z);
@@ -315,7 +331,8 @@ pub fn apply_tool_edits(
                     chunk,
                     mut chunk_data,
                     terrain_entity,
-                    chunk_transform,
+                    chunk_transform, 
+                    mut chunk_splat_data_raw
                 )) = chunk_query.get_mut(chunk_entity_within_range.clone()).ok()
                 {
                     if let Some(height_map_data) =
@@ -363,6 +380,7 @@ pub fn apply_tool_edits(
                     mut chunk_data,
                     terrain_entity,
                     chunk_transform,
+                    mut chunk_splat_data_raw
                 )) = chunk_query.get_mut(chunk_entity_within_range.clone()).ok()
                 {
                     //   if let Some(mut terrain_data) = terrain_data_query.get_mut(terrain_entity.get().clone()).ok() { //why cant i find this ?
@@ -527,7 +545,7 @@ pub fn apply_tool_edits(
 
                           //  todo!("rewrite set splat ");
                             
-                            if let Some(ref mut chunk_splat_data_raw) = &mut chunk_data.chunk_splat_data_raw {
+                            if let Some(  mut chunk_splat_data_raw ) =  chunk_splat_data_raw {
                                 //if let Some(img) = images.get_mut(splat_image_handle) {
                                     // Calculate the pixel position and radius in pixels
                                     let splat_dimensions = chunk_splat_data_raw.pixel_dimensions.clone();

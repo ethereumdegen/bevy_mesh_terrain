@@ -114,7 +114,7 @@ impl TerrainData {
         &self.texture_image_handle
     }
 
-     pub fn get_normal_texture_image(&self) -> &Option<Handle<Image>> {
+    pub fn get_normal_texture_image(&self) -> &Option<Handle<Image>> {
         &self.normal_image_handle
     }
     /*
