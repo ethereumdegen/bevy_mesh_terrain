@@ -21,8 +21,29 @@ pub struct LevelSplatDataRaw {
 pub struct ChunkSplatDataRaw {
 
 	//pixel id -> 
-	pub splat_pixels: HashMap<u32, SplatPixelDataRaw>
+	pub splat_pixels: Vec<Vec< SplatPixelDataRaw >>, //<u32, SplatPixelDataRaw>
+    pub pixel_dimensions: UVec2
+}
 
+impl ChunkSplatDataRaw {
+
+    pub fn set_exact_pixel_data(
+        &mut self, 
+        x:u32,
+        y:u32,
+        texture_type_index: u8,
+        texture_strength: f32 
+
+        ){  
+
+        info!("setting exact pixel data {} {} {} {}", x,y,texture_type_index,texture_strength);
+
+        self.splat_pixels[y as usize][x as usize].set_exact_pixel_data(
+            texture_type_index,
+            texture_strength
+            );
+
+    }
 }
 
 
@@ -38,6 +59,24 @@ pub struct SplatPixelDataRaw {
 
 
 
+
+}
+
+
+impl SplatPixelDataRaw {
+
+    fn set_exact_pixel_data(
+        &mut self,
+        texture_type_index:u8,
+        texture_strength:f32,
+    ){
+
+        self.pixel_data.insert(
+            texture_type_index.into(), 
+            texture_strength
+            ) ;
+ 
+    }
 
 }
 

@@ -525,12 +525,12 @@ pub fn apply_tool_edits(
 
                         EditingTool::SetSplatMap { r, g, b } => {
 
-                            todo!("rewrite set splat ");
-                            /*
-                            if let Some(splat_image_handle) = chunk_data.get_splat_texture_image() {
-                                if let Some(img) = images.get_mut(splat_image_handle) {
+                          //  todo!("rewrite set splat ");
+                            
+                            if let Some(ref mut chunk_splat_data_raw) = &mut chunk_data.chunk_splat_data_raw {
+                                //if let Some(img) = images.get_mut(splat_image_handle) {
                                     // Calculate the pixel position and radius in pixels
-                                    let img_size = img.size();
+                                    let splat_dimensions = chunk_splat_data_raw.pixel_dimensions.clone();
 
                                     let tool_coords: &Vec2 = &ev.coordinates;
                                     let chunk_transform = chunk_transform.translation();
@@ -547,9 +547,9 @@ pub fn apply_tool_edits(
 
                                     let pixel_pos = Vec2::new(
                                         tool_coords_local.x / chunk_dimensions_vec.x
-                                            * img_size.x as f32,
+                                            * splat_dimensions.x as f32,
                                         tool_coords_local.y / chunk_dimensions_vec.y
-                                            * img_size.y as f32,
+                                            * splat_dimensions.y as f32,
                                     );
                                     let pixel_radius = *radius as f32;
 
@@ -564,17 +564,13 @@ pub fn apply_tool_edits(
                                     match brush_type {
                                         BrushType::SetExact => {
                                             // Assuming the image format is Rgba8
-                                            if img.texture_descriptor.format
-                                                == TextureFormat::Rgba8Unorm
-                                                || img.texture_descriptor.format
-                                                    == TextureFormat::Rgba8UnormSrgb
-                                            {
+                                             
                                                 //                let img_data = img.data.as_mut_slice();
 
                                                 // Iterate over each pixel in the image
-                                                for y in 0..img_size.y {
-                                                    for x in 0..img_size.x {
-                                                        let idx = (y * img_size.x + x) as usize * 4; // 4 bytes per pixel (R, G, B, A)
+                                                for y in 0..splat_dimensions.y {
+                                                    for x in 0..splat_dimensions.x {
+                                                        let idx = (y * splat_dimensions.x + x) as usize * 4; // 4 bytes per pixel (R, G, B, A)
                                                         let pixel_coords =
                                                             Vec2::new(x as f32, y as f32);
 
@@ -584,17 +580,29 @@ pub fn apply_tool_edits(
                                                         if pixel_coords.distance(pixel_pos)
                                                             < pixel_radius
                                                         {
+
+                                                            let texture_type_index = *r as u8;
+                                                            let texture_strength = *g as f32 / 255.0; //careful w this on UI ! 
+                                                            
+                                                            chunk_splat_data_raw.set_exact_pixel_data(
+                                                                x,
+                                                                y,
+                                                                texture_type_index,
+                                                                texture_strength
+                                                            );
+
+
                                                             // Modify the pixel data
-                                                            img.data[idx] = *r as u8; // R
-                                                            img.data[idx + 1] = *g as u8; // G
-                                                            img.data[idx + 2] = *b as u8;
+                                                           // img.data[idx] = *r as u8; // R
+                                                           // img.data[idx + 1] = *g as u8; // G
+                                                           // img.data[idx + 2] = *b as u8;
                                                             // B
                                                             // Alpha value remains unchanged
 
                                                             //println!("modify pixel data ");
                                                         }
                                                     }
-                                                }
+                                                
 
 
                                                 //since we have directly edited the proper texture mut , we dont need to do anything else !
@@ -625,15 +633,11 @@ pub fn apply_tool_edits(
                                                 */
 
                                             //mark  material as needing reload !!
-                                            } else {
-                                                println!(
-                                                    "incorrect splat tex format {:?}",
-                                                    img.texture_descriptor.format
-                                                );
-                                            }
+                                            }  
                                         }
 
                                         BrushType::EyeDropper => {
+                                            /* 
                                             if img.texture_descriptor.format
                                                 == TextureFormat::Rgba8Unorm
                                                 || img.texture_descriptor.format
@@ -669,15 +673,15 @@ pub fn apply_tool_edits(
                                                         );
                                                     }
                                                 }
-                                            }
+                                            } */
                                         }
 
                                         //brush type
                                         _ => {} //todo !
-                                    }
+                                    
                                 }
                             }
-                            */
+                             
                         } // SetSplatMap
                     } //match
                 }

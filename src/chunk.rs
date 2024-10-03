@@ -37,17 +37,19 @@ pub fn chunks_plugin(app: &mut App){
 
     app
     .insert_resource(ChunkHeightMapResource::default()) 
-    .insert_resource(ChunkSplatMapResource::default())
+    //.insert_resource(ChunkSplatMapResource::default())
     .insert_resource(ChunkMeshBuildTaskCounterResource::default())
 
       .add_systems(Update,
 
-        (update_splat_image_formats,update_tool_uniforms).chain()
+        (
+            update_splat_image_formats,
+            update_tool_uniforms).chain()
         ) 
 
       .add_systems(Update,
 
-        (initialize_chunk_data,
+        (   initialize_chunk_data,
             reset_chunk_height_data,
             
             add_render_chunk_at_lod_component,
@@ -92,12 +94,7 @@ impl Chunk {
 pub struct ChunkHeightMapResource {
     pub chunk_height_maps: HashMap<u32,  HeightMapU16>, // Keyed by chunk id
 }
-
-#[derive(Resource, Default)]
-pub struct ChunkSplatMapResource {
-    pub chunk_splat_maps: HashMap<u32,  ChunkSplatDataRaw>, // Keyed by chunk id
-}
-
+ 
 
 #[derive(Resource, Default)]
 pub struct ChunkMeshBuildTaskCounterResource {
@@ -119,7 +116,10 @@ pub struct ChunkData {
 
     //shouldnt be overly large or else lag
     pub height_map_image_handle: Option<Handle<Image>>,
-    pub height_map_image_data_load_status: TerrainImageDataLoadStatus,  
+    pub height_map_image_data_load_status: TerrainImageDataLoadStatus, //this is so we can rebuild chunk+premesh based on height changing  
+
+        //need to initialize this on boot using the textures 
+    pub chunk_splat_data_raw: Option<ChunkSplatDataRaw>, //move to its own component ? more ECS-adjacent if so ..
 
     // pub height_map_data: Option<HeightMapU16>,
     pub splat_index_texture_handle: Option<Handle<Image>>, //rgba8uint
