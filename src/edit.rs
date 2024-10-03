@@ -137,7 +137,8 @@ pub fn apply_command_events(
                         }
                     }
 
-                    if *save_splat {
+                    //need to rewrite this !! 
+                    /*if *save_splat {
                         if let Some(splat_image_handle) = chunk_data.get_splat_texture_image() {
                             if let Some(splat_image) = images.get(splat_image_handle) {
                                 save_chunk_splat_map_to_disk(
@@ -148,7 +149,7 @@ pub fn apply_command_events(
                                 );
                             }
                         }
-                    }
+                    }*/
 
                     if *save_collision {
                         println!("Generating and saving collision data.. please wait..");
@@ -523,6 +524,9 @@ pub fn apply_tool_edits(
                         }
 
                         EditingTool::SetSplatMap { r, g, b } => {
+
+                            todo!("rewrite set splat ");
+                            /*
                             if let Some(splat_image_handle) = chunk_data.get_splat_texture_image() {
                                 if let Some(img) = images.get_mut(splat_image_handle) {
                                     // Calculate the pixel position and radius in pixels
@@ -673,6 +677,7 @@ pub fn apply_tool_edits(
                                     }
                                 }
                             }
+                            */
                         } // SetSplatMap
                     } //match
                 }

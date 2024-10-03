@@ -41,13 +41,29 @@ pub struct TerrainMaterial {
     #[sampler(25)]
     pub normal_texture: Option<Handle<Image>>,
 
+
+
     #[texture(26)]
     #[sampler(27)]
-    pub splat_texture: Option<Handle<Image>>,
+    pub splat_index_map_texture: Option<Handle<Image>>,
 
-    #[texture(28, dimension = "2d",sample_type = "u_int")]  //rgba8uint
+    #[texture(28)]
     #[sampler(29)]
+    pub splat_strength_map_texture: Option<Handle<Image>>,
+
+
+
+
+    #[texture(30, dimension = "2d",sample_type = "u_int")]  //rgba8uint
+    #[sampler(31)]
     pub height_map_texture: Option<Handle<Image>>,
+
+
+    #[texture(32)]
+    #[sampler(33)]
+    pub vertex_color_tint_texture: Option<Handle<Image>>,
+
+
 }
 
 impl MaterialExtension for TerrainMaterial {

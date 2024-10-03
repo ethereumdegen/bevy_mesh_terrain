@@ -128,9 +128,17 @@ impl ChunkData {
     }
 
 
-    pub fn get_splat_texture_image(&self) -> &Option<Handle<Image>> {
+    pub fn get_splat_index_texture_image(&self) -> &Option<Handle<Image>> {
         &self.splat_image_handle
     }
+
+
+
+    pub fn get_splat_strength_texture_image(&self) -> &Option<Handle<Image>> {
+        &self.splat_image_handle
+    }
+
+
 
     pub fn set_splat_texture_image(&mut self, tex_handle: Handle<Image>) {
         self.splat_image_handle = Some(tex_handle);
@@ -785,7 +793,9 @@ pub fn finish_chunk_build_tasks(
             let array_texture = terrain_data.get_array_texture_image().clone();
             let normal_texture = terrain_data.get_normal_texture_image().clone();
 
-            let splat_texture = chunk_data.get_splat_texture_image().clone();
+            let splat_index_map_texture = chunk_data.get_splat_index_texture_image().clone();
+            let splat_strength_map_texture = chunk_data.get_splat_strength_texture_image().clone();
+
             let height_map_texture = chunk_data.get_height_map_texture_image().clone();
 
             let chunk_terrain_material: Handle<TerrainMaterialExtension> =
@@ -812,9 +822,14 @@ pub fn finish_chunk_build_tasks(
                             chunk_uv,
                         },
                         tool_preview_uniforms: ToolPreviewUniforms::default(),
-                        diffuse_texture: array_texture.clone(),
-                        normal_texture: normal_texture.clone(),
-                        splat_texture: splat_texture.clone(),
+                        diffuse_texture: array_texture,
+                        normal_texture: normal_texture,
+
+                        splat_index_map_texture: splat_index_map_texture,
+
+                        splat_strength_map_texture: splat_strength_map_texture, 
+
+                      //  splat_texture: splat_texture.clone(),
                         height_map_texture: height_map_texture.clone(),
                         ..default()
                     },

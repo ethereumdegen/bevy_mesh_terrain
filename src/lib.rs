@@ -31,6 +31,8 @@ pub mod terrain_loading_state;
 pub mod terrain_material;
 pub mod tool_preview;
 
+pub mod hypersplat;
+
 pub struct TerrainMeshPlugin ;
 
 impl Default for TerrainMeshPlugin {
