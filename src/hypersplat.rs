@@ -16,6 +16,10 @@ use bevy::utils::HashMap;
 use bevy::render::render_resource::{ Extent3d, TextureDimension, TextureFormat};
 use bevy::render::render_asset::RenderAssetUsages;
 
+use half::f16; // Import the half crate for 16-bit float conversions
+
+
+
 //this is what is loaded into memory as you are painting !! For less CPU effort
 /*#[derive( Clone,Debug)]
 pub struct LevelSplatDataRaw {
@@ -102,18 +106,25 @@ impl ChunkSplatDataRaw {
         // Iterate through each pixel and populate the splat_pixels array
         for y in 0..height {
             for x in 0..width {
-                // Assuming the texture data is stored in some RGBA format
-                // Extract the index map values (4 layers: R, G, B, A) and strength values (4 layers: R, G, B, A)
+                // Calculate the offset for the current pixel in the flat array
                 let index_offset = (y * width + x) as usize * 4;
-                let strength_offset = (y * width + x) as usize * 4;
+                let strength_offset = (y * width + x) as usize * 4 * 2; // 2 bytes per channel in RGBA16Float
 
+                // Extract the index map values (4 layers: R, G, B, A) as u8
                 let indices = &splat_index_map.data[index_offset..index_offset + 4];
-                let strengths = &splat_strength_map.data[strength_offset..strength_offset + 4];
+
+                // Extract the strength map values (4 layers: R, G, B, A) as f16 (2 bytes per channel)
+                let mut strengths = [0.0f32; 4];
+                for i in 0..4 {
+                    let strength_bytes = &splat_strength_map.data[strength_offset + i * 2..strength_offset + (i + 1) * 2];
+                    let strength_f16 = f16::from_ne_bytes([strength_bytes[0], strength_bytes[1]]);
+                    strengths[i] = strength_f16.to_f32(); // Convert f16 to f32
+                }
 
                 // For each pixel, insert the material layer indices and their strengths into pixel_data
                 for i in 0..4 {
                     let texture_type_index = indices[i] as u32;
-                    let texture_strength = strengths[i] as f32 / 255.0; // Assuming the strength is stored in [0, 255] range
+                    let texture_strength = strengths[i]; // The strength is now a floating-point value in [0.0, 1.0]
 
                     // If the strength is greater than a certain threshold, insert it into the pixel data
                     if texture_strength > 0.0 {
@@ -251,7 +262,8 @@ impl ChunkSplatData{
         let mut index_map_data = vec![0u8; (width * height * 4) as usize]; // RGBA, 8-bit unsigned integer
        // let mut strength_map_data = vec![0f32; (width * height * 4) as usize]; // RGBA, floating-point strength
 
-       let mut strength_map_data = vec![0u8; (width * height * 4 * 4) as usize]; // RGBA, 32-bit float (4 bytes per channel)
+      // let mut strength_map_data = vec![0u8; (width * height * 4 * 4) as usize]; // RGBA, 32-bit float (4 bytes per channel)
+         let mut strength_map_data = vec![0u8; (width * height * 4 * 2) as usize]; // RGBA, 16-bit float (2 bytes per channel)
 
 
         // Fill in the pixel data from splat_pixels
@@ -262,7 +274,7 @@ impl ChunkSplatData{
                 // Calculate the offset for the current pixel in the flat array
                 let index_offset = ((y * width + x) * 4) as usize;
 
-                 let strength_offset = ((y * width + x) * 4 * 4) as usize;
+                  let strength_offset = ((y * width + x) * 4 * 2) as usize;
 
                 // Set the index and strength values for each material (up to 4)
                 for i in 0..4 {
@@ -270,9 +282,13 @@ impl ChunkSplatData{
                    // strength_map_data[index_offset + i] = pixel.material_strength_array[i];
 
                     // Convert f32 strength value to bytes and insert into strength map
-                    let strength_bytes = pixel.material_strength_array[i].to_ne_bytes(); // Converts f32 to 4 bytes
-                    strength_map_data[strength_offset + i * 4..strength_offset + (i + 1) * 4]
+                    let strength_f16 = f16::from_f32(pixel.material_strength_array[i]);
+                    let strength_bytes = strength_f16.to_ne_bytes(); // Converts f16 to 2 bytes
+
+                    // Store the 2 bytes of the f16 value in the strength map
+                    strength_map_data[strength_offset + i * 2..strength_offset + (i + 1) * 2]
                         .copy_from_slice(&strength_bytes);
+                    
 
                 }
             }
@@ -301,7 +317,7 @@ impl ChunkSplatData{
             },
             TextureDimension::D2,
             strength_map_data, // Convert f32 array to byte slice
-            TextureFormat::Rgba32Float, // Strength map uses floating point values
+            TextureFormat::Rgba16Float, // Strength map uses floating point values
              RenderAssetUsages::default()
         );
 
@@ -517,7 +533,7 @@ where
 
 
     // Ensure the format is Rgba8 or adapt this code block for other formats
-    if format == TextureFormat::Rgba8Unorm || format == TextureFormat::Rgba8UnormSrgb
+    if format == TextureFormat::Rgba16Float // || format == TextureFormat::Rgba8UnormSrgb
     //   || format == TextureFormat::Rgba16Unorm
     {
         // The data in Bevy's Image type is stored in a Vec<u8>, so we can use it directly
