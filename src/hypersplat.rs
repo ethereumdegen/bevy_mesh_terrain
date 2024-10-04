@@ -1,5 +1,6 @@
 
 use crate::terrain::TerrainData;
+use crate::terrain::TerrainImageDataLoadStatus;
 use crate::terrain_config::TerrainConfig;
 use std::path::PathBuf;
 use std::path::Path;
@@ -32,7 +33,8 @@ pub fn hypersplat_plugin(app:&mut App){
     app 
         .add_systems(Update, 
             (build_chunk_splat_data,
-            rebuild_chunk_splat_textures
+            rebuild_chunk_splat_textures 
+
             ).chain()
 
         )
@@ -203,6 +205,9 @@ pub struct LevelSplatData {
 
 }*/
 
+#[derive(Component)]
+pub struct SplatMapHandlesNeedReload;
+
 
 #[derive(Serialize,Deserialize,Clone,Debug,Component)]
 pub struct ChunkSplatData {
@@ -372,9 +377,9 @@ fn build_chunk_splat_data(
 
 
 fn rebuild_chunk_splat_textures(
+     mut commands:Commands,
 
-
-     chunk_query: Query<(Entity, &Chunk, & ChunkData,& ChunkSplatData, &Parent ), 
+     mut chunk_query: Query<(Entity, &Chunk, &mut ChunkData,& ChunkSplatData, &Parent ), 
      Changed<ChunkSplatData >    >, 
 
      terrain_query: Query<(&TerrainData, &TerrainConfig)>,
@@ -382,7 +387,7 @@ fn rebuild_chunk_splat_textures(
     ){
 
 
-    for (entity, chunk, chunk_data, chunk_splat_data, parent_terrain_entity ) in chunk_query.iter() { 
+    for (entity, chunk, mut chunk_data, chunk_splat_data, parent_terrain_entity ) in chunk_query.iter_mut() { 
 
 
 
@@ -413,15 +418,19 @@ fn rebuild_chunk_splat_textures(
                                 .join(&file_name),
                         );
 
-                          save_chunk_splat_strength_map_to_disk(
-                                &chunk_splat_index_map_image,
+                        save_chunk_splat_strength_map_to_disk(
+                                &chunk_splat_strength_map_image,
                                 asset_folder_path
                                     .join(&terrain_config.splat_folder_path)
-                                    .join("index_maps")
+                                    .join("strength_maps")
                                     .join(&file_name),
                             );
-                             
+                        
+                        if let Some(mut cmd) = commands.get_entity(entity){
+                            cmd.try_insert( SplatMapHandlesNeedReload );
+                        }
 
+                        
 
     }
 
@@ -487,7 +496,7 @@ where
         img.save(&save_file_path).expect("Failed to save splat map");
         println!("saved splat image {}", save_file_path.as_ref().display());
     } else {
-        eprintln!("Unsupported image format for saving: {:?}", format);
+        eprintln!("Unsupported image format for saving chunk_splat_index_map: {:?}", format);
     }
 }
 
@@ -505,6 +514,8 @@ where
     let width = splat_image.texture_descriptor.size.width;
     let height = splat_image.texture_descriptor.size.height;
 
+
+
     // Ensure the format is Rgba8 or adapt this code block for other formats
     if format == TextureFormat::Rgba8Unorm || format == TextureFormat::Rgba8UnormSrgb
     //   || format == TextureFormat::Rgba16Unorm
@@ -517,6 +528,6 @@ where
         img.save(&save_file_path).expect("Failed to save splat map");
         println!("saved splat image {}", save_file_path.as_ref().display());
     } else {
-        eprintln!("Unsupported image format for saving: {:?}", format);
+        eprintln!("Unsupported image format for saving chunk_splat_strength_map: {:?}", format);
     }
 }

@@ -1,3 +1,4 @@
+use crate::hypersplat::SplatMapHandlesNeedReload;
 use crate::TerrainEditMode;
 use crate::hypersplat::ChunkSplatDataRaw;
 use std::time::Duration;
@@ -52,7 +53,8 @@ pub fn chunks_plugin(app: &mut App){
        .add_systems(Update,
 
             (
-            add_chunk_splat_data_raw 
+            add_chunk_splat_data_raw ,
+            reload_chunk_splat_image_handles
             ).chain().run_if( in_state( TerrainEditMode::TerrainEditable ) )
         ) 
 
@@ -133,7 +135,7 @@ pub struct ChunkData {
         //need to initialize this on boot using the textures 
   //  pub chunk_splat_data_raw: Option<ChunkSplatDataRaw>, //move to its own component ? more ECS-adjacent if so ..
 
-    pub splat_map_image_data_load_status: TerrainImageDataLoadStatus,
+    //pub splat_map_handles_need_reload: bool,
 
     // pub height_map_data: Option<HeightMapU16>,
     pub splat_index_texture_handle: Option<Handle<Image>>, //rgba8uint
@@ -394,7 +396,7 @@ pub fn initialize_chunk_data(
             //     height_map_data: None, //make this its own component ?
             height_map_image_data_load_status: TerrainImageDataLoadStatus::NotLoaded,
 
-            splat_map_image_data_load_status: TerrainImageDataLoadStatus::NotLoaded, 
+            //splat_map_handles_need_reload: false, 
             splat_index_texture_handle:  Some(splat_index_texture_handle),
             splat_strength_texture_handle:  Some(splat_strength_texture_handle),
            // alpha_mask_image_handle: None, //gets set later
@@ -421,8 +423,10 @@ pub fn add_chunk_splat_data_raw(
 
     chunk_query: Query<(Entity, &Chunk, & ChunkData), Without< ChunkSplatDataRaw >>,
 
+   
 
 ){
+
 
 
 
@@ -457,6 +461,59 @@ pub fn add_chunk_splat_data_raw(
     }
 }
 
+
+pub fn reload_chunk_splat_image_handles(
+     mut commands: Commands,
+     asset_server: Res<AssetServer>,
+     mut chunk_query: Query<(Entity, &Chunk, &mut ChunkData, &Parent), With<SplatMapHandlesNeedReload>>,
+      terrain_query: Query<(&TerrainConfig, &TerrainData)>,
+    ){
+
+
+      for (entity, chunk, mut chunk_data, terrain_entity) in chunk_query.iter_mut() {
+
+        let terrain_entity_id = terrain_entity.get();
+
+        if terrain_query.get(terrain_entity_id).is_ok() == false {
+            continue;
+        }
+
+        let (terrain_config, _terrain_data) = terrain_query.get(terrain_entity_id).unwrap();
+
+
+        if let Some(mut cmd) = commands.get_entity(entity){
+
+            cmd.remove::<SplatMapHandlesNeedReload>();
+
+        }
+
+
+        let chunk_id = chunk.chunk_id;
+        let file_name = format!("{}.png", chunk_id);
+ 
+       // let temp_file_name :String = "0.png" .into();   //JUST FOR NOW 
+
+        //default_terrain/splat
+        let splat_index_texture_path = terrain_config.splat_folder_path.join("index_maps").join(&file_name);
+        println!("loading from {}", splat_index_texture_path.display());
+
+        let splat_index_texture_handle: Handle<Image> = asset_server.load(splat_index_texture_path);
+
+           let splat_strength_texture_path = terrain_config.splat_folder_path.join("strength_maps").join(&file_name);
+        println!("loading from {}", splat_strength_texture_path.display());
+
+        let splat_strength_texture_handle: Handle<Image> = asset_server.load(splat_strength_texture_path);
+
+
+        chunk_data.splat_index_texture_handle = Some( splat_index_texture_handle );
+        chunk_data.splat_strength_texture_handle = Some( splat_strength_texture_handle );
+
+        chunk_data.chunk_state = ChunkState::Init;  //flag the chunk as needing rebuild
+
+
+    }
+}
+
 /*
 
 Have to do this hack since bevy is not correctly detecting the format
@@ -472,12 +529,16 @@ pub fn update_splat_image_formats(
     for ev in ev_asset.read() {
         match ev {
             AssetEvent::LoadedWithDependencies { id } => {
-                let mut image_is_splat_index_texture = false;
-                let mut image_is_splat_strength_texture = false; 
-
-                let mut handle = Handle::Weak(*id);
+            
 
                 for (entity, chunk, mut chunk_data) in chunk_query.iter_mut() {
+
+                        let mut image_is_splat_index_texture = false;
+                        let mut image_is_splat_strength_texture = false; 
+
+                        let mut handle = Handle::Weak(*id);
+
+                
                     if chunk_data.splat_index_texture_handle == Some(handle.clone()) {
                         image_is_splat_index_texture = true
                     } 
@@ -497,11 +558,19 @@ pub fn update_splat_image_formats(
 
 
                       if image_is_splat_strength_texture {
+                         let img = images.get_mut(&mut handle).unwrap();
+                         img.texture_descriptor.format = TextureFormat::Rgba8UnormSrgb;
                          
                         chunk_data.splat_strength_texture_is_loaded = true;
                     }
 
                 }
+            }
+
+
+            AssetEvent::Modified { id } => {
+
+
             }
 
             _ => {}

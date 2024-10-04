@@ -157,10 +157,10 @@ pub fn apply_command_events(
                             );
 
                               save_chunk_splat_strength_map_to_disk(
-                                    &chunk_splat_index_map_image,
+                                    &chunk_splat_strength_map_image,
                                     asset_folder_path
                                         .join(&terrain_config.splat_folder_path)
-                                        .join("index_maps")
+                                        .join("strength_maps")
                                         .join(&file_name),
                                 );
                              
