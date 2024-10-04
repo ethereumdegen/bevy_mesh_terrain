@@ -1,6 +1,6 @@
 use crate::hypersplat::save_chunk_splat_index_map_to_disk;
 use crate::hypersplat::save_chunk_splat_strength_map_to_disk;
-use crate::hypersplat::ChunkSplatData;
+ 
 use crate::heightmap::HeightMap;
 use crate::hypersplat::ChunkSplatDataRaw;
 use std::ops::{Add, Div, Neg};
@@ -100,7 +100,7 @@ pub enum TerrainCommandEvent {
 pub fn apply_command_events(
     asset_server: Res<AssetServer>,
 
-      chunk_query: Query<(&Chunk, & ChunkData, &ChunkSplatData, &Parent, &Children)>, //chunks parent should have terrain data
+      chunk_query: Query<(&Chunk, & ChunkData, &ChunkSplatDataRaw, &Parent, &Children)>, //chunks parent should have terrain data
 
     mut images: ResMut<Assets<Image>>,
     mut terrain_materials: ResMut<Assets<TerrainMaterialExtension>>,
@@ -591,6 +591,9 @@ pub fn apply_tool_edits(
 
                                     match brush_type {
                                         BrushType::SetExact => {
+
+                                          
+
                                             // Assuming the image format is Rgba8
                                              
                                                 //                let img_data = img.data.as_mut_slice();
@@ -602,6 +605,17 @@ pub fn apply_tool_edits(
                                                         let pixel_coords =
                                                             Vec2::new(x as f32, y as f32);
 
+
+
+                                                      let hardness_multiplier =
+                                                        get_hardness_multiplier(
+                                                            tool_coords_local
+                                                                .distance(pixel_coords),
+                                                            pixel_radius,
+                                                            *brush_hardness,
+                                                        );
+
+
                                                         //  img.data[idx] = *r as u8;
 
                                                         // Check if the pixel is within the tool's radius
@@ -611,12 +625,25 @@ pub fn apply_tool_edits(
 
                                                             let texture_type_index = *r as u8;
                                                             let texture_strength = *g as u8; //careful w this on UI ! 
+
+                                                            let texture_layer = *b as u8;  //0 to 3 
+
+
+                                                            let strength_with_hardness =  
+                                                                texture_strength as f32 * 
+                                                                hardness_multiplier ;
+                                                                
+
+                                                                
+
+
                                                             
                                                             chunk_splat_data_raw.set_exact_pixel_data(
                                                                 x,
                                                                 y,
+                                                                texture_layer,
                                                                 texture_type_index,
-                                                                texture_strength
+                                                                strength_with_hardness as u8 
                                                             );
  
                                                         }
@@ -649,7 +676,8 @@ pub fn apply_tool_edits(
 
                                                             let texture_type_index = *r as u8;
                                                             let texture_strength = *g as u8; //careful w this on UI ! 
-                                                            
+
+
                                                             chunk_splat_data_raw.clear_all_pixel_data(
                                                                 x,
                                                                 y 

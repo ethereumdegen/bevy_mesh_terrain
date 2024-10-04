@@ -198,15 +198,28 @@ fn fragment(
   
 
       // Initialize texture_layers_used and blended color
-    var texture_layers_used: u32 = 0;
+    
+
     var blended_color: vec4<f32> = vec4<f32>(0.0);
     var blended_normal: vec4<f32> = vec4<f32>(0.0);
 
+
     // Loop through each layer (max 4 layers)
     for (var i: u32 = 0u; i < 4u; i = i + 1u) {
-        let splat_strength =  splat_strength_array[i];
-        if (splat_strength > 0 ) {  //this is never true ??
-            texture_layers_used += 1u;
+
+        //if there is only a base layer, it is always full strength. This allows for better blends so the base layer can be low strength (1).
+       
+
+        var splat_strength = splat_strength_array[i];
+        /*if (texture_layers_used == 1u) {
+            splat_strength = 255u;
+        } else {
+            splat_strength = splat_strength_array[i];
+        }*/
+
+
+        if (splat_strength > 0 ) {   
+           // texture_layers_used += 1u;
             let splat_strength_float =  f32(splat_strength) / 255.0 ;
 
             // Look up the terrain layer index and sample the corresponding texture
@@ -214,17 +227,26 @@ fn fragment(
             let color_from_diffuse = textureSample(base_color_texture, base_color_sampler, tiled_uv, terrain_layer_index);
             let color_from_normal = textureSample(normal_texture, normal_sampler, tiled_uv, terrain_layer_index);
             
+            if i == 0u {
+                blended_color = color_from_diffuse;
+                blended_normal = color_from_normal;
+            }else {
+              
+                blended_color = mix( blended_color, color_from_diffuse, splat_strength_float  );
+                blended_normal = mix( blended_normal, color_from_normal, splat_strength_float  );
+            }
             // Accumulate the blended color based on splat strength
-            blended_color += color_from_diffuse * splat_strength_float;
-            blended_normal += color_from_normal * splat_strength_float;
+            //blended_color += color_from_diffuse * splat_strength_float;
+            //blended_normal += color_from_normal * splat_strength_float;
         }
     }
 
     // Normalize by dividing by the number of active layers if there are any
-    if (texture_layers_used > 1u) {
+    //this is too jarring ! 
+    /*if (texture_layers_used > 1u) {
         blended_color /= f32(texture_layers_used);
         blended_normal /= f32(texture_layers_used);
-    }
+    }*/
 
     
 

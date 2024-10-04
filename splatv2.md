@@ -26,6 +26,6 @@ If there are missing images, assume they are 'blank' , there is no data there .
 
 
 
-## BIG BUG 
+## TODO 
 
-1. when i load and then save the   strength maps, they become blank and 8 bits... ? 
+1. When i edit, need to make B channel be the  layer (0,1,2,3) ! 

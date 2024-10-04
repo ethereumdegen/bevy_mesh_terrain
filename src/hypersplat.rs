@@ -34,7 +34,7 @@ pub fn hypersplat_plugin(app:&mut App){
 
     app 
         .add_systems(Update, 
-            (build_chunk_splat_data,
+            (  //build_chunk_splat_data,
             rebuild_chunk_splat_textures 
 
             ).chain()
@@ -56,7 +56,7 @@ pub fn hypersplat_plugin(app:&mut App){
 pub struct ChunkSplatDataRaw {
 
 	//pixel id -> 
-	pub splat_pixels: Vec<Vec< SplatPixelDataRaw >>, //<u32, SplatPixelDataRaw>
+	pub splat_pixels: Vec<Vec<Vec< SplatPixelDataRaw >>>, //<u32, SplatPixelDataRaw>
     pub pixel_dimensions: UVec2
 }
 
@@ -66,6 +66,7 @@ impl ChunkSplatDataRaw {
         &mut self, 
         x:u32,
         y:u32,
+        layer:u8 , 
         texture_type_index: u8,
         texture_strength: u8 
 
@@ -73,7 +74,7 @@ impl ChunkSplatDataRaw {
 
         info!("setting exact pixel data {} {} {} {}", x,y,texture_type_index,texture_strength);
 
-        self.splat_pixels[y as usize][x as usize].set_exact_pixel_data(
+        self.splat_pixels[layer as usize][y as usize][x as usize].set_exact_pixel_data(
             texture_type_index,
             texture_strength
             );
@@ -83,9 +84,12 @@ impl ChunkSplatDataRaw {
     pub fn clear_all_pixel_data(
         &mut self, 
         x:u32,
-        y:u32) {
+        y:u32 ) {
 
-         self.splat_pixels[y as usize][x as usize] = SplatPixelDataRaw::new();
+           for layer in 0..3 { 
+                 self.splat_pixels[layer as usize][y as usize][x as usize] = SplatPixelDataRaw::new();
+             }
+          
     }
 
     
@@ -97,17 +101,22 @@ impl ChunkSplatDataRaw {
         let width = splat_index_map.texture_descriptor.size.width;
         let height = splat_index_map.texture_descriptor.size.height;
 
+        let layers = 4 ; 
+
         let pixel_dimensions = UVec2::new(width, height);
 
         // Initialize the pixel array to the correct size
-        let mut splat_pixels = vec![
+        let mut splat_pixels = 
+
+        vec![
             vec![
-                SplatPixelDataRaw {
-                    pixel_data: HashMap::new()
-                };
-                width as usize
+                vec![
+                    SplatPixelDataRaw ::new();
+                    width as usize
+                ];
+                height as usize
             ];
-            height as usize
+            layers as usize
         ];
 
         // Raw data from both images
@@ -120,6 +129,7 @@ impl ChunkSplatDataRaw {
         let strength_channels = 4; // RGBA for material strength (but each channel is 2 bytes, so 8 bytes total per pixel)
 
         // Iterate through each pixel and populate the splat_pixels array
+        for layer in 0..3 {  // RGBA 
         for y in 0..height {
             for x in 0..width {
                 let pixel_index = (y * width + x) as usize;
@@ -128,15 +138,13 @@ impl ChunkSplatDataRaw {
                 let index_offset = pixel_index * index_channels;
                 let strength_offset = pixel_index * strength_channels ; // Each strength value is 2 bytes 
 
-                let mut splat_pixel_data = SplatPixelDataRaw {
-                    pixel_data: HashMap::new(),
-                };
+                let mut splat_pixel_data = SplatPixelDataRaw::new();
 
                 // Loop over each of the 4 channels (RGBA layout) for both index and strength maps
-                for i in 0..index_channels {
-                    let texture_type_index = splat_index_data[index_offset + i];
+                //for i in 0..index_channels {
+                    let texture_type_index = splat_index_data[index_offset + layer];
 
-                     let texture_strength = splat_strength_data[strength_offset + i];
+                     let texture_strength = splat_strength_data[strength_offset + layer];
                     
                     
 
@@ -147,10 +155,11 @@ impl ChunkSplatDataRaw {
                             texture_strength
                         );
                     }
-                }
+                //}
 
                 // Set the pixel data at the current x, y coordinates
-                splat_pixels[y as usize][x as usize] = splat_pixel_data;
+                splat_pixels[layer as usize][y as usize][x as usize] = splat_pixel_data;
+            }
             }
         }
 
@@ -160,9 +169,73 @@ impl ChunkSplatDataRaw {
         }
     }
 
+ 
 
+    //builds an RGBAUint8  image for the index map  and an  RGBAsrgb (float)  image for the strength map 
+      pub fn build_images(&self) -> (Image, Image) {
+        // Create buffers for index and strength maps
+        let width = self.pixel_dimensions.x;
+        let height = self.pixel_dimensions.y;
+
+        // Buffers to hold pixel data for each image
+        let mut index_map_data = Vec::with_capacity((width * height * 4) as usize); // RGBA, 8-bit unsigned integer
+        let mut strength_map_data = Vec::with_capacity((width * height * 4) as usize); // RGBA,  8-bit unsigned integer
+
+        // Fill in the pixel data from splat_pixels
+        for y in 0..height {
+            for x in 0..width {
+                // Prepare pixel data for 4 layers (assuming RGBA layout for each pixel)
+                let mut pixel_indices = [0u8; 4];
+                let mut pixel_strengths = [0u8; 4];
+
+                for layer in 0..4 {
+                    let splat_pixel = &self.splat_pixels[layer][y as usize][x as usize];
+
+                    // If pixel_data contains the texture index and strength for this layer
+                   // if let Some((&texture_type_index, &texture_strength)) = splat_pixel.pixel_data.iter().next() {
+                        pixel_indices[layer] = splat_pixel.texture_index;
+                        pixel_strengths[layer] = splat_pixel.strength;
+                  //  }
+                }
+
+                // Push index and strength data for this pixel (RGBA layout)
+                index_map_data.extend_from_slice(&pixel_indices);
+                strength_map_data.extend_from_slice(&pixel_strengths);
+            }
+        }
+
+     //   info!("index map data length {}", index_map_data.len());
+     //   info!("strength map data length {}", strength_map_data.len());
+
+        // Create the index map image (RGBA8Uint format)
+        let index_map = Image::new(
+            Extent3d {
+                width,
+                height,
+                depth_or_array_layers: 1,
+            },
+            TextureDimension::D2,
+            index_map_data,
+            TextureFormat::Rgba8Uint, // Index map uses unsigned integers for material indices
+            RenderAssetUsages::default(),
+        );
+
+        // Create the strength map image (RGBA8Uint format)
+        let strength_map = Image::new(
+            Extent3d {
+                width,
+                height,
+                depth_or_array_layers: 1,
+            },
+            TextureDimension::D2,
+            strength_map_data, // 
+            TextureFormat::Rgba8Uint, //  
+            RenderAssetUsages::default(),
+        );
+
+        (index_map, strength_map)
+    }
 }
-
 
 
 //this can actually describe how a great number of materials (more than 4)
@@ -172,7 +245,10 @@ pub struct SplatPixelDataRaw {
 
  //	material_layer_id index  ->  strength 
  // when this is edited, make sure to always keep it sorted ! (?)
-	pub pixel_data: HashMap<u8, u8>
+	//pub pixel_data: HashMap<u8, u8>
+
+    pub texture_index: u8, 
+    pub strength: u8 ,
 
 
 
@@ -185,7 +261,8 @@ impl SplatPixelDataRaw {
     fn new() -> Self{
 
         Self{
-            pixel_data: HashMap::new()
+            texture_index: 0,
+            strength: 0,
         }
     }
 
@@ -198,10 +275,8 @@ impl SplatPixelDataRaw {
         // info!("setting exact pixel data  {} {}",  texture_type_index,texture_strength);
 
 
-        self.pixel_data.insert(
-            texture_type_index.into(), 
-            texture_strength
-            ) ;
+        self.texture_index = texture_type_index;
+        self.strength = texture_strength;
  
     }
 
@@ -253,7 +328,7 @@ pub struct HasPendingUpdatedSplatHandles{
 
 }
 */
-
+/*
 #[derive(Serialize,Deserialize,Clone,Debug,Component)]
 pub struct ChunkSplatData {
  
@@ -262,7 +337,7 @@ pub struct ChunkSplatData {
 
 
 }
-
+*/
 /*
 
 pub struct SplatPixelData {
@@ -273,6 +348,8 @@ pub struct SplatPixelData {
 }
 
 */
+
+/*
 impl From<ChunkSplatDataRaw> for ChunkSplatData {
 
  fn from(chunk_splat_data_raw: ChunkSplatDataRaw) -> Self {
@@ -362,10 +439,11 @@ impl ChunkSplatData{
     }
 
 }
+*/
 
 //this ends up being able to produce our 2 Control Maps which we will send to our GPU shader 
 // then, our shader is going to have to do up to 4  UV texture lookups at this pixel  and combine them together..
-#[derive(Serialize,Deserialize,Clone,Debug)]
+/*#[derive(Serialize,Deserialize,Clone,Debug)]
 pub struct SplatPixelData {
  
 	pub material_index_array: [u8; 4],        // Changed from usize to u32
@@ -399,9 +477,9 @@ impl From<SplatPixelDataRaw> for SplatPixelData {
         }
     }
 }
+*/
 
-
-
+/*
 fn build_chunk_splat_data(
     mut commands:Commands, 
 
@@ -426,14 +504,14 @@ fn build_chunk_splat_data(
       }
 
 
-}
+}*/
 
 
 fn rebuild_chunk_splat_textures(
   //   mut commands:Commands,
 
-     mut chunk_query: Query<(Entity, &Chunk, &mut ChunkData,& ChunkSplatData, &Parent ), 
-       Changed<ChunkSplatData >    >, 
+     mut chunk_query: Query<(Entity, &Chunk, &mut ChunkData,& ChunkSplatDataRaw, &Parent ), 
+       Changed<ChunkSplatDataRaw >    >, 
 
      terrain_query: Query<(&TerrainData, &TerrainConfig)>,
 
