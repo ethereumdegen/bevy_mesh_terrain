@@ -23,3 +23,9 @@ SplatV2 is a big redesign of how the 'splat' control maps data works.  It will b
 Try to build the ChunkSplatData by using the  splat folder 
 
 If there are missing images, assume they are 'blank' , there is no data there . 
+
+
+
+## BIG BUG 
+
+1. when i load and then save the   strength maps, they become blank and 8 bits... ? 
