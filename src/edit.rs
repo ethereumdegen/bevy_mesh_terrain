@@ -603,7 +603,7 @@ pub fn apply_tool_edits(
                                                         {
 
                                                             let texture_type_index = *r as u8;
-                                                            let texture_strength = *g as f32 / 255.0; //careful w this on UI ! 
+                                                            let texture_strength = *g as u8; //careful w this on UI ! 
                                                             
                                                             chunk_splat_data_raw.set_exact_pixel_data(
                                                                 x,

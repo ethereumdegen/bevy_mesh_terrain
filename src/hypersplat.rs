@@ -15,10 +15,7 @@ use bevy::utils::HashMap;
 
 use bevy::render::render_resource::{ Extent3d, TextureDimension, TextureFormat};
 use bevy::render::render_asset::RenderAssetUsages;
-
-use half::f16; // Import the half crate for 16-bit float conversions
-
-
+ 
 
 //this is what is loaded into memory as you are painting !! For less CPU effort
 /*#[derive( Clone,Debug)]
@@ -69,7 +66,7 @@ impl ChunkSplatDataRaw {
         x:u32,
         y:u32,
         texture_type_index: u8,
-        texture_strength: f32 
+        texture_strength: u8 
 
         ){  
 
@@ -82,7 +79,8 @@ impl ChunkSplatDataRaw {
 
     }
 
-    pub fn build_from_images(
+    
+     pub fn build_from_images(
         splat_index_map: &Image,
         splat_strength_map: &Image
     ) -> Self {
@@ -103,37 +101,47 @@ impl ChunkSplatDataRaw {
             height as usize
         ];
 
+        // Raw data from both images
+        let splat_index_data = &splat_index_map.data;
+        let splat_strength_data = &splat_strength_map.data;
+
+        // Each pixel in the splat index map has 4 channels (RGBAUint8)
+        // Each pixel in the splat strength map has 4 channels, but each channel is 2 bytes (u8)
+        let index_channels = 4; // RGBA (4 channels, 1 byte each)
+        let strength_channels = 4; // RGBA for material strength (but each channel is 2 bytes, so 8 bytes total per pixel)
+
         // Iterate through each pixel and populate the splat_pixels array
         for y in 0..height {
             for x in 0..width {
-                // Calculate the offset for the current pixel in the flat array
-                let index_offset = (y * width + x) as usize * 4;
-                let strength_offset = (y * width + x) as usize * 4 * 2; // 2 bytes per channel in RGBA16Float
+                let pixel_index = (y * width + x) as usize;
 
-                // Extract the index map values (4 layers: R, G, B, A) as u8
-                let indices = &splat_index_map.data[index_offset..index_offset + 4];
+                // Extract the index and strength data for the current pixel
+                let index_offset = pixel_index * index_channels;
+                let strength_offset = pixel_index * strength_channels ; // Each strength value is 2 bytes 
 
-                // Extract the strength map values (4 layers: R, G, B, A) as f16 (2 bytes per channel)
-                let mut strengths = [0.0f32; 4];
-                for i in 0..4 {
-                    let strength_bytes = &splat_strength_map.data[strength_offset + i * 2..strength_offset + (i + 1) * 2];
-                    let strength_f16 = f16::from_ne_bytes([strength_bytes[0], strength_bytes[1]]);
-                    strengths[i] = strength_f16.to_f32(); // Convert f16 to f32
-                }
+                let mut splat_pixel_data = SplatPixelDataRaw {
+                    pixel_data: HashMap::new(),
+                };
 
-                // For each pixel, insert the material layer indices and their strengths into pixel_data
-                for i in 0..4 {
-                    let texture_type_index = indices[i] as u32;
-                    let texture_strength = strengths[i]; // The strength is now a floating-point value in [0.0, 1.0]
+                // Loop over each of the 4 channels (RGBA layout) for both index and strength maps
+                for i in 0..index_channels {
+                    let texture_type_index = splat_index_data[index_offset + i];
 
-                    // If the strength is greater than a certain threshold, insert it into the pixel data
-                    if texture_strength > 0.0 {
-                        splat_pixels[y as usize][x as usize].set_exact_pixel_data(
-                            texture_type_index as u8,
-                            texture_strength,
+                     let texture_strength = splat_strength_data[strength_offset + i];
+                    
+                    
+
+                    // Only store valid texture indices (non-zero material indices with strength)
+                    if texture_type_index != 0 {
+                        splat_pixel_data.set_exact_pixel_data(
+                            texture_type_index, 
+                            texture_strength
                         );
                     }
                 }
+
+                // Set the pixel data at the current x, y coordinates
+                splat_pixels[y as usize][x as usize] = splat_pixel_data;
             }
         }
 
@@ -142,6 +150,8 @@ impl ChunkSplatDataRaw {
             pixel_dimensions,
         }
     }
+
+
 }
 
 
@@ -151,9 +161,9 @@ impl ChunkSplatDataRaw {
 #[derive( Clone,Debug)]
 pub struct SplatPixelDataRaw {
 
- //	material_layer_id -> 
+ //	material_layer_id index  ->  strength 
  // when this is edited, make sure to always keep it sorted ! (?)
-	pub pixel_data: HashMap<u32, f32>
+	pub pixel_data: HashMap<u8, u8>
 
 
 
@@ -166,7 +176,7 @@ impl SplatPixelDataRaw {
     fn set_exact_pixel_data(
         &mut self,
         texture_type_index:u8,
-        texture_strength:f32,
+        texture_strength:u8,
     ){
 
         // info!("setting exact pixel data  {} {}",  texture_type_index,texture_strength);
@@ -228,6 +238,17 @@ pub struct ChunkSplatData {
 
 
 }
+
+/*
+
+pub struct SplatPixelData {
+ 
+    pub material_index_array: [u8; 4],        
+    pub material_strength_array: [u8; 4],
+
+}
+
+*/
 impl From<ChunkSplatDataRaw> for ChunkSplatData {
 
  fn from(chunk_splat_data_raw: ChunkSplatDataRaw) -> Self {
@@ -253,46 +274,39 @@ impl From<ChunkSplatDataRaw> for ChunkSplatData {
 impl ChunkSplatData{
 
     //builds an RGBAUint8  image for the index map  and an  RGBAsrgb (float)  image for the strength map 
-    pub fn build_images(&self) -> (Image, Image) {
+      pub fn build_images(&self) -> (Image, Image) {
         // Create buffers for index and strength maps
         let width = self.pixel_dimensions.x;
         let height = self.pixel_dimensions.y;
 
         // Buffers to hold pixel data for each image
-        let mut index_map_data = vec![0u8; (width * height * 4) as usize]; // RGBA, 8-bit unsigned integer
-       // let mut strength_map_data = vec![0f32; (width * height * 4) as usize]; // RGBA, floating-point strength
-
-      // let mut strength_map_data = vec![0u8; (width * height * 4 * 4) as usize]; // RGBA, 32-bit float (4 bytes per channel)
-         let mut strength_map_data = vec![0u8; (width * height * 4 * 2) as usize]; // RGBA, 16-bit float (2 bytes per channel)
-
+        let mut index_map_data = Vec::with_capacity((width * height * 4) as usize); // RGBA, 8-bit unsigned integer
+        let mut strength_map_data = Vec::with_capacity((width * height * 8) as usize); // RGBA, 16-bit float (2 bytes per channel)
 
         // Fill in the pixel data from splat_pixels
-        for y in 0..height {
+         for y in 0..height {
             for x in 0..width {
                 let pixel = &self.splat_pixels[y as usize][x as usize];
 
-                // Calculate the offset for the current pixel in the flat array
-                let index_offset = ((y * width + x) * 4) as usize;
+                // Extract the material indices and strengths from the pixel
+                let material_indices = &pixel.material_index_array;
+                let material_strengths = &pixel.material_strength_array;
 
-                  let strength_offset = ((y * width + x) * 4 * 2) as usize;
+                // Add the 4 channels (RGBA) for the index map
+                index_map_data.push(material_indices[0]);
+                index_map_data.push(material_indices[1]);
+                index_map_data.push(material_indices[2]);
+                index_map_data.push(material_indices[3]);
 
-                // Set the index and strength values for each material (up to 4)
-                for i in 0..4 {
-                    index_map_data[index_offset + i] = pixel.material_index_array[i] as u8;
-                   // strength_map_data[index_offset + i] = pixel.material_strength_array[i];
-
-                    // Convert f32 strength value to bytes and insert into strength map
-                    let strength_f16 = f16::from_f32(pixel.material_strength_array[i]);
-                    let strength_bytes = strength_f16.to_ne_bytes(); // Converts f16 to 2 bytes
-
-                    // Store the 2 bytes of the f16 value in the strength map
-                    strength_map_data[strength_offset + i * 2..strength_offset + (i + 1) * 2]
-                        .copy_from_slice(&strength_bytes);
-                    
-
-                }
+                // Add the 4 channels (RGBA) for the strength map
+                strength_map_data.push(material_strengths[0]);
+                strength_map_data.push(material_strengths[1]);
+                strength_map_data.push(material_strengths[2]);
+                strength_map_data.push(material_strengths[3]);
             }
         }
+        info!("index map data length {}", index_map_data.len());
+        info!("strength map data length {}", strength_map_data.len());
 
         // Create the index map image (RGBA8Uint format)
         let index_map = Image::new(
@@ -304,11 +318,10 @@ impl ChunkSplatData{
             TextureDimension::D2,
             index_map_data,
             TextureFormat::Rgba8Uint, // Index map uses unsigned integers for material indices
-            RenderAssetUsages::default()
-      
+            RenderAssetUsages::default(),
         );
 
-        // Create the strength map image (RGBA32Float format)
+        // Create the strength map image (RGBA8Uint format)
         let strength_map = Image::new(
             Extent3d {
                 width,
@@ -316,9 +329,9 @@ impl ChunkSplatData{
                 depth_or_array_layers: 1,
             },
             TextureDimension::D2,
-            strength_map_data, // Convert f32 array to byte slice
-            TextureFormat::Rgba16Float, // Strength map uses floating point values
-             RenderAssetUsages::default()
+            strength_map_data, // 
+            TextureFormat::Rgba8Uint, //  
+            RenderAssetUsages::default(),
         );
 
         (index_map, strength_map)
@@ -331,25 +344,25 @@ impl ChunkSplatData{
 #[derive(Serialize,Deserialize,Clone,Debug)]
 pub struct SplatPixelData {
  
-	pub material_index_array: [u32; 4],        // Changed from usize to u32
-    pub material_strength_array: [f32; 4],
+	pub material_index_array: [u8; 4],        // Changed from usize to u32
+    pub material_strength_array: [u8; 4],
 
 }
 
 impl From<SplatPixelDataRaw> for SplatPixelData {
     fn from(pixel_data_raw: SplatPixelDataRaw) -> Self {
-        // Sort the pixel_data by strength (f32) in descending order
-        let mut sorted_pixel_data: Vec<(u32, f32)> = pixel_data_raw
+        // Sort the pixel_data by strength (u8) in descending order
+        let mut sorted_pixel_data: Vec<(u8, u8)> = pixel_data_raw
             .pixel_data
             .into_iter()
             .collect();
 
-        // Sort by the f32 strength value in descending order
+        // Sort by the u16 strength value in descending order
         sorted_pixel_data.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap_or(std::cmp::Ordering::Equal));
 
         // Take the top 4 materials, or default to (0, 0.0) if less than 4
         let mut material_index_array = [0; 4];
-        let mut material_strength_array = [0.0; 4];
+        let mut material_strength_array = [0; 4];
 
         for (i, (material_index, strength)) in sorted_pixel_data.into_iter().take(4).enumerate() {
             material_index_array[i] = material_index;
@@ -417,13 +430,12 @@ fn rebuild_chunk_splat_textures(
  
 
 
-                         let file_name = format!("{}.png", chunk.chunk_id);
-                             let asset_folder_path = PathBuf::from("assets");
+                        let file_name = format!("{}.png", chunk.chunk_id);
+                        let asset_folder_path = PathBuf::from("assets");
 
                         let (chunk_splat_index_map_image,chunk_splat_strength_map_image) 
                                 = chunk_splat_data.build_images();
-                            
-
+                             
                       
                        
                         save_chunk_splat_index_map_to_disk(
@@ -533,7 +545,7 @@ where
 
 
     // Ensure the format is Rgba8 or adapt this code block for other formats
-    if format == TextureFormat::Rgba16Float // || format == TextureFormat::Rgba8UnormSrgb
+    if format == TextureFormat::Rgba8Uint // || format == TextureFormat::Rgba8UnormSrgb
     //   || format == TextureFormat::Rgba16Unorm
     {
         // The data in Bevy's Image type is stored in a Vec<u8>, so we can use it directly

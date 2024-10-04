@@ -173,7 +173,9 @@ fn fragment(
  
 
      let splat_index_values_at_pixel :vec4<u32> = textureLoad(splat_index_map_texture,   vec2<i32>(  splat_map_sample_coord  ) , 0 ).rgba;
-     let splat_strength_values_at_pixel :vec4<f32> = textureSample(splat_strength_map_texture, splat_strength_map_sampler, splat_uv ).rgba;
+
+     let splat_strength_values_at_pixel :vec4<u32> = textureLoad(splat_strength_map_texture,   vec2<i32>(  splat_map_sample_coord  ) , 0 ).rgba;
+     //let splat_strength_values_at_pixel :vec4<f32> = textureSample(splat_strength_map_texture, splat_strength_map_sampler, splat_uv ).rgba;
 
 
 
@@ -189,7 +191,7 @@ fn fragment(
  
 
     // Initialize an array to store the splat strength values and the index values
-    var splat_strength_array: array<f32, 4> = array<f32, 4>(splat_strength_values_at_pixel.x, splat_strength_values_at_pixel.y, splat_strength_values_at_pixel.z, splat_strength_values_at_pixel.w);
+    var splat_strength_array: array<u32, 4> = array<u32, 4>(splat_strength_values_at_pixel.x  , splat_strength_values_at_pixel.y, splat_strength_values_at_pixel.z , splat_strength_values_at_pixel.w );
     var splat_index_array: array<u32, 4> = array<u32, 4>(splat_index_values_at_pixel.x, splat_index_values_at_pixel.y, splat_index_values_at_pixel.z, splat_index_values_at_pixel.w);
 
 
@@ -203,8 +205,9 @@ fn fragment(
     // Loop through each layer (max 4 layers)
     for (var i: u32 = 0u; i < 4u; i = i + 1u) {
         let splat_strength = splat_strength_array[i];
-        if (splat_strength > 0.001) {
+        if (splat_strength > 0 ) {
             texture_layers_used += 1u;
+            let splat_strength_float =  splat_strength * 255.0 ;
 
             // Look up the terrain layer index and sample the corresponding texture
             let terrain_layer_index = i32(splat_index_array[i]);
@@ -212,8 +215,8 @@ fn fragment(
             let color_from_normal = textureSample(normal_texture, normal_sampler, tiled_uv, terrain_layer_index);
             
             // Accumulate the blended color based on splat strength
-            blended_color += color_from_diffuse * splat_strength;
-            blended_normal += color_from_normal * splat_strength;
+            blended_color += color_from_diffuse * splat_strength_float;
+            blended_normal += color_from_normal * splat_strength_float;
         }
     }
 

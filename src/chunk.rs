@@ -499,7 +499,7 @@ pub fn reload_chunk_splat_image_handles(
 
         let splat_index_texture_handle: Handle<Image> = asset_server.load(splat_index_texture_path);
 
-           let splat_strength_texture_path = terrain_config.splat_folder_path.join("strength_maps").join(&file_name);
+        let splat_strength_texture_path = terrain_config.splat_folder_path.join("strength_maps").join(&file_name);
         println!("loading from {}", splat_strength_texture_path.display());
 
         let splat_strength_texture_handle: Handle<Image> = asset_server.load(splat_strength_texture_path);
@@ -557,7 +557,7 @@ pub fn update_splat_image_formats(
 
                            println!("splat strength map image format is {:?}", img.texture_descriptor.format);
 
-                         img.texture_descriptor.format = TextureFormat::Rgba16Float;
+                         img.texture_descriptor.format = TextureFormat::Rgba8Uint;
                          
                         chunk_data.splat_strength_texture_is_loaded = true;
 

@@ -47,7 +47,8 @@ pub struct TerrainMaterial {
     #[sampler(27)]
     pub splat_index_map_texture: Option<Handle<Image>>,
 
-    #[texture(28)]
+    
+    #[texture(28, dimension = "2d",sample_type = "u_int")]
     #[sampler(29)]
     pub splat_strength_map_texture: Option<Handle<Image>>,
 
