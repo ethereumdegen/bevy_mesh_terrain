@@ -1,11 +1,8 @@
 
-1. Need to make the splat map REFRESH  the images immediately 
--i think the control map sorting isnt right ?? it randomly assigns each boot up 
+1.  add a subtool to CLEAR all splat for each pixel   bc there can be too many and it gets too crazy 
+2. invent some way to better inspect all of the materials that on a hypersplat pixel..  a better eyedrop  ?
 
-
- 
-     
-  3. lods 
+3. lods 
   BUG : lod stitching is not working right 
    
    

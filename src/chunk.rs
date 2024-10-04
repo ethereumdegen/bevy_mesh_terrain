@@ -467,6 +467,10 @@ pub fn reload_chunk_splat_image_handles(
      asset_server: Res<AssetServer>,
      mut chunk_query: Query<(Entity, &Chunk, &mut ChunkData, &Parent), With<SplatMapHandlesNeedReload>>,
       terrain_query: Query<(&TerrainConfig, &TerrainData)>,
+
+
+      mut terrain_materials: ResMut<Assets<TerrainMaterialExtension>>,
+
     ){
 
 
@@ -480,7 +484,7 @@ pub fn reload_chunk_splat_image_handles(
 
         let (terrain_config, _terrain_data) = terrain_query.get(terrain_entity_id).unwrap();
 
-
+        info!("handle reload_chunk_splat_image_handles");
         if let Some(mut cmd) = commands.get_entity(entity){
 
             cmd.remove::<SplatMapHandlesNeedReload>();
@@ -491,25 +495,16 @@ pub fn reload_chunk_splat_image_handles(
         let chunk_id = chunk.chunk_id;
         let file_name = format!("{}.png", chunk_id);
  
-       // let temp_file_name :String = "0.png" .into();   //JUST FOR NOW 
-
+      
         //default_terrain/splat
         let splat_index_texture_path = terrain_config.splat_folder_path.join("index_maps").join(&file_name);
-        println!("loading from {}", splat_index_texture_path.display());
-
-        let splat_index_texture_handle: Handle<Image> = asset_server.load(splat_index_texture_path);
-
+       
+        asset_server.reload(splat_index_texture_path.clone());
+      
         let splat_strength_texture_path = terrain_config.splat_folder_path.join("strength_maps").join(&file_name);
-        println!("loading from {}", splat_strength_texture_path.display());
-
-        let splat_strength_texture_handle: Handle<Image> = asset_server.load(splat_strength_texture_path);
-
-
-        chunk_data.splat_index_texture_handle = Some( splat_index_texture_handle );
-        chunk_data.splat_strength_texture_handle = Some( splat_strength_texture_handle );
-
-        chunk_data.chunk_state = ChunkState::Init;  //flag the chunk as needing rebuild
-
+     
+        asset_server.reload(splat_strength_texture_path.clone());
+      
 
     }
 }
@@ -737,8 +732,7 @@ pub fn build_chunk_height_data(
             //maybe we can do this in a thread since it is quite cpu intense ?
             let loaded_heightmap_data_result = HeightMapU16::load_from_image(height_map_image);
 
-            println!("built heightmapu16 "); //this is working !! !
-
+            
             match loaded_heightmap_data_result {
                 Ok(loaded_heightmap_data) => {
                     

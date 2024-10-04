@@ -454,6 +454,8 @@ fn rebuild_chunk_splat_textures(
                                     .join(&file_name),
                             );
                         
+
+                        
                         if let Some(mut cmd) = commands.get_entity(entity){
                             cmd.try_insert( SplatMapHandlesNeedReload );
                         }
