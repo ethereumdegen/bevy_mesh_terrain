@@ -4,7 +4,6 @@ use crate::hypersplat::ChunkSplatDataRaw;
 use std::time::Duration;
 use bevy::time::common_conditions::on_timer;
 use std::fs::File;
-use std::io::BufWriter;
 use std::path::Path;
 
 use bevy::asset::LoadState;
@@ -54,7 +53,7 @@ pub fn chunks_plugin(app: &mut App){
 
             (
             add_chunk_splat_data_raw ,
-            reload_chunk_splat_image_handles
+           // reload_chunk_splat_image_handles
             ).chain().run_if( in_state( TerrainEditMode::TerrainEditable ) )
         ) 
 
@@ -461,7 +460,7 @@ pub fn add_chunk_splat_data_raw(
     }
 }
 
-
+/*
 pub fn reload_chunk_splat_image_handles(
      mut commands: Commands,
      asset_server: Res<AssetServer>,
@@ -508,6 +507,7 @@ pub fn reload_chunk_splat_image_handles(
 
     }
 }
+*/
 
 /*
 

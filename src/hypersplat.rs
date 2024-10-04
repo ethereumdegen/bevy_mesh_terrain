@@ -1,4 +1,5 @@
 
+use crate::TerrainMaterialExtension;
 use crate::terrain::TerrainData;
 use crate::terrain::TerrainImageDataLoadStatus;
 use crate::terrain_config::TerrainConfig;
@@ -110,8 +111,8 @@ impl ChunkSplatDataRaw {
         ];
 
         // Raw data from both images
-        let splat_index_data = &splat_index_map.data;
-        let splat_strength_data = &splat_strength_map.data;
+        let splat_index_data = &splat_index_map.data; // vec u8 
+        let splat_strength_data = &splat_strength_map.data;  // vec u8 
 
         // Each pixel in the splat index map has 4 channels (RGBAUint8)
         // Each pixel in the splat strength map has 4 channels, but each channel is 2 bytes (u8)
@@ -140,7 +141,7 @@ impl ChunkSplatDataRaw {
                     
 
                     // Only store valid texture indices (non-zero material indices with strength)
-                    if texture_type_index != 0 {
+                    if texture_strength > 0 {
                         splat_pixel_data.set_exact_pixel_data(
                             texture_type_index, 
                             texture_strength
@@ -423,12 +424,17 @@ fn build_chunk_splat_data(
 
 
 fn rebuild_chunk_splat_textures(
-     mut commands:Commands,
+  //   mut commands:Commands,
 
      mut chunk_query: Query<(Entity, &Chunk, &mut ChunkData,& ChunkSplatData, &Parent ), 
-     Changed<ChunkSplatData >    >, 
+       Changed<ChunkSplatData >    >, 
 
      terrain_query: Query<(&TerrainData, &TerrainConfig)>,
+
+     mut terrain_materials: ResMut<Assets<TerrainMaterialExtension>>,
+
+     asset_server: Res<AssetServer>, 
+
 
     ){
 
@@ -447,15 +453,38 @@ fn rebuild_chunk_splat_textures(
  
 
 
-                        let file_name = format!("{}.png", chunk.chunk_id);
-                        let asset_folder_path = PathBuf::from("assets");
+                     //   let file_name = format!("{}.png", chunk.chunk_id);
+                     //   let asset_folder_path = PathBuf::from("assets");
 
                         let (chunk_splat_index_map_image,chunk_splat_strength_map_image) 
                                 = chunk_splat_data.build_images();
                              
                       
+
+                        //let chunk_splat_index_map_handle = &chunk_data.splat_index_texture_handle ;
+                       // let chunk_splat_strength_map_handle = &chunk_data.splat_strength_texture_handle ;
+
+
+                        let chunk_splat_index_texture  = asset_server.add( chunk_splat_index_map_image );
+                        let chunk_splat_strength_texture  = asset_server.add( chunk_splat_strength_map_image );
+
+                        chunk_data.splat_index_texture_handle = Some(chunk_splat_index_texture.clone());
+                        chunk_data.splat_strength_texture_handle = Some(chunk_splat_strength_texture.clone());
+
+
+                        if let Some( terrain_material_handle ) = &  chunk_data.material_handle {
+                            if let Some(terrain_material) = terrain_materials.get_mut( terrain_material_handle ){
+
+
+                             terrain_material.extension.splat_index_map_texture = Some(chunk_splat_index_texture.clone() );
+                             terrain_material.extension.splat_strength_map_texture = Some(chunk_splat_strength_texture.clone());
                        
-                        save_chunk_splat_index_map_to_disk(
+                            }
+
+
+                        }
+                        
+                       /* save_chunk_splat_index_map_to_disk(
                             &chunk_splat_index_map_image,
                             asset_folder_path
                                 .join(&terrain_config.splat_folder_path)
@@ -469,13 +498,13 @@ fn rebuild_chunk_splat_textures(
                                     .join(&terrain_config.splat_folder_path)
                                     .join("strength_maps")
                                     .join(&file_name),
-                            );
+                            );*/
                         
 
 
-                        if let Some(mut cmd) = commands.get_entity(entity){
-                            cmd.try_insert( SplatMapHandlesNeedReload );
-                        }
+                       // if let Some(mut cmd) = commands.get_entity(entity){
+                       //     cmd.try_insert( SplatMapHandlesNeedReload );
+                      //  }
 
                         
 
