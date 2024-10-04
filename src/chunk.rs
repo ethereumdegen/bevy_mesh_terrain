@@ -133,6 +133,8 @@ pub struct ChunkData {
         //need to initialize this on boot using the textures 
   //  pub chunk_splat_data_raw: Option<ChunkSplatDataRaw>, //move to its own component ? more ECS-adjacent if so ..
 
+    pub splat_map_image_data_load_status: TerrainImageDataLoadStatus,
+
     // pub height_map_data: Option<HeightMapU16>,
     pub splat_index_texture_handle: Option<Handle<Image>>, //rgba8uint
     pub splat_strength_texture_handle:Option<Handle<Image>>, //rgba f32
@@ -392,6 +394,7 @@ pub fn initialize_chunk_data(
             //     height_map_data: None, //make this its own component ?
             height_map_image_data_load_status: TerrainImageDataLoadStatus::NotLoaded,
 
+            splat_map_image_data_load_status: TerrainImageDataLoadStatus::NotLoaded, 
             splat_index_texture_handle:  Some(splat_index_texture_handle),
             splat_strength_texture_handle:  Some(splat_strength_texture_handle),
            // alpha_mask_image_handle: None, //gets set later

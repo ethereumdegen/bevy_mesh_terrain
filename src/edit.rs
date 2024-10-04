@@ -579,6 +579,9 @@ pub fn apply_tool_edits(
                                         pixel_pos, pixel_radius, r
                                     );
 
+
+                                   
+
                                     match brush_type {
                                         BrushType::SetExact => {
                                             // Assuming the image format is Rgba8

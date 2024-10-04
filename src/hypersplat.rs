@@ -1,4 +1,7 @@
 
+use crate::terrain::TerrainData;
+use crate::terrain_config::TerrainConfig;
+use std::path::PathBuf;
 use std::path::Path;
 use image::RgbaImage;
 use image::ImageBuffer;
@@ -29,7 +32,7 @@ pub fn hypersplat_plugin(app:&mut App){
     app 
         .add_systems(Update, 
             (build_chunk_splat_data,
-            //rebuild_chunk_splat_textures
+            rebuild_chunk_splat_textures
             ).chain()
 
         )
@@ -345,11 +348,9 @@ fn build_chunk_splat_data(
     mut commands:Commands, 
 
     chunk_query: Query<(Entity, &Chunk, & ChunkData,& ChunkSplatDataRaw), 
-     Changed<ChunkSplatDataRaw>    >,
- 
+     Changed<ChunkSplatDataRaw>    >, 
 
-){
-
+){ 
 
       for (entity, chunk, chunk_data, chunk_splat_data_raw ) in chunk_query.iter() {
 
@@ -366,6 +367,63 @@ fn build_chunk_splat_data(
 
       }
 
+
+}
+
+
+fn rebuild_chunk_splat_textures(
+
+
+     chunk_query: Query<(Entity, &Chunk, & ChunkData,& ChunkSplatData, &Parent ), 
+     Changed<ChunkSplatData >    >, 
+
+     terrain_query: Query<(&TerrainData, &TerrainConfig)>,
+
+    ){
+
+
+    for (entity, chunk, chunk_data, chunk_splat_data, parent_terrain_entity ) in chunk_query.iter() { 
+
+
+
+          let terrain_entity_id = parent_terrain_entity.get();
+
+            if terrain_query.get(terrain_entity_id).is_ok() == false {
+                continue;
+            }
+
+            let (terrain_data, terrain_config) = terrain_query.get(terrain_entity_id).unwrap();
+ 
+
+
+                         let file_name = format!("{}.png", chunk.chunk_id);
+                             let asset_folder_path = PathBuf::from("assets");
+
+                        let (chunk_splat_index_map_image,chunk_splat_strength_map_image) 
+                                = chunk_splat_data.build_images();
+                            
+
+                      
+                       
+                        save_chunk_splat_index_map_to_disk(
+                            &chunk_splat_index_map_image,
+                            asset_folder_path
+                                .join(&terrain_config.splat_folder_path)
+                                .join("index_maps")
+                                .join(&file_name),
+                        );
+
+                          save_chunk_splat_strength_map_to_disk(
+                                &chunk_splat_index_map_image,
+                                asset_folder_path
+                                    .join(&terrain_config.splat_folder_path)
+                                    .join("index_maps")
+                                    .join(&file_name),
+                            );
+                             
+
+
+    }
 
 }
 
