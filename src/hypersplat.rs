@@ -79,6 +79,14 @@ impl ChunkSplatDataRaw {
 
     }
 
+    pub fn clear_all_pixel_data(
+        &mut self, 
+        x:u32,
+        y:u32) {
+
+         self.splat_pixels[y as usize][x as usize] = SplatPixelDataRaw::new();
+    }
+
     
      pub fn build_from_images(
         splat_index_map: &Image,
@@ -173,6 +181,13 @@ pub struct SplatPixelDataRaw {
 
 impl SplatPixelDataRaw {
 
+    fn new() -> Self{
+
+        Self{
+            pixel_data: HashMap::new()
+        }
+    }
+
     fn set_exact_pixel_data(
         &mut self,
         texture_type_index:u8,
@@ -188,6 +203,8 @@ impl SplatPixelDataRaw {
             ) ;
  
     }
+
+    
 
 }
 
@@ -455,7 +472,7 @@ fn rebuild_chunk_splat_textures(
                             );
                         
 
-                        
+
                         if let Some(mut cmd) = commands.get_entity(entity){
                             cmd.try_insert( SplatMapHandlesNeedReload );
                         }

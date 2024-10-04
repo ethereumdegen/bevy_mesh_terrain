@@ -55,6 +55,7 @@ pub enum EditingTool {
 pub enum BrushType {
     #[default]
     SetExact, // hardness ?
+    ClearAll,
     Smooth,
     Noise,
     EyeDropper,
@@ -64,6 +65,7 @@ impl Display for BrushType {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         let label = match self {
             BrushType::SetExact => "SetExact",
+            BrushType::ClearAll => "ClearAll",
             BrushType::Smooth => "Smooth",
             BrushType::Noise => "Noise",
             BrushType::EyeDropper => "EyeDropper",
@@ -436,6 +438,11 @@ pub fn apply_tool_edits(
                                         }
                                     }
 
+                                     BrushType::ClearAll => {
+                                        //do nothing 
+
+                                     }
+
                                     BrushType::Smooth => {
                                         for x in 0..img_data_length {
                                             for y in 0..img_data_length {
@@ -611,49 +618,49 @@ pub fn apply_tool_edits(
                                                                 texture_type_index,
                                                                 texture_strength
                                                             );
-
-
-                                                            // Modify the pixel data
-                                                           // img.data[idx] = *r as u8; // R
-                                                           // img.data[idx + 1] = *g as u8; // G
-                                                           // img.data[idx + 2] = *b as u8;
-                                                            // B
-                                                            // Alpha value remains unchanged
-
-                                                            //println!("modify pixel data ");
+ 
                                                         }
                                                     }
                                                 
 
 
-                                                //since we have directly edited the proper texture mut , we dont need to do anything else !
+                                                   
+                                            }  
+                                        }
 
+                                        BrushType::ClearAll => {
+                                            // Assuming the image format is Rgba8
+                                             
+                                                //                let img_data = img.data.as_mut_slice();
 
-                                                // -----
+                                                // Iterate over each pixel in the image
+                                                for y in 0..splat_dimensions.y {
+                                                    for x in 0..splat_dimensions.x {
+                                                        let idx = (y * splat_dimensions.x + x) as usize * 4; // 4 bytes per pixel (R, G, B, A)
+                                                        let pixel_coords =
+                                                            Vec2::new(x as f32, y as f32);
 
-                                               // let updated_image = img.clone();
+                                                        //  img.data[idx] = *r as u8;
 
-                                               // let updated_image_handle = asset_server.add(updated_image);
+                                                        // Check if the pixel is within the tool's radius
+                                                        if pixel_coords.distance(pixel_pos)
+                                                            < pixel_radius
+                                                        {
 
-                                             /*   chunk_data.set_splat_texture_image(
-                                                    updated_image_handle.clone(),
-                                                );*/ //is this necessary? i think so in case the height is modified
-                                                            /*
-                                                if let Some(material_handle) =
-                                                    &chunk_data.material_handle
-                                                {
-                                                    if let Some(terrain_material) =
-                                                        terrain_materials.get_mut(material_handle)
-                                                    {
-                                                        //this should let us avoid rebuilding the entire mesh
-                                                        terrain_material.extension.splat_texture =
-                                                            Some(updated_image_handle);
-                                                        println!("rewrote splat tex in terrain material ");
+                                                            let texture_type_index = *r as u8;
+                                                            let texture_strength = *g as u8; //careful w this on UI ! 
+                                                            
+                                                            chunk_splat_data_raw.clear_all_pixel_data(
+                                                                x,
+                                                                y 
+                                                            );
+ 
+                                                        }
                                                     }
-                                                }
-                                                */
+                                                
 
-                                            //mark  material as needing reload !!
+
+                                                   
                                             }  
                                         }
 
