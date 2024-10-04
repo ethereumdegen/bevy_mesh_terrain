@@ -1,4 +1,4 @@
-use crate::hypersplat::SplatMapHandlesNeedReload;
+ 
 use crate::TerrainEditMode;
 use crate::hypersplat::ChunkSplatDataRaw;
 use std::time::Duration;
@@ -520,10 +520,29 @@ pub fn update_splat_image_formats(
     mut images: ResMut<Assets<Image>>,
 
     mut chunk_query: Query<(Entity, &Chunk, &mut ChunkData)>,
+
+    mut terrain_materials: ResMut<Assets<TerrainMaterialExtension>>,
 ) {
     for ev in ev_asset.read() {
         match ev {
             AssetEvent::LoadedWithDependencies { id } => {
+
+
+                /*
+
+    
+                     if let Some( terrain_material_handle ) = &  chunk_data.material_handle {
+                            if let Some(terrain_material) = terrain_materials.get_mut( terrain_material_handle ){
+
+
+                             terrain_material.extension.splat_index_map_texture = Some(chunk_splat_index_texture.clone() );
+                             terrain_material.extension.splat_strength_map_texture = Some(chunk_splat_strength_texture.clone());
+                       
+                            }
+
+
+                        }
+                */
             
 
                 for (entity, chunk, mut chunk_data) in chunk_query.iter_mut() {
@@ -543,6 +562,19 @@ pub fn update_splat_image_formats(
 
                         chunk_data.splat_index_texture_is_loaded = true;
 
+
+                          if let Some( terrain_material_handle ) = &  chunk_data.material_handle {
+                            if let Some(terrain_material) = terrain_materials.get_mut( terrain_material_handle ){
+
+
+                             terrain_material.extension.splat_index_map_texture =  chunk_data.splat_index_texture_handle.clone() ;
+                            // terrain_material.extension.splat_strength_map_texture = Some(chunk_splat_strength_texture.clone());
+                       
+                            }
+
+
+                        }
+
                         continue;
                     } 
                     if chunk_data.splat_strength_texture_handle == Some(handle.clone()) {
@@ -555,6 +587,18 @@ pub fn update_splat_image_formats(
                          img.texture_descriptor.format = TextureFormat::Rgba8Uint;
                          
                         chunk_data.splat_strength_texture_is_loaded = true;
+
+                         if let Some( terrain_material_handle ) = &  chunk_data.material_handle {
+                            if let Some(terrain_material) = terrain_materials.get_mut( terrain_material_handle ){
+
+
+                            //  terrain_material.extension.splat_index_map_texture = Some(chunk_splat_index_texture.clone() );
+                              terrain_material.extension.splat_strength_map_texture =  chunk_data.splat_strength_texture_handle.clone() ;
+                       
+                            }
+
+
+                        }
 
                         continue;
 

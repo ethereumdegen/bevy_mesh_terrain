@@ -244,9 +244,15 @@ pub struct LevelSplatData {
 
 }*/
 
+/*
 #[derive(Component)]
-pub struct SplatMapHandlesNeedReload;
+pub struct HasPendingUpdatedSplatHandles{
 
+    splat_index_map_handle: Handle<Image>,
+    splat_strength_map_handle: Handle<Image> ,
+
+}
+*/
 
 #[derive(Serialize,Deserialize,Clone,Debug,Component)]
 pub struct ChunkSplatData {
@@ -472,17 +478,7 @@ fn rebuild_chunk_splat_textures(
                         chunk_data.splat_strength_texture_handle = Some(chunk_splat_strength_texture.clone());
 
 
-                        if let Some( terrain_material_handle ) = &  chunk_data.material_handle {
-                            if let Some(terrain_material) = terrain_materials.get_mut( terrain_material_handle ){
-
-
-                             terrain_material.extension.splat_index_map_texture = Some(chunk_splat_index_texture.clone() );
-                             terrain_material.extension.splat_strength_map_texture = Some(chunk_splat_strength_texture.clone());
                        
-                            }
-
-
-                        }
                         
                        /* save_chunk_splat_index_map_to_disk(
                             &chunk_splat_index_map_image,
