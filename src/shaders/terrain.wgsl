@@ -102,7 +102,7 @@ var splat_index_map_texture: texture_2d<u32>;
 var splat_index_map_sampler: sampler;
 
 @group(2) @binding(28)
-var splat_strength_map_texture: texture_2d<f32>; 
+var splat_strength_map_texture: texture_2d<u32>; 
  @group(2) @binding(29)
 var splat_strength_map_sampler: sampler;
 
@@ -200,17 +200,17 @@ fn fragment(
       // Initialize texture_layers_used and blended color
     var texture_layers_used: u32 = 0;
     var blended_color: vec4<f32> = vec4<f32>(0.0);
-    var blended_normal: vec4<f32> = vec4<f32>(1.0);
+    var blended_normal: vec4<f32> = vec4<f32>(0.0);
 
     // Loop through each layer (max 4 layers)
     for (var i: u32 = 0u; i < 4u; i = i + 1u) {
-        let splat_strength = splat_strength_array[i];
-        if (splat_strength > 0 ) {
+        let splat_strength =  splat_strength_array[i];
+        if (splat_strength > 0 ) {  //this is never true ??
             texture_layers_used += 1u;
-            let splat_strength_float =  splat_strength * 255.0 ;
+            let splat_strength_float =  f32(splat_strength) / 255.0 ;
 
             // Look up the terrain layer index and sample the corresponding texture
-            let terrain_layer_index = i32(splat_index_array[i]);
+            let terrain_layer_index =  i32(splat_index_array[i]);
             let color_from_diffuse = textureSample(base_color_texture, base_color_sampler, tiled_uv, terrain_layer_index);
             let color_from_normal = textureSample(normal_texture, normal_sampler, tiled_uv, terrain_layer_index);
             
@@ -221,14 +221,12 @@ fn fragment(
     }
 
     // Normalize by dividing by the number of active layers if there are any
-    if (texture_layers_used > 0u) {
+    if (texture_layers_used > 1u) {
         blended_color /= f32(texture_layers_used);
         blended_normal /= f32(texture_layers_used);
     }
 
- 
- 
-
+    
 
     blended_normal = normalize(blended_normal); 
                     
