@@ -622,7 +622,7 @@ pub fn apply_tool_edits(
 
 
 
-                                                      let mut hardness_multiplier =
+                                                      let   hardness_multiplier =
                                                         get_hardness_multiplier(
                                                             tool_coords_local
                                                                 .distance(pixel_coords),
@@ -643,29 +643,42 @@ pub fn apply_tool_edits(
 
                                                             let texture_layer = *b as u8;  //0 to 3 
 
-                                                            //make hardness_multiplier always be 1.0 if layer 0 ? 
-                                                            //no... get rid of this and actually fix it  v
-                                                            if texture_layer == 0 {
-                                                                hardness_multiplier = 1.0;
-                                                            }
 
-                                                            // this is not a good way to do this !! 
-                                                            //needs to do a MIN with what is actually there  !? see the old code.. 
-                                                            // defs needs to be considering what is there 
-                                                            let strength_with_hardness =  
-                                                                texture_strength as f32 * 
-                                                                hardness_multiplier ;
-                                                                
 
-                                                                
+
+                                                            let original_strength = chunk_splat_data_raw.get_pixel_strength_map_data(
+                                                                x,
+                                                                y,
+                                                                texture_layer,
+                                                           
+                                                            ); 
+
+                                                           let strength_with_hardness = apply_hardness_multiplier(
+
+
+
+                                                            original_strength as f32,
+                                                            texture_strength as f32,
+
+                                                            hardness_multiplier
+
+                                                            );         
 
 
                                                             
-                                                            chunk_splat_data_raw.set_exact_pixel_data(
+                                                            chunk_splat_data_raw.set_pixel_index_map_data(
                                                                 x,
                                                                 y,
                                                                 texture_layer,
                                                                 texture_type_index,
+                                                               // strength_with_hardness as u8 
+                                                            );
+
+                                                             chunk_splat_data_raw.set_pixel_strength_map_data(
+                                                                x,
+                                                                y,
+                                                                texture_layer,
+                                                             //  texture_type_index,
                                                                 strength_with_hardness as u8 
                                                             );
 

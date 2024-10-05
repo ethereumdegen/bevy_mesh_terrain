@@ -59,7 +59,7 @@ pub struct ChunkSplatDataRaw {
 
 impl ChunkSplatDataRaw {
 
-    pub fn set_exact_pixel_data(
+    /*pub fn set_exact_pixel_data(
         &mut self, 
         x:u32,
         y:u32,
@@ -103,6 +103,119 @@ impl ChunkSplatDataRaw {
         self.splat_strength_map_texture.data[idx] = texture_strength;
 
 
+    }*/ 
+
+
+    fn get_pixel_internal_index(
+        x:u32,
+        y:u32,
+        layer:u8 , 
+        width: u32
+    ) -> usize {
+
+
+         let layers_count = 4; 
+
+         if layer > layers_count {
+            warn!("invalid layer ! {}", layer);
+         }
+
+         //let width = self.splat_index_map_texture.width();
+
+         let pixel_index = (y * width + x) as usize;
+
+                // Extract the index and strength data for the current pixel
+         let index_offset = pixel_index * layers_count as usize;
+
+         let idx = index_offset + layer as usize; 
+
+         idx
+    }
+
+
+    pub fn set_pixel_index_map_data(
+        &mut self, 
+        x:u32,
+        y:u32,
+        layer:u8 , 
+        texture_type_index: u8,
+        
+
+        ){  
+
+        
+
+        //layer must be 0,1,2 or 4 and that is RGBA respectively 
+
+           
+
+        let width = self.splat_index_map_texture.width();
+         
+        let idx = Self::get_pixel_internal_index(x,y,layer,width); 
+
+        self.splat_index_map_texture.data[idx] = texture_type_index;       
+
+    }
+
+
+    pub fn set_pixel_strength_map_data(
+        &mut self, 
+        x:u32,
+        y:u32,
+        layer:u8 , 
+        
+        texture_strength: u8 
+
+        ){  
+
+        
+
+        //layer must be 0,1,2 or 4 and that is RGBA respectively 
+
+        let width = self.splat_index_map_texture.width();
+         
+        let idx = Self::get_pixel_internal_index(x,y,layer,width); 
+        
+        self.splat_strength_map_texture.data[idx] = texture_strength;
+
+
+    }
+
+
+      pub fn get_pixel_index_map_data(
+        &mut self, 
+        x:u32,
+        y:u32,
+        layer:u8  
+        ) -> u8 {  
+ 
+
+        //layer must be 0,1,2 or 4 and that is RGBA respectively 
+
+        let width = self.splat_index_map_texture.width();
+         
+        let idx = Self::get_pixel_internal_index(x,y,layer,width); 
+
+         self.splat_index_map_texture.data[idx]      
+
+    }
+
+     pub fn get_pixel_strength_map_data(
+        &mut self, 
+        x:u32,
+        y:u32,
+        layer:u8  
+        ) -> u8 {  
+ 
+
+        //layer must be 0,1,2 or 4 and that is RGBA respectively 
+
+        let width = self.splat_index_map_texture.width();
+         
+        let idx = Self::get_pixel_internal_index(x,y,layer,width); 
+
+         self.splat_strength_map_texture.data[idx]      
+
     }
 
     pub fn clear_all_pixel_data(
@@ -111,21 +224,15 @@ impl ChunkSplatDataRaw {
         y:u32 ) {
 
 
-            let layers_count = 4; 
+             let width = self.splat_index_map_texture.width();
 
            for layer in 0..3 { 
                  //self.splat_pixels[layer as usize][y as usize][x as usize] = SplatPixelDataRaw::new();
 
 
-   
-                     let width = self.splat_index_map_texture.width();
-
-                     let pixel_index = (y * width + x) as usize;
-
-                            // Extract the index and strength data for the current pixel
-                     let index_offset = pixel_index * layers_count as usize;
-
-                     let idx = index_offset + layer as usize; 
+  
+         
+                 let idx = Self::get_pixel_internal_index(x,y,layer,width); 
 
 
 
