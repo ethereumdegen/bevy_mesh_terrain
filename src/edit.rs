@@ -1,3 +1,4 @@
+use crate::hypersplat::SplatMapDataUpdated;
 use crate::hypersplat::save_chunk_splat_index_map_to_disk;
 use crate::hypersplat::save_chunk_splat_strength_map_to_disk;
  
@@ -147,7 +148,7 @@ pub fn apply_command_events(
                      if *save_splat {
  
                         let (chunk_splat_index_map_image,chunk_splat_strength_map_image) 
-                                = chunk_splat_data.build_images();
+                                = chunk_splat_data.get_images();
                          
                            
                             save_chunk_splat_index_map_to_disk(
@@ -262,6 +263,7 @@ pub fn apply_command_events(
 }
 
 pub fn apply_tool_edits(
+    mut commands: Commands, 
     mut asset_server: Res<AssetServer>,
 
     mut chunk_query: Query<(Entity, &Chunk, &mut ChunkData, &Parent, &GlobalTransform, Option<&mut ChunkSplatDataRaw>)>, //chunks parent should have terrain data
@@ -555,7 +557,10 @@ pub fn apply_tool_edits(
                             if let Some(  mut chunk_splat_data_raw ) =  chunk_splat_data_raw {
                                 //if let Some(img) = images.get_mut(splat_image_handle) {
                                     // Calculate the pixel position and radius in pixels
-                                    let splat_dimensions = chunk_splat_data_raw.pixel_dimensions.clone();
+                                    let splat_dimensions = UVec2::new(
+                                        chunk_splat_data_raw.splat_index_map_texture.width() , 
+                                        chunk_splat_data_raw.splat_index_map_texture.height() 
+                                        ) ;
 
                                     let tool_coords: &Vec2 = &ev.coordinates;
                                     let chunk_transform = chunk_transform.translation();
@@ -587,11 +592,20 @@ pub fn apply_tool_edits(
                                     );
 
 
-                                   
+                                  
 
                                     match brush_type {
                                         BrushType::SetExact => {
 
+
+                                            if let Some(mut cmds) = commands.get_entity( chunk_entity ){
+
+
+                                                cmds.try_insert(SplatMapDataUpdated);
+
+
+
+                                            }
                                           
 
                                             // Assuming the image format is Rgba8
@@ -645,6 +659,8 @@ pub fn apply_tool_edits(
                                                                 texture_type_index,
                                                                 strength_with_hardness as u8 
                                                             );
+
+
  
                                                         }
                                                     }
@@ -674,8 +690,8 @@ pub fn apply_tool_edits(
                                                             < pixel_radius
                                                         {
 
-                                                            let texture_type_index = *r as u8;
-                                                            let texture_strength = *g as u8; //careful w this on UI ! 
+                                                           // let texture_type_index = *r as u8;
+                                                           // let texture_strength = *g as u8; //careful w this on UI ! 
 
 
                                                             chunk_splat_data_raw.clear_all_pixel_data(
