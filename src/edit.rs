@@ -731,12 +731,8 @@ pub fn apply_tool_edits(
                                         }
 
                                         BrushType::EyeDropper => {
-                                            /* 
-                                            if img.texture_descriptor.format
-                                                == TextureFormat::Rgba8Unorm
-                                                || img.texture_descriptor.format
-                                                    == TextureFormat::Rgba8UnormSrgb
-                                            {
+                                             
+                                            
                                                 if tool_coords.x >= chunk_transform_vec2.x
                                                     && tool_coords.x
                                                         < chunk_transform_vec2.x
@@ -751,12 +747,31 @@ pub fn apply_tool_edits(
                                                     let x = tool_coords_local.x as u32;
                                                     let y = tool_coords_local.y as u32;
 
-                                                    if x < img_size.x && y < img_size.y {
+
+                                                    let texture_layer = *b as u8;  //0 to 3 
+
+
+                                                     let original_index = chunk_splat_data_raw.get_pixel_index_map_data(
+                                                                x,
+                                                                y,
+                                                                texture_layer,
+                                                           
+                                                            ); 
+
+                                                     let original_strength = chunk_splat_data_raw.get_pixel_strength_map_data(
+                                                                x,
+                                                                y,
+                                                                texture_layer,
+                                                           
+                                                            );  
+
+
+                                                  //  if x < img_size.x && y < img_size.y {
                                                         //  let local_height = height_map_data.0[x][y];
-                                                        let idx = (y * img_size.x + x) as usize * 4;
-                                                        let r = img.data[idx];
-                                                        let g = img.data[idx + 1];
-                                                        let b = img.data[idx + 2];
+                                                        //let idx = (y * img_size.x + x) as usize * 4;
+                                                        let r = original_index;
+                                                        let g = original_strength;
+                                                        let b = texture_layer;
 
                                                         evt_writer.send(
                                                             TerrainBrushEvent::EyeDropSplatMap {
@@ -765,9 +780,9 @@ pub fn apply_tool_edits(
                                                                 b,
                                                             },
                                                         );
-                                                    }
+                                                  //  }
                                                 }
-                                            } */
+                                               
                                         }
 
                                         //brush type
