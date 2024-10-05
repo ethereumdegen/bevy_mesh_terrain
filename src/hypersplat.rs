@@ -100,7 +100,7 @@ impl ChunkSplatDataRaw {
 
 
         self.splat_index_map_texture.data[idx] = texture_type_index;
-        self.splat_strength_map_texture.data[idx] = texture_type_index;
+        self.splat_strength_map_texture.data[idx] = texture_strength;
 
 
     }
@@ -158,48 +158,7 @@ impl ChunkSplatDataRaw {
         (&self.splat_index_map_texture, &self.splat_strength_map_texture)
     }
 }
-
-
-//this can actually describe how a great number of materials (more than 4)
-// are applied to the terrain - thus better than a .PNG pixel 
-#[derive( Clone,Debug)]
-pub struct SplatPixelDataRaw {
-
- //	material_layer_id index  ->  strength 
- // when this is edited, make sure to always keep it sorted ! (?)
-	//pub pixel_data: HashMap<u8, u8>
-
-    pub texture_index: u8, 
-    pub strength: u8 ,
-
-
-
-
-}
-
-
-impl SplatPixelDataRaw {
-
-    
-    fn set_exact_pixel_data(
-        &mut self,
-        texture_type_index:u8,
-        texture_strength:u8,
-    ){
-
-        // info!("setting exact pixel data  {} {}",  texture_type_index,texture_strength);
-
-
-        self.texture_index = texture_type_index;
-        self.strength = texture_strength;
- 
-    }
-
-    
-
-}
- 
-
+  
 fn rebuild_chunk_splat_textures(
     mut commands:Commands,
 
@@ -237,7 +196,7 @@ fn rebuild_chunk_splat_textures(
 
             let (terrain_data, terrain_config) = terrain_query.get(terrain_entity_id).unwrap();
  
-
+                info!("replacing splat index texture " );
 
                      //   let file_name = format!("{}.png", chunk.chunk_id);
                      //   let asset_folder_path = PathBuf::from("assets");
@@ -257,8 +216,17 @@ fn rebuild_chunk_splat_textures(
                         chunk_data.splat_index_texture_handle = Some(chunk_splat_index_texture.clone());
                         chunk_data.splat_strength_texture_handle = Some(chunk_splat_strength_texture.clone());
 
+                        if let Some(terrain_material_handle)= &chunk_data.material_handle {
+                             if let Some( terrain_material ) = terrain_materials.get_mut ( terrain_material_handle )  {
 
-                       
+ 
+                                 terrain_material.extension.splat_index_map_texture =  chunk_data.splat_index_texture_handle.clone() ;
+                                 terrain_material.extension.splat_strength_map_texture =  chunk_data.splat_strength_texture_handle.clone() ;
+
+
+                            }
+
+                        }
                         
                        /* save_chunk_splat_index_map_to_disk(
                             &chunk_splat_index_map_image,

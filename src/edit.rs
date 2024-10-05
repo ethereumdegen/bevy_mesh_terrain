@@ -592,12 +592,7 @@ pub fn apply_tool_edits(
                                     );
 
 
-                                  
-
-                                    match brush_type {
-                                        BrushType::SetExact => {
-
-
+                                    
                                             if let Some(mut cmds) = commands.get_entity( chunk_entity ){
 
 
@@ -606,6 +601,12 @@ pub fn apply_tool_edits(
 
 
                                             }
+                                  
+
+                                    match brush_type {
+                                        BrushType::SetExact => {
+
+
                                           
 
                                             // Assuming the image format is Rgba8

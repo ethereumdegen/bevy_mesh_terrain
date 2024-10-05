@@ -563,7 +563,7 @@ pub fn update_splat_image_formats(
                         chunk_data.splat_index_texture_is_loaded = true;
 
 
-                          if let Some( terrain_material_handle ) = &  chunk_data.material_handle {
+                          /*if let Some( terrain_material_handle ) = &  chunk_data.material_handle {
                             if let Some(terrain_material) = terrain_materials.get_mut( terrain_material_handle ){
 
 
@@ -573,7 +573,7 @@ pub fn update_splat_image_formats(
                             }
 
 
-                        }
+                        }*/
 
                         continue;
                     } 
@@ -588,7 +588,7 @@ pub fn update_splat_image_formats(
                          
                         chunk_data.splat_strength_texture_is_loaded = true;
 
-                         if let Some( terrain_material_handle ) = &  chunk_data.material_handle {
+                        /* if let Some( terrain_material_handle ) = &  chunk_data.material_handle {
                             if let Some(terrain_material) = terrain_materials.get_mut( terrain_material_handle ){
 
 
@@ -598,7 +598,7 @@ pub fn update_splat_image_formats(
                             }
 
 
-                        }
+                        }*/
 
                         continue;
 
