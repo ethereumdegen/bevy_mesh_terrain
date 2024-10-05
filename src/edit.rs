@@ -586,10 +586,10 @@ pub fn apply_tool_edits(
                                     //force override
                                     //  img.texture_descriptor.format = TextureFormat::Rgba8Unorm;
 
-                                    println!(
+                                    /*println!(
                                         "set splat map at {} {} {}",
                                         pixel_pos, pixel_radius, r
-                                    );
+                                    );*/
 
 
 

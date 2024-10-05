@@ -557,7 +557,7 @@ pub fn update_splat_image_formats(
                         //image_is_splat_index_texture = true
 
                          let img = images.get_mut(&mut handle).unwrap();
-                        println!("splat index map image format is {:?}", img.texture_descriptor.format);
+                       // println!("splat index map image format is {:?}", img.texture_descriptor.format);
                         img.texture_descriptor.format = TextureFormat::Rgba8Uint;
 
                         chunk_data.splat_index_texture_is_loaded = true;
@@ -582,7 +582,7 @@ pub fn update_splat_image_formats(
 
                         let img = images.get_mut(&mut handle).unwrap();
 
-                           println!("splat strength map image format is {:?}", img.texture_descriptor.format);
+                          // println!("splat strength map image format is {:?}", img.texture_descriptor.format);
 
                          img.texture_descriptor.format = TextureFormat::Rgba8Uint;
                          

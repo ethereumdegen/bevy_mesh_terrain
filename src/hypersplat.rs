@@ -303,7 +303,7 @@ fn rebuild_chunk_splat_textures(
 
             let (terrain_data, terrain_config) = terrain_query.get(terrain_entity_id).unwrap();
  
-                info!("replacing splat index texture " );
+               // info!("replacing splat index texture " );
 
                      //   let file_name = format!("{}.png", chunk.chunk_id);
                      //   let asset_folder_path = PathBuf::from("assets");
