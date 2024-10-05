@@ -592,7 +592,7 @@ pub fn apply_tool_edits(
                                     );
 
 
-                                    
+
                                             if let Some(mut cmds) = commands.get_entity( chunk_entity ){
 
 
@@ -622,7 +622,7 @@ pub fn apply_tool_edits(
 
 
 
-                                                      let hardness_multiplier =
+                                                      let mut hardness_multiplier =
                                                         get_hardness_multiplier(
                                                             tool_coords_local
                                                                 .distance(pixel_coords),
@@ -643,7 +643,12 @@ pub fn apply_tool_edits(
 
                                                             let texture_layer = *b as u8;  //0 to 3 
 
+                                                            //make hardness_multiplier always be 1.0 if layer 0 ? 
+                                                            if texture_layer == 0 {
+                                                                hardness_multiplier = 1.0;
+                                                            }
 
+                                                            
                                                             let strength_with_hardness =  
                                                                 texture_strength as f32 * 
                                                                 hardness_multiplier ;
