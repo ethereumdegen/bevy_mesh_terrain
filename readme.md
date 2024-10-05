@@ -30,7 +30,11 @@ cargo run --example basic
  You spawn an entity and give it the 'TerrainConfig' and 'TerrainData' components, and then the plugin systems will spawn child entities which are each of the rendered chunks. 
  In this way, it works similarly to a voxel chunking system ( a la minecraft) except using heightfields (2d) instead of voxels (3d). 
  
+
  
+ 
+ ![image](https://github.com/user-attachments/assets/f7c68b56-62b1-494e-8cf0-623b319cd28e)
+
 ![image](https://github.com/user-attachments/assets/a1f040f7-9a48-4ecb-8157-67705060e266)
 
  
