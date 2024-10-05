@@ -216,7 +216,9 @@ fn rebuild_chunk_splat_textures(
                         chunk_data.splat_index_texture_handle = Some(chunk_splat_index_texture.clone());
                         chunk_data.splat_strength_texture_handle = Some(chunk_splat_strength_texture.clone());
 
-                        if let Some(terrain_material_handle)= &chunk_data.material_handle {
+
+                        //try to do this later, when its actually loaded , to remove flickering 
+                    /*    if let Some(terrain_material_handle)= &chunk_data.material_handle {
                              if let Some( terrain_material ) = terrain_materials.get_mut ( terrain_material_handle )  {
 
  
@@ -226,30 +228,9 @@ fn rebuild_chunk_splat_textures(
 
                             }
 
-                        }
+                        }*/
                         
-                       /* save_chunk_splat_index_map_to_disk(
-                            &chunk_splat_index_map_image,
-                            asset_folder_path
-                                .join(&terrain_config.splat_folder_path)
-                                .join("index_maps")
-                                .join(&file_name),
-                        );
-
-                        save_chunk_splat_strength_map_to_disk(
-                                &chunk_splat_strength_map_image,
-                                asset_folder_path
-                                    .join(&terrain_config.splat_folder_path)
-                                    .join("strength_maps")
-                                    .join(&file_name),
-                            );*/
                         
-
-
-                       // if let Some(mut cmd) = commands.get_entity(entity){
-                       //     cmd.try_insert( SplatMapHandlesNeedReload );
-                      //  }
-
                         
 
     }
