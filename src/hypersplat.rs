@@ -32,12 +32,7 @@ pub fn hypersplat_plugin(app:&mut App){
 
         )
 
-    ;
-
-
-
-
-
+    ; 
 
 }
 
@@ -52,58 +47,12 @@ pub struct ChunkSplatDataRaw {
     pub splat_index_map_texture: Image ,
     pub splat_strength_map_texture:  Image, 
 
-	//pixel id -> 
-	//pub splat_pixels: Vec<Vec<Vec< SplatPixelDataRaw >>>, //<u32, SplatPixelDataRaw>
-   // pub pixel_dimensions: UVec2
+ 
 }
 
 impl ChunkSplatDataRaw {
 
-    /*pub fn set_exact_pixel_data(
-        &mut self, 
-        x:u32,
-        y:u32,
-        layer:u8 , 
-        texture_type_index: u8,
-        texture_strength: u8 
-
-        ){  
-
-        info!("setting exact pixel data {} {} {} {}", x,y,texture_type_index,texture_strength);
-
-        /*
-        self.splat_pixels[layer as usize][y as usize][x as usize].set_exact_pixel_data(
-            texture_type_index,
-            texture_strength
-            );
-
-        */
-
-
-
-        //layer must be 0,1,2 or 4 and that is RGBA respectively 
-
-        let layers_count = 4; 
-
-         if layer > layers_count {
-            warn!("invalid layer ! {}", layer);
-         }
-
-         let width = self.splat_index_map_texture.width();
-
-         let pixel_index = (y * width + x) as usize;
-
-                // Extract the index and strength data for the current pixel
-         let index_offset = pixel_index * layers_count as usize;
-
-         let idx = index_offset + layer as usize; 
-
-
-        self.splat_index_map_texture.data[idx] = texture_type_index;
-        self.splat_strength_map_texture.data[idx] = texture_strength;
-
-
-    }*/ 
+   
 
 
     fn get_pixel_internal_index(
@@ -343,37 +292,7 @@ fn rebuild_chunk_splat_textures(
     }
 
 }
-
-/*
-fn rebuild_chunk_splat_textures(
-    mut commands:Commands, 
-
-    chunk_query: Query<(Entity, &Chunk, & ChunkData), 
-     Changed<ChunkSplatData>    >,
  
-
-){
-
-
-     for (entity, chunk, chunk_data, chunk_splat_data_raw ) in chunk_query.iter() {
-
-
-          if let Some(mut cmd) = commands.get_entity(  entity ) {
-
-                  cmd.try_insert( 
-                    ChunkSplatData ::build_from_raw(
-                       chunk_splat_data_raw
-                    ) 
-                 );
-          }
-
-
-      }
- 
-
-
-}*/
-
 
 
 // ----
@@ -391,6 +310,9 @@ where
     let format = splat_image.texture_descriptor.format;
     let width = splat_image.texture_descriptor.size.width;
     let height = splat_image.texture_descriptor.size.height;
+
+
+    info!("saving splat image {} {} ", &width  ,   &height );
 
     // Ensure the format is Rgba8 or adapt this code block for other formats
     if format == TextureFormat::Rgba8Uint  
@@ -422,7 +344,7 @@ where
     let width = splat_image.texture_descriptor.size.width;
     let height = splat_image.texture_descriptor.size.height;
 
-
+      info!("saving splat image {} {} ", &width  ,   &height );
 
     // Ensure the format is Rgba8 or adapt this code block for other formats
     if format == TextureFormat::Rgba8Uint // || format == TextureFormat::Rgba8UnormSrgb

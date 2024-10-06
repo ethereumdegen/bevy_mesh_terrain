@@ -3,6 +3,6 @@
 2. invent some way to better inspect all of the materials that on a hypersplat pixel..  a better eyedrop  ?
 
 3. lods 
-  BUG : lod stitching is not working right 
+  BUG :  Painting is broken when using 512/512  splat res 
    
    

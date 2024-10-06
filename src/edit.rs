@@ -575,21 +575,20 @@ pub fn apply_tool_edits(
                                     let tool_coords_local =
                                         tool_coords.add(chunk_transform_vec2.neg());
 
-                                    let pixel_pos = Vec2::new(
+                                    /*let pixel_pos = Vec2::new(
                                         tool_coords_local.x / chunk_dimensions_vec.x
                                             * splat_dimensions.x as f32,
                                         tool_coords_local.y / chunk_dimensions_vec.y
                                             * splat_dimensions.y as f32,
-                                    );
+                                    );*/
                                     let pixel_radius = *radius as f32;
+
+
+
 
                                     //force override
                                     //  img.texture_descriptor.format = TextureFormat::Rgba8Unorm;
-
-                                    /*println!(
-                                        "set splat map at {} {} {}",
-                                        pixel_pos, pixel_radius, r
-                                    );*/
+ 
 
 
 
@@ -616,25 +615,46 @@ pub fn apply_tool_edits(
                                                 // Iterate over each pixel in the image
                                                 for y in 0..splat_dimensions.y {
                                                     for x in 0..splat_dimensions.x {
-                                                        let idx = (y * splat_dimensions.x + x) as usize * 4; // 4 bytes per pixel (R, G, B, A)
+                                                       // let idx = (y * splat_dimensions.x + x) as usize * 4; // 4 bytes per pixel (R, G, B, A)
                                                         let pixel_coords =
                                                             Vec2::new(x as f32, y as f32);
 
 
 
+                                                            //this is busted ! should be in real world units ?? s
+                                                        let scale_factor = Vec2::new( 
+                                                           splat_dimensions.x as f32 / chunk_dimensions_vec.x  ,
+                                                             splat_dimensions.y as f32 / chunk_dimensions_vec.y
+
+                                                          );  
+                                                        let pixel_pos_local = (pixel_coords / scale_factor).add(chunk_transform_vec2.neg());
+
+
+
+                                                                //maybe i need to use pixel pos ? 
+
                                                       let   hardness_multiplier =
                                                         get_hardness_multiplier(
                                                             tool_coords_local
-                                                                .distance(pixel_coords),
+                                                                .distance(pixel_pos_local),
                                                             pixel_radius,
                                                             *brush_hardness,
                                                         );
 
 
+
+
+                                                           // println!(
+                                                          //      "set pixel {:?} {:?} {:?}",
+                                                          //      pixel_coords, tool_coords_local , pixel_pos
+                                                          //  ); 
+
+
+
                                                         //  img.data[idx] = *r as u8;
 
                                                         // Check if the pixel is within the tool's radius
-                                                        if pixel_coords.distance(pixel_pos)
+                                                        if tool_coords_local.distance(pixel_pos_local)
                                                             < pixel_radius
                                                         {
 
@@ -642,6 +662,9 @@ pub fn apply_tool_edits(
                                                             let texture_strength = *g as u8; //careful w this on UI ! 
 
                                                             let texture_layer = *b as u8;  //0 to 3 
+
+
+
 
 
 
@@ -663,6 +686,7 @@ pub fn apply_tool_edits(
                                                             hardness_multiplier
 
                                                             );         
+
 
 
                                                             
@@ -701,14 +725,26 @@ pub fn apply_tool_edits(
                                                 // Iterate over each pixel in the image
                                                 for y in 0..splat_dimensions.y {
                                                     for x in 0..splat_dimensions.x {
-                                                        let idx = (y * splat_dimensions.x + x) as usize * 4; // 4 bytes per pixel (R, G, B, A)
+                                                        //let idx = (y * splat_dimensions.x + x) as usize * 4; // 4 bytes per pixel (R, G, B, A)
                                                         let pixel_coords =
                                                             Vec2::new(x as f32, y as f32);
+
+
+
+                                                         let scale_factor = Vec2::new( 
+                                                           splat_dimensions.x as f32 / chunk_dimensions_vec.x  ,
+                                                             splat_dimensions.y as f32 / chunk_dimensions_vec.y
+
+                                                          );  
+                                                        let pixel_pos_local = (pixel_coords / scale_factor).add(chunk_transform_vec2.neg());
+
+
+
 
                                                         //  img.data[idx] = *r as u8;
 
                                                         // Check if the pixel is within the tool's radius
-                                                        if pixel_coords.distance(pixel_pos)
+                                                        if tool_coords_local.distance(pixel_pos_local)
                                                             < pixel_radius
                                                         {
 
