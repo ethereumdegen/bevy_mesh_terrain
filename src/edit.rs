@@ -606,7 +606,11 @@ pub fn apply_tool_edits(
                                         BrushType::SetExact => {
 
 
-                                          
+                                             let scale_factor = Vec2::new( 
+                                                           splat_dimensions.x as f32 / chunk_dimensions_vec.x  ,
+                                                             splat_dimensions.y as f32 / chunk_dimensions_vec.y
+
+                                                          ); 
 
                                             // Assuming the image format is Rgba8
                                              
@@ -622,12 +626,8 @@ pub fn apply_tool_edits(
 
 
                                                             //this is busted ! should be in real world units ?? s
-                                                        let scale_factor = Vec2::new( 
-                                                           splat_dimensions.x as f32 / chunk_dimensions_vec.x  ,
-                                                             splat_dimensions.y as f32 / chunk_dimensions_vec.y
-
-                                                          );  
-                                                        let pixel_pos_local = (pixel_coords / scale_factor).add(chunk_transform_vec2.neg());
+                                                        
+                                                        let pixel_pos  = (pixel_coords / scale_factor).add( chunk_transform_vec2 );
 
 
 
@@ -635,8 +635,8 @@ pub fn apply_tool_edits(
 
                                                       let   hardness_multiplier =
                                                         get_hardness_multiplier(
-                                                            tool_coords_local
-                                                                .distance(pixel_pos_local),
+                                                            tool_coords 
+                                                                .distance(pixel_pos),
                                                             pixel_radius,
                                                             *brush_hardness,
                                                         );
@@ -654,7 +654,7 @@ pub fn apply_tool_edits(
                                                         //  img.data[idx] = *r as u8;
 
                                                         // Check if the pixel is within the tool's radius
-                                                        if tool_coords_local.distance(pixel_pos_local)
+                                                        if tool_coords.distance(pixel_pos )
                                                             < pixel_radius
                                                         {
 
@@ -722,6 +722,13 @@ pub fn apply_tool_edits(
                                              
                                                 //                let img_data = img.data.as_mut_slice();
 
+
+                                                 let scale_factor = Vec2::new( 
+                                                           splat_dimensions.x as f32 / chunk_dimensions_vec.x  ,
+                                                             splat_dimensions.y as f32 / chunk_dimensions_vec.y
+
+                                                          );  
+
                                                 // Iterate over each pixel in the image
                                                 for y in 0..splat_dimensions.y {
                                                     for x in 0..splat_dimensions.x {
@@ -731,12 +738,8 @@ pub fn apply_tool_edits(
 
 
 
-                                                         let scale_factor = Vec2::new( 
-                                                           splat_dimensions.x as f32 / chunk_dimensions_vec.x  ,
-                                                             splat_dimensions.y as f32 / chunk_dimensions_vec.y
-
-                                                          );  
-                                                        let pixel_pos_local = (pixel_coords / scale_factor).add(chunk_transform_vec2.neg());
+                                                        
+                                                         let pixel_pos  = (pixel_coords / scale_factor).add( chunk_transform_vec2 );
 
 
 
@@ -744,7 +747,7 @@ pub fn apply_tool_edits(
                                                         //  img.data[idx] = *r as u8;
 
                                                         // Check if the pixel is within the tool's radius
-                                                        if tool_coords_local.distance(pixel_pos_local)
+                                                        if tool_coords .distance(pixel_pos )
                                                             < pixel_radius
                                                         {
 
