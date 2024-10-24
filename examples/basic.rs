@@ -6,6 +6,14 @@ use bevy::render::settings::RenderCreation;
 use bevy::pbr::wireframe::WireframePlugin;
 use bevy::input::mouse::MouseMotion;
 use bevy::{pbr::ShadowFilteringMethod, prelude::*};
+
+
+
+
+use bevy::tasks::AsyncComputeTaskPool;
+use bevy::tasks::TaskPoolBuilder;
+
+
 use bevy_mesh_terrain::TerrainEditMode;
 use bevy_mesh_terrain::{
     terrain::{TerrainData, TerrainViewer},
@@ -17,6 +25,13 @@ use bevy_mesh_terrain::{
 pub struct TextureLoaderResource {}
 
 fn main() {
+
+    //highly recommend adjusting this ! 
+    AsyncComputeTaskPool::get_or_init(|| TaskPoolBuilder::new().num_threads(32).stack_size(8 * 1024 * 1024).build());
+
+
+
+
     App::new()
        .add_plugins((
             DefaultPlugins.set(RenderPlugin {

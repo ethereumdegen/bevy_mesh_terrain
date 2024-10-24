@@ -748,6 +748,11 @@ pub fn reset_chunk_height_data(
     }
 }
 
+ 
+
+
+
+
 pub fn build_chunk_height_data(
     //mut commands: Commands,
     asset_server: Res<AssetServer>,
@@ -757,14 +762,19 @@ pub fn build_chunk_height_data(
 
     mut chunk_query: Query<(Entity, &Chunk, &mut ChunkData, &Parent)>,
 ) {
+
+
+
     for (chunk_entity, chunk, mut chunk_data, terrain_entity) in chunk_query.iter_mut() {
+
+
         if chunk_data.height_map_image_data_load_status == TerrainImageDataLoadStatus::NotLoaded {
             let height_map_image: &Image = match &chunk_data.height_map_image_handle {
                 Some(height_map_handle) => {
                     let height_map_loaded = asset_server.get_load_state(height_map_handle);
 
                     if height_map_loaded != Some(LoadState::Loaded) {
-                        println!("height map not yet loaded");
+                         // info!("height map not yet loaded");
                         continue;
                     }
 
@@ -773,6 +783,12 @@ pub fn build_chunk_height_data(
                 None => continue,
             };
 
+
+            //this is causing crashes i believe 
+
+            let chunk_id = chunk.chunk_id; 
+
+                info!("loading height map {} from disk - io intensive ... ", chunk_id);
             //maybe we can do this in a thread since it is quite cpu intense ?
             let loaded_heightmap_data_result = HeightMapU16::load_from_image(height_map_image);
 
@@ -794,9 +810,88 @@ pub fn build_chunk_height_data(
             //we can let go of the height map image handle now that we loaded our heightmap data from it
             //terrain_data.height_map_image_handle = None;
             chunk_data.height_map_image_data_load_status = TerrainImageDataLoadStatus::Loaded;
+           
+             info!("finished loading height map {} from disk  . ", chunk_id);
+
         }
     }
-}
+} 
+
+
+/*
+const MAX_CONCURRENT_HEIGHTMAP_LOADS: usize = 1; // Limit to only one heightmap load at a time
+
+pub fn build_chunk_height_data(
+    asset_server: Res<AssetServer>,
+    images: Res<Assets<Image>>,
+    mut chunk_height_maps: ResMut<ChunkHeightMapResource>,
+    mut chunk_query: Query<(Entity, &Chunk, &mut ChunkData, &Parent)>,
+    mut num_active_loads: Local<usize>,  // Local variable to keep track of active loads
+) {
+    if *num_active_loads >= MAX_CONCURRENT_HEIGHTMAP_LOADS {
+        // Limit exceeded, do not load any more heightmaps
+        return;
+    }
+
+    for (chunk_entity, chunk, mut chunk_data, _terrain_entity) in chunk_query.iter_mut() {
+        if chunk_data.height_map_image_data_load_status == TerrainImageDataLoadStatus::NotLoaded {
+            let height_map_image: &Image = match &chunk_data.height_map_image_handle {
+                Some(height_map_handle) => {
+                    let height_map_loaded = asset_server.get_load_state(height_map_handle);
+                    if height_map_loaded != Some(LoadState::Loaded) {
+                        // Heightmap not loaded yet, skip this chunk
+                        continue;
+                    }
+                    images.get(height_map_handle).unwrap()
+                }
+                None => continue,
+            };
+
+            let chunk_id = chunk.chunk_id;
+
+            // Offload the heightmap loading into an async thread to avoid blocking
+            let thread_pool = AsyncComputeTaskPool::get();
+            let task = thread_pool.spawn(async move {
+                info!("Loading height map for chunk {} from disk...", chunk_id);
+
+                // Load heightmap in a separate thread
+                let loaded_heightmap_data_result = HeightMapU16::load_from_image(height_map_image);
+
+                match loaded_heightmap_data_result {
+                    Ok(loaded_heightmap_data) => {
+                        Some(loaded_heightmap_data)
+                    }
+                    Err(e) => {
+                        println!("Error loading heightmap: {}", e);
+                        None
+                    }
+                }
+            });
+
+            // Block on the async task completion
+            if let Some(loaded_heightmap_data) = future::block_on(task) {
+                chunk_height_maps
+                    .chunk_height_maps
+                    .insert(chunk.chunk_id, *loaded_heightmap_data);
+                chunk_data.height_map_image_data_load_status = TerrainImageDataLoadStatus::Loaded;
+
+                // Track that we've processed this load
+                *num_active_loads += 1;
+                if *num_active_loads >= MAX_CONCURRENT_HEIGHTMAP_LOADS {
+                    // Stop further loading if we hit the max concurrent limit
+                    break;
+                }
+            }
+        }
+    }
+
+    // Reset load counter if all loads are finished
+    if *num_active_loads > 0 {
+        *num_active_loads = 0;
+    }
+}*/
+
+
  
  
 /*
@@ -865,6 +960,7 @@ pub fn build_chunk_meshes(
 
             let thread_pool = AsyncComputeTaskPool::get();
 
+
             let chunk_rows = terrain_config.chunk_rows;
             let terrain_dimensions = terrain_config.terrain_dimensions;
             let height_scale = terrain_config.height_scale;
@@ -875,7 +971,7 @@ pub fn build_chunk_meshes(
 
             // might use lots of RAM ? idk ..
             //maybe we subsection first and THEN build the mesh!  oh well... anyways
-            let height_map_data_cloned = ( height_map_data.as_ref().unwrap()).clone();
+            let height_map_data_ref =   height_map_data.as_ref().unwrap()  ;
 
             //chunk_data.lod_level = render_at_lod.0;
 
@@ -906,11 +1002,12 @@ pub fn build_chunk_meshes(
 
             //for now, add the unstitched data..
             commands.entity(chunk_entity).insert(CachedHeightmapData {
-                heightmap_data: height_map_data_cloned.clone(),
+                heightmap_data: height_map_data_ref.to_vec(),
             });
 
             //these three LOC really take no time at all
-            let mut sub_heightmap = (height_map_data_cloned.to_vec());
+          //  let mut sub_heightmap = (height_map_data_ref.to_vec());
+            let mut sub_heightmap = Box::new(height_map_data_ref.to_vec());  //use heap not stack 
 
             stitch_data_x_row.map(|x_row| sub_heightmap.append_x_row(x_row));
             stitch_data_y_col.map(|y_col| sub_heightmap.append_y_col(y_col));
