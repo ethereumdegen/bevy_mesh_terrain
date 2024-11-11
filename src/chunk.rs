@@ -1078,6 +1078,8 @@ pub fn finish_chunk_build_tasks(
 
     chunk_with_children_query: Query<&Children, With<ChunkData>>,
 
+     chunk_mesh_query: Query<Entity, With<TerrainChunkMesh>>,
+
     mut meshes: ResMut<Assets<Mesh>>,
 
     terrain_query: Query<(&TerrainData, &TerrainConfig)>,
@@ -1104,11 +1106,13 @@ pub fn finish_chunk_build_tasks(
             let chunk_uv = built_chunk_mesh_data.chunk_uv;
             let mesh = built_chunk_mesh_data.mesh;
 
-            //despawn any old children on this chunk
+            //despawn any old mesh children on this chunk
             if let Ok(chunk_children) = chunk_with_children_query.get(chunk_entity_id) {
                 for &child in chunk_children.iter() {
-                    commands.entity(child).despawn_recursive();
-                }
+                    if chunk_mesh_query.get( child ).ok().is_some(){
+                            commands.entity(child).despawn_recursive();
+                        }
+                    }
             }
 
             //careful w this unwrap
