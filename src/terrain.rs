@@ -1,11 +1,10 @@
 use bevy::asset::{AssetPath, LoadState};
+use bevy::image::{ImageSampler, ImageSamplerDescriptor};
 use bevy::prelude::*;
 use bevy::render::render_resource::{
     AddressMode, FilterMode, SamplerDescriptor, TextureDescriptor, TextureFormat,
 };
-use bevy::image::image::{
-     ImageSamplerDescriptor,
-};
+ 
 use bevy::utils::HashMap;
 
 use crate::chunk::{Chunk, ChunkCoordinates, ChunkCoords, ChunkData, TerrainMaterialExtension};
@@ -164,12 +163,12 @@ pub fn load_terrain_texture_from_image(
             //https://github.com/bevyengine/bevy/pull/10254
             texture_image.sampler = ImageSampler::Descriptor(ImageSamplerDescriptor {
                 label: None,
-                address_mode_u: ImageAddressMode::Repeat,
-                address_mode_v: ImageAddressMode::Repeat,
-                address_mode_w: ImageAddressMode::Repeat,
-                mag_filter: ImageFilterMode::Linear,
-                min_filter: ImageFilterMode::Linear,
-                mipmap_filter: ImageFilterMode::Linear,
+                address_mode_u: AddressMode::Repeat.into(),
+                address_mode_v: AddressMode::Repeat.into(),
+                address_mode_w: AddressMode::Repeat.into(),
+                mag_filter: FilterMode::Linear.into(),
+                min_filter: FilterMode::Linear.into(),
+                mipmap_filter: FilterMode::Linear.into(),
                 ..default()
             });
 
@@ -246,12 +245,12 @@ pub fn load_terrain_normal_from_image(
             //https://github.com/bevyengine/bevy/pull/10254
             texture_image.sampler = ImageSampler::Descriptor(ImageSamplerDescriptor {
                 label: None,
-                address_mode_u: ImageAddressMode::Repeat,
-                address_mode_v: ImageAddressMode::Repeat,
-                address_mode_w: ImageAddressMode::Repeat,
-                mag_filter: ImageFilterMode::Linear,
-                min_filter: ImageFilterMode::Linear,
-                mipmap_filter: ImageFilterMode::Linear,
+                address_mode_u: AddressMode::Repeat.into(),
+                address_mode_v: AddressMode::Repeat.into(),
+                address_mode_w: AddressMode::Repeat.into(),
+                mag_filter: FilterMode::Linear.into(),
+                min_filter: FilterMode::Linear.into(),
+                mipmap_filter: FilterMode::Linear.into(),
                 ..default()
             });
 
