@@ -719,7 +719,7 @@ pub fn build_chunk_height_data(
                 Some(height_map_handle) => {
                     let height_map_loaded = asset_server.get_load_state(height_map_handle);
 
-                    if height_map_loaded.is_some_and(|st| st.is_loaded() ){
+                    if height_map_loaded.is_some_and(|st| !st.is_loaded() ){
                         println!("height map not yet loaded");
                         continue;
                     }

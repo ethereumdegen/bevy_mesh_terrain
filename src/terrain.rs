@@ -150,7 +150,7 @@ pub fn load_terrain_texture_from_image(
                 Some(texture_image_handle) => {
                     let texture_image_loaded = asset_server.get_load_state(texture_image_handle);
 
-                    if texture_image_loaded .is_some_and(|st| st.is_loaded() ) {
+                    if texture_image_loaded .is_some_and(|st| ! st.is_loaded() ) {
                         println!("terrain texture not yet loaded");
                         continue;
                     }
@@ -232,7 +232,7 @@ pub fn load_terrain_normal_from_image(
                 Some(texture_image_handle) => {
                     let texture_image_loaded = asset_server.get_load_state(texture_image_handle);
 
-                    if texture_image_loaded.is_some_and(|st| st.is_loaded() ) {
+                    if texture_image_loaded.is_some_and(|st| !st.is_loaded() ) {
                         println!("terrain texture not yet loaded");
                         continue;
                     }
