@@ -178,7 +178,7 @@ impl ChunkData {
 
 
 
-pub type TerrainPbrBundle = MaterialMeshBundle<TerrainMaterialExtension>;
+//pub type TerrainPbrBundle = MaterialMeshBundle<TerrainMaterialExtension>;
 
 #[derive(Component)]
 pub struct MeshBuilderTask(Task<BuiltChunkMeshData>);
@@ -719,7 +719,7 @@ pub fn build_chunk_height_data(
                 Some(height_map_handle) => {
                     let height_map_loaded = asset_server.get_load_state(height_map_handle);
 
-                    if height_map_loaded != Some(LoadState::Loaded) {
+                    if height_map_loaded.is_some_and(|st| st.is_loaded() ){
                         println!("height map not yet loaded");
                         continue;
                     }
@@ -1040,15 +1040,15 @@ pub fn finish_chunk_build_tasks(
 
             let terrain_mesh_handle = meshes.add(mesh);
 
+            //now using required_components instead of bundles 
             let mesh_bundle = commands
-                .spawn(TerrainPbrBundle {
-                    mesh: terrain_mesh_handle,
-                    material: chunk_terrain_material.clone(),
-                    transform: Transform::from_xyz(0.0, 0.0, 0.0),
-
-                    ..default()
-                })
-                .insert(TerrainChunkMesh {})
+                .spawn_empty().insert( (
+                    Transform::from_xyz(0.0, 0.0, 0.0),
+                    Mesh3d( terrain_mesh_handle),
+                    MeshMaterial3d ( chunk_terrain_material.clone() ), 
+                    TerrainChunkMesh {}
+                  ) ) 
+                 
                 .id();
 
             chunk_data.material_handle = Some(chunk_terrain_material);
@@ -1068,7 +1068,7 @@ pub fn finish_chunk_build_tasks(
 }
 
 pub fn update_tool_uniforms(
-    terrain_chunk_mesh_query: Query<&Handle<TerrainMaterialExtension>, With<TerrainChunkMesh>>,
+    terrain_chunk_mesh_query: Query<&MeshMaterial3d<TerrainMaterialExtension>, With<TerrainChunkMesh>>,
 
     mut terrain_materials: ResMut<Assets<TerrainMaterialExtension>>,
 

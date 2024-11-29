@@ -109,7 +109,7 @@ pub fn apply_command_events(
 
     terrain_query: Query<(&TerrainData, &TerrainConfig)>,
 
-    chunk_mesh_query: Query<(Entity, &Handle<Mesh>, &GlobalTransform), With<TerrainChunkMesh>>,
+    chunk_mesh_query: Query<(Entity, &Mesh3d , &GlobalTransform), With<TerrainChunkMesh>>,
     meshes: Res<Assets<Mesh>>,
 
     mut ev_reader: EventReader<TerrainCommandEvent>,

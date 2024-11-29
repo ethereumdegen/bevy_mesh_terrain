@@ -3,8 +3,8 @@ use bevy::prelude::*;
 use bevy::render::render_resource::{
     AddressMode, FilterMode, SamplerDescriptor, TextureDescriptor, TextureFormat,
 };
-use bevy::render::texture::{
-    ImageAddressMode, ImageFilterMode, ImageSampler, ImageSamplerDescriptor,
+use bevy::image::image::{
+     ImageSamplerDescriptor,
 };
 use bevy::utils::HashMap;
 
@@ -151,7 +151,7 @@ pub fn load_terrain_texture_from_image(
                 Some(texture_image_handle) => {
                     let texture_image_loaded = asset_server.get_load_state(texture_image_handle);
 
-                    if texture_image_loaded != Some(LoadState::Loaded) {
+                    if texture_image_loaded .is_some_and(|st| st.is_loaded() ) {
                         println!("terrain texture not yet loaded");
                         continue;
                     }
@@ -233,7 +233,7 @@ pub fn load_terrain_normal_from_image(
                 Some(texture_image_handle) => {
                     let texture_image_loaded = asset_server.get_load_state(texture_image_handle);
 
-                    if texture_image_loaded != Some(LoadState::Loaded) {
+                    if texture_image_loaded.is_some_and(|st| st.is_loaded() ) {
                         println!("terrain texture not yet loaded");
                         continue;
                     }
