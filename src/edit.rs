@@ -234,18 +234,22 @@ pub fn apply_command_events(
                                 }
                                 .build();
 
-                               /* let collider = Collider::trimesh_from_mesh(&mesh)
-                                    .expect("Failed to create collider from mesh");
+                                #[cfg(feature = "physics")]
+                                {
+                                   let collider = Collider::trimesh_from_mesh(&mesh)
+                                        .expect("Failed to create collider from mesh");
 
-                                let collider_data_serialized =
-                                    bincode::serialize(&collider).unwrap();
-                                let file_name = format!("{}.col", chunk.chunk_id);
-                                save_chunk_collision_data_to_disk(
-                                    collider_data_serialized,
-                                    asset_folder_path
-                                        .join(&terrain_config.collider_data_folder_path)
-                                        .join(file_name),
-                                );*/
+                                    let collider_data_serialized =
+                                        bincode::serialize(&collider).unwrap();
+                                    let file_name = format!("{}.col", chunk.chunk_id);
+                                    save_chunk_collision_data_to_disk(
+                                        collider_data_serialized,
+                                        asset_folder_path
+                                            .join(&terrain_config.collider_data_folder_path)
+                                            .join(file_name),
+                                    );
+                                }
+
                                 continue;
                             }
 
