@@ -2,6 +2,7 @@ use crate::hypersplat::SplatMapHandlesNeedReload;
 use crate::TerrainEditMode;
 use crate::hypersplat::ChunkSplatDataRaw;
 use std::time::Duration;
+use bevy::image::ImageSampler;
 use bevy::time::common_conditions::on_timer;
 use std::fs::File;
 use std::io::BufWriter;
@@ -515,6 +516,14 @@ Have to do this hack since bevy is not correctly detecting the format
 
 */
 
+
+ 
+
+ 
+
+
+
+
 pub fn update_splat_image_formats(
     mut ev_asset: EventReader<AssetEvent<Image>>,
     mut images: ResMut<Assets<Image>>,
@@ -540,6 +549,7 @@ pub fn update_splat_image_formats(
                          let img = images.get_mut(&mut handle).unwrap();
                         println!("splat index map image format is {:?}", img.texture_descriptor.format);
                         img.texture_descriptor.format = TextureFormat::Rgba8Uint;
+                        img.sampler = ImageSampler::nearest(); //need for bevy 0.15 
 
                         chunk_data.splat_index_texture_is_loaded = true;
 
@@ -552,7 +562,8 @@ pub fn update_splat_image_formats(
 
                            println!("splat strength map image format is {:?}", img.texture_descriptor.format);
 
-                         img.texture_descriptor.format = TextureFormat::Rgba8Uint;
+                        img.texture_descriptor.format = TextureFormat::Rgba8Uint;
+                        img.sampler = ImageSampler::nearest(); //need for bevy 0.15 
                          
                         chunk_data.splat_strength_texture_is_loaded = true;
 
@@ -707,7 +718,7 @@ pub fn reset_chunk_height_data(
 pub fn build_chunk_height_data(
     //mut commands: Commands,
     asset_server: Res<AssetServer>,
-     images: Res <Assets<Image>>,
+    mut images: ResMut<Assets<Image>>,
 
     mut chunk_height_maps: ResMut<ChunkHeightMapResource>,
 
@@ -715,19 +726,24 @@ pub fn build_chunk_height_data(
 ) {
     for (chunk_entity, chunk, mut chunk_data, terrain_entity) in chunk_query.iter_mut() {
         if chunk_data.height_map_image_data_load_status == TerrainImageDataLoadStatus::NotLoaded {
-            let height_map_image: &Image = match &chunk_data.height_map_image_handle {
+            let height_map_image: &mut Image = match &chunk_data.height_map_image_handle {
                 Some(height_map_handle) => {
                     let height_map_loaded = asset_server.get_load_state(height_map_handle);
 
-                    if height_map_loaded.is_some_and(|st| !st.is_loaded() ){
-                        println!("height map not yet loaded");
-                        continue;
+                    if height_map_loaded.is_some_and(|st|  st.is_loaded() ){
+                       images.get_mut (height_map_handle).unwrap()
+                    }else {
+                        continue ; 
                     }
 
-                    images.get(height_map_handle).unwrap()
+                   
                 }
                 None => continue,
             };
+
+            //make sure height image descriptor is correct here (force) 
+            height_map_image.sampler = ImageSampler::nearest();
+
 
             //maybe we can do this in a thread since it is quite cpu intense ?
             let loaded_heightmap_data_result = HeightMapU16::load_from_image(height_map_image);
@@ -866,7 +882,7 @@ pub fn build_chunk_meshes(
             });
 
             //these three LOC really take no time at all
-            let mut sub_heightmap = (height_map_data_cloned.to_vec());
+            let mut sub_heightmap =  height_map_data_cloned.to_vec() ;
 
             stitch_data_x_row.map(|x_row| sub_heightmap.append_x_row(x_row));
             stitch_data_y_col.map(|y_col| sub_heightmap.append_y_col(y_col));

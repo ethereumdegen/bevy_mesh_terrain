@@ -32,7 +32,7 @@ use crate::terrain::{TerrainData, TerrainImageDataLoadStatus};
 use crate::terrain_config::TerrainConfig;
 use crate::terrain_material::TerrainMaterial;
  
-use avian3d::prelude::Collider;
+ // use avian3d::prelude::Collider;
 
  
 
@@ -234,7 +234,7 @@ pub fn apply_command_events(
                                 }
                                 .build();
 
-                                let collider = Collider::trimesh_from_mesh(&mesh)
+                               /* let collider = Collider::trimesh_from_mesh(&mesh)
                                     .expect("Failed to create collider from mesh");
 
                                 let collider_data_serialized =
@@ -245,7 +245,7 @@ pub fn apply_command_events(
                                     asset_folder_path
                                         .join(&terrain_config.collider_data_folder_path)
                                         .join(file_name),
-                                );
+                                );*/
                                 continue;
                             }
 
