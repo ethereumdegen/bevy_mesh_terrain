@@ -2,6 +2,7 @@
 use crate::TerrainEditMode;
 use crate::hypersplat::ChunkSplatDataRaw;
 use std::time::Duration;
+use bevy::image::ImageSampler;
 use bevy::time::common_conditions::on_timer;
 use std::fs::File;
 use std::path::Path;
@@ -177,7 +178,7 @@ impl ChunkData {
 
 
 
-pub type TerrainPbrBundle = MaterialMeshBundle<TerrainMaterialExtension>;
+//pub type TerrainPbrBundle = MaterialMeshBundle<TerrainMaterialExtension>;
 
 #[derive(Component)]
 pub struct MeshBuilderTask(Task<BuiltChunkMeshData>);
@@ -515,6 +516,14 @@ Have to do this hack since bevy is not correctly detecting the format
 
 */
 
+
+ 
+
+ 
+
+
+
+
 pub fn update_splat_image_formats(
     mut ev_asset: EventReader<AssetEvent<Image>>,
     mut images: ResMut<Assets<Image>>,
@@ -559,6 +568,7 @@ pub fn update_splat_image_formats(
                          let img = images.get_mut(&mut handle).unwrap();
                        // println!("splat index map image format is {:?}", img.texture_descriptor.format);
                         img.texture_descriptor.format = TextureFormat::Rgba8Uint;
+                        img.sampler = ImageSampler::nearest(); //need for bevy 0.15 
 
                         chunk_data.splat_index_texture_is_loaded = true;
 
@@ -584,7 +594,8 @@ pub fn update_splat_image_formats(
 
                           // println!("splat strength map image format is {:?}", img.texture_descriptor.format);
 
-                         img.texture_descriptor.format = TextureFormat::Rgba8Uint;
+                        img.texture_descriptor.format = TextureFormat::Rgba8Uint;
+                        img.sampler = ImageSampler::nearest(); //need for bevy 0.15 
                          
                         chunk_data.splat_strength_texture_is_loaded = true;
 
@@ -756,7 +767,7 @@ pub fn reset_chunk_height_data(
 pub fn build_chunk_height_data(
     //mut commands: Commands,
     asset_server: Res<AssetServer>,
-     images: Res <Assets<Image>>,
+    mut images: ResMut<Assets<Image>>,
 
     mut chunk_height_maps: ResMut<ChunkHeightMapResource>,
 
@@ -769,26 +780,40 @@ pub fn build_chunk_height_data(
 
 
         if chunk_data.height_map_image_data_load_status == TerrainImageDataLoadStatus::NotLoaded {
-            let height_map_image: &Image = match &chunk_data.height_map_image_handle {
+            let height_map_image: &mut Image = match &chunk_data.height_map_image_handle {
                 Some(height_map_handle) => {
                     let height_map_loaded = asset_server.get_load_state(height_map_handle);
 
+<<<<<<< HEAD
                     if height_map_loaded != Some(LoadState::Loaded) {
                          // info!("height map not yet loaded");
                         continue;
+=======
+                    if height_map_loaded.is_some_and(|st|  st.is_loaded() ){
+                       images.get_mut (height_map_handle).unwrap()
+                    }else {
+                        continue ; 
+>>>>>>> 0.15
                     }
 
-                    images.get(height_map_handle).unwrap()
+                   
                 }
                 None => continue,
             };
 
+<<<<<<< HEAD
 
             //this is causing crashes i believe 
 
             let chunk_id = chunk.chunk_id; 
 
                 info!("loading height map {} from disk - io intensive ... ", chunk_id);
+=======
+            //make sure height image descriptor is correct here (force) 
+            height_map_image.sampler = ImageSampler::nearest();
+
+
+>>>>>>> 0.15
             //maybe we can do this in a thread since it is quite cpu intense ?
             let loaded_heightmap_data_result = HeightMapU16::load_from_image(height_map_image);
 
@@ -1006,8 +1031,12 @@ pub fn build_chunk_meshes(
             });
 
             //these three LOC really take no time at all
+<<<<<<< HEAD
           //  let mut sub_heightmap = (height_map_data_ref.to_vec());
             let mut sub_heightmap = Box::new(height_map_data_ref.to_vec());  //use heap not stack 
+=======
+            let mut sub_heightmap =  height_map_data_cloned.to_vec() ;
+>>>>>>> 0.15
 
             stitch_data_x_row.map(|x_row| sub_heightmap.append_x_row(x_row));
             stitch_data_y_col.map(|y_col| sub_heightmap.append_y_col(y_col));
@@ -1185,15 +1214,15 @@ pub fn finish_chunk_build_tasks(
 
             let terrain_mesh_handle = meshes.add(mesh);
 
+            //now using required_components instead of bundles 
             let mesh_bundle = commands
-                .spawn(TerrainPbrBundle {
-                    mesh: terrain_mesh_handle,
-                    material: chunk_terrain_material.clone(),
-                    transform: Transform::from_xyz(0.0, 0.0, 0.0),
-
-                    ..default()
-                })
-                .insert(TerrainChunkMesh {})
+                .spawn_empty().insert( (
+                    Transform::from_xyz(0.0, 0.0, 0.0),
+                    Mesh3d( terrain_mesh_handle),
+                    MeshMaterial3d ( chunk_terrain_material.clone() ), 
+                    TerrainChunkMesh {}
+                  ) ) 
+                 
                 .id();
 
             chunk_data.material_handle = Some(chunk_terrain_material);
@@ -1213,7 +1242,7 @@ pub fn finish_chunk_build_tasks(
 }
 
 pub fn update_tool_uniforms(
-    terrain_chunk_mesh_query: Query<&Handle<TerrainMaterialExtension>, With<TerrainChunkMesh>>,
+    terrain_chunk_mesh_query: Query<&MeshMaterial3d<TerrainMaterialExtension>, With<TerrainChunkMesh>>,
 
     mut terrain_materials: ResMut<Assets<TerrainMaterialExtension>>,
 

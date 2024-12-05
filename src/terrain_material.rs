@@ -44,19 +44,19 @@ pub struct TerrainMaterial {
 
 
     #[texture(26, dimension = "2d",sample_type = "u_int")] //rgba8uint
-    #[sampler(27)]
+    #[sampler(27 , sampler_type = "non_filtering")]
     pub splat_index_map_texture: Option<Handle<Image>>,
 
     
     #[texture(28, dimension = "2d",sample_type = "u_int")]
-    #[sampler(29)]
+    #[sampler(29 , sampler_type = "non_filtering")]
     pub splat_strength_map_texture: Option<Handle<Image>>,
 
 
 
 
     #[texture(30, dimension = "2d",sample_type = "u_int")]  //rgba8uint
-    #[sampler(31)]
+    #[sampler(31 , sampler_type = "non_filtering")]
     pub height_map_texture: Option<Handle<Image>>,
 
 

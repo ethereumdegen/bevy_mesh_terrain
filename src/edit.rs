@@ -15,7 +15,8 @@ use bevy::prelude::EventReader;
 
 use bevy::asset::{AssetServer, Assets};
 use bevy::render::render_resource::{Extent3d, TextureFormat};
-use bevy::render::texture::Image;
+ 
+
 
 use bevy::prelude::*;
 
@@ -32,7 +33,7 @@ use crate::terrain::{TerrainData, TerrainImageDataLoadStatus};
 use crate::terrain_config::TerrainConfig;
 use crate::terrain_material::TerrainMaterial;
  
-use avian3d::prelude::Collider;
+ // use avian3d::prelude::Collider;
 
  
 
@@ -110,7 +111,7 @@ pub fn apply_command_events(
 
     terrain_query: Query<(&TerrainData, &TerrainConfig)>,
 
-    chunk_mesh_query: Query<(Entity, &Handle<Mesh>, &GlobalTransform), With<TerrainChunkMesh>>,
+    chunk_mesh_query: Query<(Entity, &Mesh3d , &GlobalTransform), With<TerrainChunkMesh>>,
     meshes: Res<Assets<Mesh>>,
 
     mut ev_reader: EventReader<TerrainCommandEvent>,
@@ -234,18 +235,22 @@ pub fn apply_command_events(
                                 }
                                 .build();
 
-                                let collider = Collider::trimesh_from_mesh(&mesh)
-                                    .expect("Failed to create collider from mesh");
+                                #[cfg(feature = "physics")]
+                                {
+                                   let collider = Collider::trimesh_from_mesh(&mesh)
+                                        .expect("Failed to create collider from mesh");
 
-                                let collider_data_serialized =
-                                    bincode::serialize(&collider).unwrap();
-                                let file_name = format!("{}.col", chunk.chunk_id);
-                                save_chunk_collision_data_to_disk(
-                                    collider_data_serialized,
-                                    asset_folder_path
-                                        .join(&terrain_config.collider_data_folder_path)
-                                        .join(file_name),
-                                );
+                                    let collider_data_serialized =
+                                        bincode::serialize(&collider).unwrap();
+                                    let file_name = format!("{}.col", chunk.chunk_id);
+                                    save_chunk_collision_data_to_disk(
+                                        collider_data_serialized,
+                                        asset_folder_path
+                                            .join(&terrain_config.collider_data_folder_path)
+                                            .join(file_name),
+                                    );
+                                }
+
                                 continue;
                             }
 

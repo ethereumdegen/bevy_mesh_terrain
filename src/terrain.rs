@@ -1,11 +1,10 @@
 use bevy::asset::{AssetPath, LoadState};
+use bevy::image::{ImageSampler, ImageSamplerDescriptor};
 use bevy::prelude::*;
 use bevy::render::render_resource::{
     AddressMode, FilterMode, SamplerDescriptor, TextureDescriptor, TextureFormat,
 };
-use bevy::render::texture::{
-    ImageAddressMode, ImageFilterMode, ImageSampler, ImageSamplerDescriptor,
-};
+ 
 use bevy::utils::HashMap;
 
 use crate::chunk::{Chunk, ChunkCoordinates, ChunkCoords, ChunkData, TerrainMaterialExtension};
@@ -86,16 +85,21 @@ pub fn initialize_terrain(
                 let chunk_entity = commands
                     .spawn(Chunk::new(chunk_id))
                     .insert(Name::new(chunk_name))
-                    .insert(SpatialBundle {
-                        transform: Transform::from_xyz(
+                    .insert(
+
+                        (
+
+                            Transform::from_xyz(
                             chunk_coords.x() as f32 * chunk_dimensions.x,
                             0.0,
                             chunk_coords.y() as f32 * chunk_dimensions.y,
-                        ),
-                        visibility: Visibility::Hidden,
+                            ),
+                             Visibility::Hidden
+                        )
 
-                        ..Default::default()
-                    })
+
+
+                       )
                     .id();
 
                 let mut terrain_entity_commands = commands.get_entity(terrain_entity).unwrap();
@@ -151,12 +155,13 @@ pub fn load_terrain_texture_from_image(
                 Some(texture_image_handle) => {
                     let texture_image_loaded = asset_server.get_load_state(texture_image_handle);
 
-                    if texture_image_loaded != Some(LoadState::Loaded) {
-                        println!("terrain texture not yet loaded");
-                        continue;
+                    if texture_image_loaded .is_some_and(|st|   st.is_loaded() ) {
+                        
+                        images.get_mut(texture_image_handle).unwrap()
+                    }else {
+                        continue ;
                     }
-
-                    images.get_mut(texture_image_handle).unwrap()
+ 
                 }
                 None => continue,
             };
@@ -164,12 +169,12 @@ pub fn load_terrain_texture_from_image(
             //https://github.com/bevyengine/bevy/pull/10254
             texture_image.sampler = ImageSampler::Descriptor(ImageSamplerDescriptor {
                 label: None,
-                address_mode_u: ImageAddressMode::Repeat,
-                address_mode_v: ImageAddressMode::Repeat,
-                address_mode_w: ImageAddressMode::Repeat,
-                mag_filter: ImageFilterMode::Linear,
-                min_filter: ImageFilterMode::Linear,
-                mipmap_filter: ImageFilterMode::Linear,
+                address_mode_u: AddressMode::Repeat.into(),
+                address_mode_v: AddressMode::Repeat.into(),
+                address_mode_w: AddressMode::Repeat.into(),
+                mag_filter: FilterMode::Linear.into(),
+                min_filter: FilterMode::Linear.into(),
+                mipmap_filter: FilterMode::Linear.into(),
                 ..default()
             });
 
@@ -233,12 +238,13 @@ pub fn load_terrain_normal_from_image(
                 Some(texture_image_handle) => {
                     let texture_image_loaded = asset_server.get_load_state(texture_image_handle);
 
-                    if texture_image_loaded != Some(LoadState::Loaded) {
-                        println!("terrain texture not yet loaded");
-                        continue;
+                    if texture_image_loaded.is_some_and(|st|  st.is_loaded() ) {
+                        images.get_mut(texture_image_handle).unwrap()
+                    }else {
+                        continue ;
                     }
 
-                    images.get_mut(texture_image_handle).unwrap()
+                   
                 }
                 None => continue,
             };
@@ -246,12 +252,12 @@ pub fn load_terrain_normal_from_image(
             //https://github.com/bevyengine/bevy/pull/10254
             texture_image.sampler = ImageSampler::Descriptor(ImageSamplerDescriptor {
                 label: None,
-                address_mode_u: ImageAddressMode::Repeat,
-                address_mode_v: ImageAddressMode::Repeat,
-                address_mode_w: ImageAddressMode::Repeat,
-                mag_filter: ImageFilterMode::Linear,
-                min_filter: ImageFilterMode::Linear,
-                mipmap_filter: ImageFilterMode::Linear,
+                address_mode_u: AddressMode::Repeat.into(),
+                address_mode_v: AddressMode::Repeat.into(),
+                address_mode_w: AddressMode::Repeat.into(),
+                mag_filter: FilterMode::Linear.into(),
+                min_filter: FilterMode::Linear.into(),
+                mipmap_filter: FilterMode::Linear.into(),
                 ..default()
             });
 
@@ -294,3 +300,5 @@ pub fn load_terrain_normal_from_image(
         }
     }
 }
+
+
