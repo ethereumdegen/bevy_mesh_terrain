@@ -788,8 +788,22 @@ pub fn apply_tool_edits(
                                                 {
                                                     let tool_coords_local =
                                                         tool_coords.add(chunk_transform_vec2.neg());
-                                                    let x = tool_coords_local.x as u32;
-                                                    let y = tool_coords_local.y as u32;
+
+
+
+                                                        //ends up being 4.0 scale factor in our case if a chunk is 128x 128 and the tex is 512x512 
+                                                   let scale_factor = Vec2::new( 
+                                                           splat_dimensions.x as f32 / chunk_dimensions_vec.x  ,
+                                                             splat_dimensions.y as f32 / chunk_dimensions_vec.y
+
+                                                          ); 
+
+
+
+
+                                                         //need to expand our coords since splat tex is often expanded, larger than ingame units 
+                                                    let x = (tool_coords_local.x * scale_factor.x) as u32;
+                                                    let y = (tool_coords_local.y * scale_factor.y) as u32;
 
 
                                                     let mut texture_indices : [u8 ; 4 ] = [0u8; 4]; 
@@ -816,40 +830,14 @@ pub fn apply_tool_edits(
 
                                                     }
 
-                                                    /*let texture_layer = *b as u8;  //0 to 3 
-
-
-
-
-
-                                                     let original_index = chunk_splat_data_raw.get_pixel_index_map_data(
-                                                                x,
-                                                                y,
-                                                                texture_layer,
-                                                           
-                                                            ); 
-
-                                                     let original_strength = chunk_splat_data_raw.get_pixel_strength_map_data(
-                                                                x,
-                                                                y,
-                                                                texture_layer,
-                                                           
-                                                            );  */
-
-
-                                                  //  if x < img_size.x && y < img_size.y {
-                                                        //  let local_height = height_map_data.0[x][y];
-                                                        //let idx = (y * img_size.x + x) as usize * 4;
-                                                       // let r = original_index;
-                                                        //let g = original_strength;
-                                                        //let b = texture_layer;
+                                                   
 
                                                         evt_writer.send(
                                                             TerrainBrushEvent::EyeDropSplatMap {
                                                                  texture_indices,texture_strengths
                                                             },
                                                         );
-                                                  //  }
+                                                 
                                                 }
                                                
                                         }

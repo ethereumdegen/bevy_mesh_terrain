@@ -119,7 +119,7 @@ impl ChunkSplatDataRaw {
 
         
 
-        //layer must be 0,1,2 or 4 and that is RGBA respectively 
+        //layer must be 0,1,2 or 3 and that is RGBA respectively 
 
         let width = self.splat_index_map_texture.width();
          
@@ -139,7 +139,7 @@ impl ChunkSplatDataRaw {
         ) -> u8 {  
  
 
-        //layer must be 0,1,2 or 4 and that is RGBA respectively 
+        //layer must be 0,1,2 or 3 and that is RGBA respectively 
 
         let width = self.splat_index_map_texture.width();
          
@@ -157,7 +157,7 @@ impl ChunkSplatDataRaw {
         ) -> u8 {  
  
 
-        //layer must be 0,1,2 or 4 and that is RGBA respectively 
+        //layer must be 0,1,2 or 3 and that is RGBA respectively 
 
         let width = self.splat_index_map_texture.width();
          
