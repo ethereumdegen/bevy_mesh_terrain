@@ -51,12 +51,13 @@ use core::cmp::{max, min};
 pub enum EditingTool {
     SetHeightMap { height: u16 },        // height, radius, save to disk
     SetSplatMap { r: u8, g: u8, b: u8 }, //R, G, B, radius, save to disk
+    SetSplatMapUltra { texture_indices: [u8;4], texture_strengths: [u8;4] }, 
 }
 
 #[derive(Debug, Default, Clone, Eq, PartialEq)]
 pub enum BrushType {
     #[default]
-    SetExact, // hardness ?
+    SetExact, // hardness ? 
     ClearAll,
     Smooth,
     Noise,
@@ -67,6 +68,7 @@ impl Display for BrushType {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         let label = match self {
             BrushType::SetExact => "SetExact",
+           
             BrushType::ClearAll => "ClearAll",
             BrushType::Smooth => "Smooth",
             BrushType::Noise => "Noise",
@@ -849,6 +851,302 @@ pub fn apply_tool_edits(
                             }
                              
                         } // SetSplatMap
+
+
+
+                        EditingTool::SetSplatMapUltra { texture_indices, texture_strengths } => {
+
+                          //  todo!("rewrite set splat ");
+                            
+                            if let Some(  mut chunk_splat_data_raw ) =  chunk_splat_data_raw {
+                                //if let Some(img) = images.get_mut(splat_image_handle) {
+                                    // Calculate the pixel position and radius in pixels
+                                    let splat_dimensions = UVec2::new(
+                                        chunk_splat_data_raw.splat_index_map_texture.width() , 
+                                        chunk_splat_data_raw.splat_index_map_texture.height() 
+                                        ) ;
+
+                                    let tool_coords: &Vec2 = &ev.coordinates;
+                                    let chunk_transform = chunk_transform.translation();
+                                    let chunk_transform_vec2: Vec2 =
+                                        Vec2::new(chunk_transform.x, chunk_transform.z);
+
+                                    let chunk_dimensions_vec: Vec2 = Vec2::new(
+                                        chunk_dimensions.x() as f32,
+                                        chunk_dimensions.y() as f32,
+                                    );
+
+                                    let tool_coords_local =
+                                        tool_coords.add(chunk_transform_vec2.neg());
+
+                                    /*let pixel_pos = Vec2::new(
+                                        tool_coords_local.x / chunk_dimensions_vec.x
+                                            * splat_dimensions.x as f32,
+                                        tool_coords_local.y / chunk_dimensions_vec.y
+                                            * splat_dimensions.y as f32,
+                                    );*/
+                                    let pixel_radius = *radius as f32;
+
+
+
+
+                                    //force override
+                                    //  img.texture_descriptor.format = TextureFormat::Rgba8Unorm;
+ 
+
+
+
+                                            if let Some(mut cmds) = commands.get_entity( chunk_entity ){
+
+
+                                                cmds.try_insert(SplatMapDataUpdated);
+
+
+
+                                            }
+                                  
+
+                                    match brush_type {
+                                        BrushType::SetExact => {
+
+
+                                             let scale_factor = Vec2::new( 
+                                                           splat_dimensions.x as f32 / chunk_dimensions_vec.x  ,
+                                                             splat_dimensions.y as f32 / chunk_dimensions_vec.y
+
+                                                          ); 
+
+                                            // Assuming the image format is Rgba8
+                                             
+                                                //                let img_data = img.data.as_mut_slice();
+
+                                                // Iterate over each pixel in the image
+                                                for y in 0..splat_dimensions.y {
+                                                    for x in 0..splat_dimensions.x {
+                                                       // let idx = (y * splat_dimensions.x + x) as usize * 4; // 4 bytes per pixel (R, G, B, A)
+                                                        let pixel_coords =
+                                                            Vec2::new(x as f32, y as f32);
+
+
+
+                                                            //this is busted ! should be in real world units ?? s
+                                                        
+                                                        let pixel_pos  = (pixel_coords / scale_factor).add( chunk_transform_vec2 );
+
+
+
+                                                                //maybe i need to use pixel pos ? 
+
+                                                      let   hardness_multiplier =
+                                                        get_hardness_multiplier(
+                                                            tool_coords 
+                                                                .distance(pixel_pos),
+                                                            pixel_radius,
+                                                            *brush_hardness,
+                                                        );
+
+
+ 
+                                                        if tool_coords.distance(pixel_pos )
+                                                            < pixel_radius
+                                                        {
+
+
+
+
+                                                            for texture_layer in 0..4 {
+
+
+                                                                let texture_type_index = texture_indices[texture_layer as usize]; 
+                                                                let texture_strength = texture_strengths[texture_layer as usize];
+
+
+
+                                                                 let original_strength = chunk_splat_data_raw.get_pixel_strength_map_data(
+                                                                        x,
+                                                                        y,
+                                                                        texture_layer,
+                                                                   
+                                                                    ); 
+
+                                                                   let strength_with_hardness = apply_hardness_multiplier(
+
+
+
+                                                                    original_strength as f32,
+                                                                    texture_strength as f32,
+
+                                                                    hardness_multiplier
+
+                                                                    );         
+
+
+
+                                                                    
+                                                                    chunk_splat_data_raw.set_pixel_index_map_data(
+                                                                        x,
+                                                                        y,
+                                                                        texture_layer,
+                                                                        texture_type_index,
+                                                                       // strength_with_hardness as u8 
+                                                                    );
+
+                                                                     chunk_splat_data_raw.set_pixel_strength_map_data(
+                                                                        x,
+                                                                        y,
+                                                                        texture_layer,
+                                                                     //  texture_type_index,
+                                                                        strength_with_hardness as u8 
+                                                                    );
+
+
+
+
+
+                                                                    }
+         
+ 
+
+ 
+                                                        }
+                                                    }
+                                                
+
+
+                                                   
+                                            }  
+                                        }
+
+                                        BrushType::ClearAll => {
+                                            // Assuming the image format is Rgba8
+                                             
+                                                //                let img_data = img.data.as_mut_slice();
+
+
+                                                 let scale_factor = Vec2::new( 
+                                                           splat_dimensions.x as f32 / chunk_dimensions_vec.x  ,
+                                                             splat_dimensions.y as f32 / chunk_dimensions_vec.y
+
+                                                          );  
+
+                                                // Iterate over each pixel in the image
+                                                for y in 0..splat_dimensions.y {
+                                                    for x in 0..splat_dimensions.x {
+                                                        //let idx = (y * splat_dimensions.x + x) as usize * 4; // 4 bytes per pixel (R, G, B, A)
+                                                        let pixel_coords =
+                                                            Vec2::new(x as f32, y as f32);
+
+
+
+                                                        
+                                                         let pixel_pos  = (pixel_coords / scale_factor).add( chunk_transform_vec2 );
+
+
+
+
+                                                        //  img.data[idx] = *r as u8;
+
+                                                        // Check if the pixel is within the tool's radius
+                                                        if tool_coords .distance(pixel_pos )
+                                                            < pixel_radius
+                                                        {
+
+                                                           // let texture_type_index = *r as u8;
+                                                           // let texture_strength = *g as u8; //careful w this on UI ! 
+
+
+                                                            chunk_splat_data_raw.clear_all_pixel_data(
+                                                                x,
+                                                                y 
+                                                            );
+ 
+                                                        }
+                                                    }
+                                                
+
+
+                                                   
+                                            }  
+                                        }
+
+                                        BrushType::EyeDropper => {
+                                             
+                                            
+                                                if tool_coords.x >= chunk_transform_vec2.x
+                                                    && tool_coords.x
+                                                        < chunk_transform_vec2.x
+                                                            + chunk_dimensions.x() as f32
+                                                    && tool_coords.y >= chunk_transform_vec2.y
+                                                    && tool_coords.y
+                                                        < chunk_transform_vec2.y
+                                                            + chunk_dimensions.y() as f32
+                                                {
+                                                    let tool_coords_local =
+                                                        tool_coords.add(chunk_transform_vec2.neg());
+
+
+
+                                                        //ends up being 4.0 scale factor in our case if a chunk is 128x 128 and the tex is 512x512 
+                                                   let scale_factor = Vec2::new( 
+                                                           splat_dimensions.x as f32 / chunk_dimensions_vec.x  ,
+                                                             splat_dimensions.y as f32 / chunk_dimensions_vec.y
+
+                                                          ); 
+
+
+
+
+                                                         //need to expand our coords since splat tex is often expanded, larger than ingame units 
+                                                    let x = (tool_coords_local.x * scale_factor.x) as u32;
+                                                    let y = (tool_coords_local.y * scale_factor.y) as u32;
+
+
+                                                    let mut texture_indices : [u8 ; 4 ] = [0u8; 4]; 
+                                                    let mut texture_strengths : [u8 ; 4 ]  = [0u8; 4]; 
+
+                                                    for tex_layer in 0..4 {
+
+                                                         let original_index = chunk_splat_data_raw.get_pixel_index_map_data(
+                                                                x,
+                                                                y,
+                                                                tex_layer,
+                                                           
+                                                            ); 
+
+                                                         let original_strength = chunk_splat_data_raw.get_pixel_strength_map_data(
+                                                                    x,
+                                                                    y,
+                                                                    tex_layer,
+                                                               
+                                                                );   
+
+                                                        texture_indices[tex_layer as usize] = original_index;
+                                                        texture_strengths[tex_layer as usize] = original_strength;
+
+                                                    }
+
+                                                   
+
+                                                        evt_writer.send(
+                                                            TerrainBrushEvent::EyeDropSplatMap {
+                                                                 texture_indices,texture_strengths
+                                                            },
+                                                        );
+                                                 
+                                                }
+                                               
+                                        }
+
+                                        //brush type
+                                        _ => {} //todo !
+                                    
+                                }
+                            }
+                             
+                        } 
+
+
+
                     } //match
                 }
             }
