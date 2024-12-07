@@ -784,16 +784,14 @@ pub fn build_chunk_height_data(
                 Some(height_map_handle) => {
                     let height_map_loaded = asset_server.get_load_state(height_map_handle);
 
-<<<<<<< HEAD
-                    if height_map_loaded != Some(LoadState::Loaded) {
-                         // info!("height map not yet loaded");
-                        continue;
-=======
+ 
+                 
+ 
                     if height_map_loaded.is_some_and(|st|  st.is_loaded() ){
                        images.get_mut (height_map_handle).unwrap()
                     }else {
                         continue ; 
->>>>>>> 0.15
+ 
                     }
 
                    
@@ -801,19 +799,19 @@ pub fn build_chunk_height_data(
                 None => continue,
             };
 
-<<<<<<< HEAD
+ 
 
             //this is causing crashes i believe 
 
             let chunk_id = chunk.chunk_id; 
 
                 info!("loading height map {} from disk - io intensive ... ", chunk_id);
-=======
+ 
             //make sure height image descriptor is correct here (force) 
             height_map_image.sampler = ImageSampler::nearest();
 
 
->>>>>>> 0.15
+ 
             //maybe we can do this in a thread since it is quite cpu intense ?
             let loaded_heightmap_data_result = HeightMapU16::load_from_image(height_map_image);
 
@@ -1031,12 +1029,12 @@ pub fn build_chunk_meshes(
             });
 
             //these three LOC really take no time at all
-<<<<<<< HEAD
+ 
           //  let mut sub_heightmap = (height_map_data_ref.to_vec());
-            let mut sub_heightmap = Box::new(height_map_data_ref.to_vec());  //use heap not stack 
-=======
-            let mut sub_heightmap =  height_map_data_cloned.to_vec() ;
->>>>>>> 0.15
+           // let mut sub_heightmap = Box::new(height_map_data_ref.to_vec());  //use heap not stack 
+ 
+            let mut sub_heightmap =  height_map_data_ref.to_vec() ;
+ 
 
             stitch_data_x_row.map(|x_row| sub_heightmap.append_x_row(x_row));
             stitch_data_y_col.map(|y_col| sub_heightmap.append_y_col(y_col));

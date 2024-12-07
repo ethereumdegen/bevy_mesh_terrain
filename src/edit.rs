@@ -91,7 +91,7 @@ pub struct EditTerrainEvent {
 #[derive(Event, Debug, Clone)]
 pub enum TerrainBrushEvent {
     EyeDropTerrainHeight { height: u16 },
-    EyeDropSplatMap { r: u8, g: u8, b: u8 },
+    EyeDropSplatMap { texture_indices: [u8;4] , texture_strengths: [u8;4]  },
 }
 
 #[derive(Event, Debug, Clone)]
@@ -792,7 +792,34 @@ pub fn apply_tool_edits(
                                                     let y = tool_coords_local.y as u32;
 
 
-                                                    let texture_layer = *b as u8;  //0 to 3 
+                                                    let mut texture_indices : [u8 ; 4 ] = [0u8; 4]; 
+                                                    let mut texture_strengths : [u8 ; 4 ]  = [0u8; 4]; 
+
+                                                    for tex_layer in 0..4 {
+
+                                                         let original_index = chunk_splat_data_raw.get_pixel_index_map_data(
+                                                                x,
+                                                                y,
+                                                                tex_layer,
+                                                           
+                                                            ); 
+
+                                                         let original_strength = chunk_splat_data_raw.get_pixel_strength_map_data(
+                                                                    x,
+                                                                    y,
+                                                                    tex_layer,
+                                                               
+                                                                );   
+
+                                                        texture_indices[tex_layer as usize] = original_index;
+                                                        texture_strengths[tex_layer as usize] = original_strength;
+
+                                                    }
+
+                                                    /*let texture_layer = *b as u8;  //0 to 3 
+
+
+
 
 
                                                      let original_index = chunk_splat_data_raw.get_pixel_index_map_data(
@@ -807,21 +834,19 @@ pub fn apply_tool_edits(
                                                                 y,
                                                                 texture_layer,
                                                            
-                                                            );  
+                                                            );  */
 
 
                                                   //  if x < img_size.x && y < img_size.y {
                                                         //  let local_height = height_map_data.0[x][y];
                                                         //let idx = (y * img_size.x + x) as usize * 4;
-                                                        let r = original_index;
-                                                        let g = original_strength;
-                                                        let b = texture_layer;
+                                                       // let r = original_index;
+                                                        //let g = original_strength;
+                                                        //let b = texture_layer;
 
                                                         evt_writer.send(
                                                             TerrainBrushEvent::EyeDropSplatMap {
-                                                                r,
-                                                                g,
-                                                                b,
+                                                                 texture_indices,texture_strengths
                                                             },
                                                         );
                                                   //  }
