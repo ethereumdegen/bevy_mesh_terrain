@@ -13,6 +13,12 @@ use bevy::math::Vec2;
 use bevy::ecs::event::Event;
 use bevy::prelude::EventReader;
 
+use bevy::tasks::{AsyncComputeTaskPool, Task};
+
+ 
+use futures_lite::future;
+
+
 use bevy::asset::{AssetServer, Assets};
 use bevy::render::render_resource::{Extent3d, TextureFormat};
  
@@ -268,6 +274,27 @@ pub fn apply_command_events(
 
     //  Ok(())
 }
+
+
+
+
+
+
+
+#[derive(Component)]
+pub struct HyperSplatPaintTask(Task<HyperSplatPaintData>);
+
+pub struct HyperSplatPaintData {
+    
+}
+
+
+
+
+
+
+
+
 
 pub fn apply_tool_edits(
     mut commands: Commands, 
@@ -888,13 +915,56 @@ pub fn apply_tool_edits(
 
 
 
+                                     let thread_pool = AsyncComputeTaskPool::get();
+
+
+
+
                                     //force override
                                     //  img.texture_descriptor.format = TextureFormat::Rgba8Unorm;
  
 
+                                    /*
+                                            do this in the task ! 
+
+                                              if let Some(mut cmds) = commands.get_entity( chunk_entity ){ 
+
+                                                cmds.try_insert(SplatMapDataUpdated); 
+
+                                            }
+                                  
+
+                                    */
+
+                                          
+
+                                    match brush_type {
+                                        BrushType::SetExact => {
+
+                                                       let task = thread_pool.spawn(async move {
+                                                            
 
 
-                                            if let Some(mut cmds) = commands.get_entity( chunk_entity ){
+
+                                                            HyperSplatPaintData {
+                                                                
+                                                            }
+                                                        });
+
+                                                        // Spawn new entity and add our new task as a component
+                                                        commands.spawn(HyperSplatPaintTask(task));
+                                                        //that is it ! 
+
+
+
+
+  
+                                        }
+
+                                        BrushType::ClearAll => {
+
+
+                                              if let Some(mut cmds) = commands.get_entity( chunk_entity ){
 
 
                                                 cmds.try_insert(SplatMapDataUpdated);
@@ -904,124 +974,8 @@ pub fn apply_tool_edits(
                                             }
                                   
 
-                                    match brush_type {
-                                        BrushType::SetExact => {
 
 
-                                             let scale_factor = Vec2::new( 
-                                                           splat_dimensions.x as f32 / chunk_dimensions_vec.x  ,
-                                                             splat_dimensions.y as f32 / chunk_dimensions_vec.y
-
-                                                          ); 
-
-                                            // Assuming the image format is Rgba8
-                                             
-                                                //                let img_data = img.data.as_mut_slice();
-
-                                                // Iterate over each pixel in the image
-                                                //maybe we shrink this loop to only be the tool radius ? 
-
-
-                                                
-                                                for y in 0..splat_dimensions.y {
-                                                    for x in 0..splat_dimensions.x {
-                                                       // let idx = (y * splat_dimensions.x + x) as usize * 4; // 4 bytes per pixel (R, G, B, A)
-                                                        let pixel_coords =
-                                                            Vec2::new(x as f32, y as f32);
-
-
-
-                                                            
-                                                       //is this correct ? 
-
-                                                        let pixel_pos  = (pixel_coords / scale_factor).add( chunk_transform_vec2 );
-                                                       // let pixel_pos_local  = (pixel_coords / scale_factor) ;
-
-
- 
-
-
- 
-                                                        if tool_coords.distance(pixel_pos )
-                                                            >= pixel_radius
-                                                        { continue };
-
-
-
-                                                       let   hardness_multiplier =
-                                                        get_hardness_multiplier(
-                                                            tool_coords 
-                                                                .distance(pixel_pos),
-                                                            pixel_radius,
-                                                            *brush_hardness,
-                                                        );
-
-
-
-
-                                                            for texture_layer in 0..4 {
-
-
-                                                                let texture_type_index = texture_indices[texture_layer as usize]; 
-                                                                let texture_strength = texture_strengths[texture_layer as usize];
-
-
-
-                                                                 let original_strength = chunk_splat_data_raw.get_pixel_strength_map_data(
-                                                                        x,
-                                                                        y,
-                                                                        texture_layer,
-                                                                   
-                                                                    ); 
-
-                                                                   let strength_with_hardness = apply_hardness_multiplier(
-
-
-
-                                                                    original_strength as f32,
-                                                                    texture_strength as f32,
-
-                                                                    hardness_multiplier
-
-                                                                    );         
-
-
-
-                                                                    
-                                                                    chunk_splat_data_raw.set_pixel_index_map_data(
-                                                                        x,
-                                                                        y,
-                                                                        texture_layer,
-                                                                        texture_type_index,
-                                                                       // strength_with_hardness as u8 
-                                                                    );
-
-                                                                     chunk_splat_data_raw.set_pixel_strength_map_data(
-                                                                        x,
-                                                                        y,
-                                                                        texture_layer,
-                                                                     //  texture_type_index,
-                                                                        strength_with_hardness as u8 
-                                                                    );
-
-
-
-
-
-                                                                    }
-         
- 
-
- 
-                                                        }
-                                                     
-                                                 
-
-                                                   
-                                            }  
-                                        }
-
-                                        BrushType::ClearAll => {
                                             // Assuming the image format is Rgba8
                                              
                                                 //                let img_data = img.data.as_mut_slice();
