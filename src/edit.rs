@@ -326,7 +326,7 @@ pub fn apply_tool_edits(
 
                 let chunk_local_distance = tool_coords.distance(chunk_center_transform);
 
-                if chunk_local_distance < 800.0 {
+                if chunk_local_distance < 400.0 {
                     chunk_entities_within_range.push(chunk_entity);
                 }
             }
@@ -640,13 +640,7 @@ pub fn apply_tool_edits(
 
                                                                 //maybe i need to use pixel pos ? 
 
-                                                      let   hardness_multiplier =
-                                                        get_hardness_multiplier(
-                                                            tool_coords 
-                                                                .distance(pixel_pos),
-                                                            pixel_radius,
-                                                            *brush_hardness,
-                                                        );
+                                                    
 
 
 
@@ -664,6 +658,15 @@ pub fn apply_tool_edits(
                                                         if tool_coords.distance(pixel_pos )
                                                             < pixel_radius
                                                         {
+
+                                                              let   hardness_multiplier =
+                                                                get_hardness_multiplier(
+                                                                    tool_coords 
+                                                                        .distance(pixel_pos),
+                                                                    pixel_radius,
+                                                                    *brush_hardness,
+                                                                );
+
 
                                                             let texture_type_index = *r as u8;
                                                             let texture_strength = *g as u8; //careful w this on UI ! 
@@ -879,12 +882,7 @@ pub fn apply_tool_edits(
                                     let tool_coords_local =
                                         tool_coords.add(chunk_transform_vec2.neg());
 
-                                    /*let pixel_pos = Vec2::new(
-                                        tool_coords_local.x / chunk_dimensions_vec.x
-                                            * splat_dimensions.x as f32,
-                                        tool_coords_local.y / chunk_dimensions_vec.y
-                                            * splat_dimensions.y as f32,
-                                    );*/
+                                     
                                     let pixel_radius = *radius as f32;
 
 
@@ -921,6 +919,10 @@ pub fn apply_tool_edits(
                                                 //                let img_data = img.data.as_mut_slice();
 
                                                 // Iterate over each pixel in the image
+                                                //maybe we shrink this loop to only be the tool radius ? 
+
+
+                                                
                                                 for y in 0..splat_dimensions.y {
                                                     for x in 0..splat_dimensions.x {
                                                        // let idx = (y * splat_dimensions.x + x) as usize * 4; // 4 bytes per pixel (R, G, B, A)
@@ -929,27 +931,30 @@ pub fn apply_tool_edits(
 
 
 
-                                                            //this is busted ! should be in real world units ?? s
-                                                        
+                                                            
+                                                       //is this correct ? 
+
                                                         let pixel_pos  = (pixel_coords / scale_factor).add( chunk_transform_vec2 );
+                                                       // let pixel_pos_local  = (pixel_coords / scale_factor) ;
+
+
+ 
+
+
+ 
+                                                        if tool_coords.distance(pixel_pos )
+                                                            >= pixel_radius
+                                                        { continue };
 
 
 
-                                                                //maybe i need to use pixel pos ? 
-
-                                                      let   hardness_multiplier =
+                                                       let   hardness_multiplier =
                                                         get_hardness_multiplier(
                                                             tool_coords 
                                                                 .distance(pixel_pos),
                                                             pixel_radius,
                                                             *brush_hardness,
                                                         );
-
-
- 
-                                                        if tool_coords.distance(pixel_pos )
-                                                            < pixel_radius
-                                                        {
 
 
 
@@ -1009,9 +1014,8 @@ pub fn apply_tool_edits(
 
  
                                                         }
-                                                    }
-                                                
-
+                                                     
+                                                 
 
                                                    
                                             }  
