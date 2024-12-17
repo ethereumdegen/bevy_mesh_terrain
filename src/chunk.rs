@@ -74,7 +74,17 @@ pub fn chunks_plugin(app: &mut App){
             update_chunk_visibility,
 
             ).chain().run_if(on_timer( task_update_rate))
-        );
+        )
+
+       .add_systems(PostUpdate,
+
+            (
+            despawn_chunks ,
+           
+            ) 
+        ) 
+
+       ;
 
 
 }
@@ -103,6 +113,12 @@ impl Chunk {
         Self { chunk_id }
     }
 }
+
+#[derive(Component, Default)]
+pub struct DespawnMarker  ;
+
+
+
 
 #[derive(Resource, Default)]
 pub struct ChunkHeightMapResource {
@@ -931,7 +947,7 @@ pub fn build_chunk_meshes(
     chunk_height_maps: ResMut<ChunkHeightMapResource>,
 
     mut chunk_mesh_build_task_counter_resource: ResMut<ChunkMeshBuildTaskCounterResource>,
-    chunk_build_tasks_query: Query<Entity,With<MeshBuilderTask>>
+   // chunk_build_tasks_query: Query<Entity,With<MeshBuilderTask>>
     // mut chunk_data_query: Query<( &mut ChunkData )>,
 ) {
 
@@ -1097,9 +1113,12 @@ pub fn build_chunk_meshes(
     }
 }
 
+#[derive(Component)]
+pub struct StartedTask;
+
 pub fn finish_chunk_build_tasks(
     mut commands: Commands,
-    mut chunk_build_tasks: Query<(Entity, &mut MeshBuilderTask)>, //&Chunk, &mut ChunkData, &Parent,
+    mut chunk_build_tasks: Query<(Entity, &mut MeshBuilderTask), Without<StartedTask>>, //&Chunk, &mut ChunkData, &Parent,
 
     mut chunk_query: Query<(Entity, &Chunk, &mut ChunkData, &Parent)>, //&Chunk, &mut ChunkData, &Parent,
 
@@ -1117,6 +1136,9 @@ pub fn finish_chunk_build_tasks(
     //chunk, mut chunk_data,  terrain_entity,
 
     for (entity, mut task) in &mut chunk_build_tasks {
+
+        commands.entity(entity).insert(StartedTask);
+
         if let Some(built_chunk_mesh_data) = future::block_on(future::poll_once(&mut task.0)) {
             // Add our new PbrBundle of components to our tagged entity
 
@@ -1137,7 +1159,8 @@ pub fn finish_chunk_build_tasks(
             if let Ok(chunk_children) = chunk_with_children_query.get(chunk_entity_id) {
                 for &child in chunk_children.iter() {
                     if chunk_mesh_query.get( child ).ok().is_some(){
-                            commands.entity(child).despawn_recursive();
+                           // commands.entity(child).despawn_recursive();
+                            commands.entity(child).insert( DespawnMarker );
                         }
                     }
             }
@@ -1232,7 +1255,7 @@ pub fn finish_chunk_build_tasks(
 
             println!("chunk fully built ");
 
-            commands.entity(entity).despawn();
+            commands.entity(entity).despawn();  //despawn the task 
 
              chunk_mesh_build_task_counter_resource.active_build_tasks -= 1 ;
         }
@@ -1313,6 +1336,22 @@ pub fn update_chunk_visibility(
                 false => Visibility::Hidden,
             };
         }
+    }
+}
+
+fn despawn_chunks(
+    mut commands: Commands,
+    chunks_query: Query<Entity, With<DespawnMarker>>,
+){
+
+    for ent in chunks_query.iter() {
+
+
+        if let Some(mut cmd) = commands.get_entity( ent ){
+
+            cmd.despawn_recursive();
+        }
+
     }
 }
 
