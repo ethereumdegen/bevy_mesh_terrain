@@ -37,7 +37,7 @@ thiserror = "1.0.48"
  
  #maybe put a modifier on this like 'physics'
 # Optional dependency for physics
-avian3d = { git = "https://github.com/Jondolf/avian", optional=true }
+avian3d = { git = "https://github.com/Jondolf/avian", optional=true, features = [ "serialize" ] }
 
 serde_json = "1.0.113"
 bincode = "1.3.3"

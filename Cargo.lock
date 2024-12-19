@@ -352,6 +352,7 @@ dependencies = [
  "nalgebra",
  "parry3d",
  "parry3d-f64",
+ "serde",
 ]
 
 [[package]]
@@ -553,6 +554,7 @@ dependencies = [
  "bevy_reflect",
  "bevy_tasks",
  "bevy_utils",
+ "serde",
  "uuid",
 ]
 
@@ -746,6 +748,7 @@ checksum = "f85619a206875db57b0213dc5242b51f1be748663cd5f8f99f78d2a6a108dabf"
 dependencies = [
  "bevy_math",
  "bevy_reflect",
+ "serde",
 ]
 
 [[package]]
@@ -798,6 +801,7 @@ dependencies = [
  "bevy_reflect",
  "bevy_utils",
  "derive_more",
+ "serde",
  "smol_str",
 ]
 
@@ -1140,6 +1144,7 @@ dependencies = [
  "nonmax",
  "radsort",
  "rectangle-pack",
+ "serde",
 ]
 
 [[package]]
@@ -1222,6 +1227,7 @@ dependencies = [
  "bevy_reflect",
  "bevy_utils",
  "crossbeam-channel",
+ "serde",
 ]
 
 [[package]]
@@ -1236,6 +1242,7 @@ dependencies = [
  "bevy_math",
  "bevy_reflect",
  "derive_more",
+ "serde",
 ]
 
 [[package]]
@@ -1245,6 +1252,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1fcad6974fb74cab07425c4f3d3af78876966b4525c3aec5c0d56ae8511a946a"
 dependencies = [
  "bevy",
+ "serde",
 ]
 
 [[package]]
@@ -1276,6 +1284,7 @@ dependencies = [
  "bytemuck",
  "derive_more",
  "nonmax",
+ "serde",
  "smallvec",
  "taffy",
 ]
@@ -1321,6 +1330,7 @@ dependencies = [
  "bevy_reflect",
  "bevy_utils",
  "raw-window-handle",
+ "serde",
  "smol_str",
 ]
 
@@ -1351,6 +1361,7 @@ dependencies = [
  "cfg-if",
  "crossbeam-channel",
  "raw-window-handle",
+ "serde",
  "wasm-bindgen",
  "web-sys",
  "wgpu-types",
@@ -3118,6 +3129,7 @@ dependencies = [
  "num-complex",
  "num-rational",
  "num-traits",
+ "serde",
  "simba",
  "typenum",
 ]
@@ -3263,6 +3275,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "73f88a1307638156682bada9d7604135552957b7818057dcef22705b4d509495"
 dependencies = [
  "num-traits",
+ "serde",
 ]
 
 [[package]]
@@ -3672,6 +3685,7 @@ dependencies = [
  "rayon",
  "rstar",
  "rustc-hash 2.1.0",
+ "serde",
  "simba",
  "slab",
  "smallvec",
@@ -3699,6 +3713,7 @@ dependencies = [
  "rayon",
  "rstar",
  "rustc-hash 2.1.0",
+ "serde",
  "simba",
  "slab",
  "smallvec",
@@ -4424,6 +4439,9 @@ name = "smallvec"
 version = "1.13.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e6ecd384b10a64542d77071bd64bd7b231f4ed5940fba55e98c3de13824cf3d7"
+dependencies = [
+ "serde",
+]
 
 [[package]]
 name = "smol_str"
