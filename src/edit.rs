@@ -33,7 +33,9 @@ use crate::terrain::{TerrainData, TerrainImageDataLoadStatus};
 use crate::terrain_config::TerrainConfig;
 use crate::terrain_material::TerrainMaterial;
  
- // use avian3d::prelude::Collider;
+ #[cfg(feature = "physics")]
+ use avian3d::prelude::Collider;
+
 
  
 
