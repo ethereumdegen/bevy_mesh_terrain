@@ -185,6 +185,10 @@ impl ChunkData {
     pub fn get_splat_strength_texture_image(&self) -> &Option<Handle<Image>> {
         &self.splat_strength_texture_handle
     }
+
+    pub fn get_lod_level(&self) -> u8 {
+        self.lod_level.clone() 
+    }
  
 
   //  pub fn get_alpha_mask_texture_image(&self) -> &Option<Handle<Image>> {
