@@ -91,37 +91,46 @@ var normal_texture: texture_2d_array<f32>;
 @group(2) @binding(25)
 var normal_sampler: sampler;
 
+@group(2) @binding(26)
+var blend_height_texture: texture_2d_array<f32>;
+@group(2) @binding(27)
+var blend_height_sampler: sampler;
+
 
 
 
 
 // see hypersplat.rs 
-@group(2) @binding(26)
+@group(2) @binding(30)
 var splat_index_map_texture: texture_2d<u32>; 
- @group(2) @binding(27)
+ @group(2) @binding(31)
 var splat_index_map_sampler: sampler;
 
-@group(2) @binding(28)
+@group(2) @binding(32)
 var splat_strength_map_texture: texture_2d<u32>; 
- @group(2) @binding(29)
+ @group(2) @binding(33)
 var splat_strength_map_sampler: sampler;
 
 
 
 // we use a separate tex for this for NOW to make collision mesh building far easier (only need height map and not splat)
-@group(2) @binding(30)
+@group(2) @binding(34)
 var height_map_texture: texture_2d<u32>; 
-@group(2) @binding(31)
+@group(2) @binding(35)
 var height_map_sampler: sampler;
   
  
 
 //should consider adding vertex painting to this .. need another binding of course.. performs a color shift 
 // this could be used for baked shadows !! THIS IS PROB HOW TIRISFALL GLADES WORKS 
-@group(2) @binding(32)
+@group(2) @binding(36)
 var vertex_color_tint_texture: texture_2d<f32>; 
-@group(2) @binding(33)
+@group(2) @binding(37)
 var vertex_color_tint_sampler: sampler;
+
+
+
+const BLEND_HEIGHT_OVERRIDE_THRESHOLD:f32 = 0.6;
 
 
 
@@ -175,6 +184,8 @@ fn fragment(
      let splat_index_values_at_pixel :vec4<u32> = textureLoad(splat_index_map_texture,   vec2<i32>(  splat_map_sample_coord  ) , 0 ).rgba;
 
      let splat_strength_values_at_pixel :vec4<u32> = textureLoad(splat_strength_map_texture,   vec2<i32>(  splat_map_sample_coord  ) , 0 ).rgba;
+     
+
      //let splat_strength_values_at_pixel :vec4<f32> = textureSample(splat_strength_map_texture, splat_strength_map_sampler, splat_uv ).rgba;
 
 
@@ -204,13 +215,34 @@ fn fragment(
     var blended_normal: vec4<f32> = vec4<f32>(0.0);
 
 
+      
+    //is this right ? 
+  
+    var highest_drawn_pixel_height = 0.0;
+
+
+
     // Loop through each layer (max 4 layers)
     for (var i: u32 = 0u; i < 4u; i = i + 1u) {
 
-        //if there is only a base layer, it is always full strength. This allows for better blends so the base layer can be low strength (1).
-       
+        let terrain_layer_index =  i32(splat_index_array[i]);
 
+        //if there is only a base layer, it is always full strength. This allows for better blends so the base layer can be low strength (1). 
+
+
+        
         var splat_strength = splat_strength_array[i];
+
+
+
+
+     let blend_height_strength_f = textureSample(blend_height_texture, blend_height_sampler, tiled_uv, terrain_layer_index). r ;
+
+         //helps us blend per-pixel based on a blend height map 
+     //  let blend_height_strength :u32 = textureLoad(blend_height_texture,   vec2<i32>(  blend_height_sample_coord  ) , 0 , terrain_layer_index ).r; 
+
+      
+
         /*if (texture_layers_used == 1u) {
             splat_strength = 255u;
         } else {
@@ -218,26 +250,58 @@ fn fragment(
         }*/
 
 
+        
         if (splat_strength > 0 ) {   
            // texture_layers_used += 1u;
-            let splat_strength_float =  f32(splat_strength) / 255.0 ;
+
 
             // Look up the terrain layer index and sample the corresponding texture
-            let terrain_layer_index =  i32(splat_index_array[i]);
+          
             let color_from_diffuse = textureSample(base_color_texture, base_color_sampler, tiled_uv, terrain_layer_index);
             let color_from_normal = textureSample(normal_texture, normal_sampler, tiled_uv, terrain_layer_index);
             
+             
+            
+          
+            var splat_strength_float =  f32( splat_strength ) / 255.0 ;   
+            //from 0.0 to 1.0 
+
+
+          // let splat_strength_with_blend_height =   splat_strength_float  * blend_height_strength_f ;
+
+
+ 
+
             if i == 0u {
                 blended_color = color_from_diffuse;
                 blended_normal = color_from_normal;
+                highest_drawn_pixel_height = blend_height_strength_f;
             }else {
-              
+
+
+
+                //renders above 
+                if ( blend_height_strength_f > highest_drawn_pixel_height
+                 || splat_strength_float > BLEND_HEIGHT_OVERRIDE_THRESHOLD
+                ) {
+
+                  
+                    highest_drawn_pixel_height = blend_height_strength_f;
+
+                }else {
+                    //artificially reduce our splat strength since we are below 
+                   splat_strength_float = splat_strength_float * 0.5 ; 
+                }
+
+                  // Accumulate the blended color based on splat strength 
                 blended_color = mix( blended_color, color_from_diffuse, splat_strength_float  );
-                blended_normal = mix( blended_normal, color_from_normal, splat_strength_float  );
+                 blended_normal = mix( blended_normal, color_from_normal, splat_strength_float  );
+
+               
             }
-            // Accumulate the blended color based on splat strength
-            //blended_color += color_from_diffuse * splat_strength_float;
-            //blended_normal += color_from_normal * splat_strength_float;
+
+           // blended_color = vec4<f32>( blend_height_strength,0.0,0.0,1.0   );
+             
         }
     }
 

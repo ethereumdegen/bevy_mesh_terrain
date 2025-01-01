@@ -41,27 +41,32 @@ pub struct TerrainMaterial {
     #[sampler(25)]
     pub normal_texture: Option<Handle<Image>>,
 
+    #[texture(26, dimension = "2d_array" )]
+    #[sampler(27  )]
+    pub blend_height_texture: Option<Handle<Image>>,
 
 
-    #[texture(26, dimension = "2d",sample_type = "u_int")] //rgba8uint
-    #[sampler(27 , sampler_type = "non_filtering")]
+
+
+    #[texture(30, dimension = "2d",sample_type = "u_int")] //rgba8uint
+    #[sampler(31 , sampler_type = "non_filtering")]
     pub splat_index_map_texture: Option<Handle<Image>>,
 
     
-    #[texture(28, dimension = "2d",sample_type = "u_int")]
-    #[sampler(29 , sampler_type = "non_filtering")]
+    #[texture(32, dimension = "2d",sample_type = "u_int")]
+    #[sampler(33 , sampler_type = "non_filtering")]
     pub splat_strength_map_texture: Option<Handle<Image>>,
 
+ 
 
 
-
-    #[texture(30, dimension = "2d",sample_type = "u_int")]  //rgba8uint
-    #[sampler(31 , sampler_type = "non_filtering")]
+    #[texture(34, dimension = "2d",sample_type = "u_int")]  //rgba8uint
+    #[sampler(35 , sampler_type = "non_filtering")]
     pub height_map_texture: Option<Handle<Image>>,
 
-
-    #[texture(32)]
-    #[sampler(33)]
+    // not used ? 
+    #[texture(36)]
+    #[sampler(37)]
     pub vertex_color_tint_texture: Option<Handle<Image>>,
 
 

@@ -1,10 +1,11 @@
+ 
 use bevy::time::common_conditions::on_timer;
 use bevy::{asset::load_internal_asset, prelude::*};
 /*use chunk::{
     build_chunk_height_data, build_chunk_meshes, finish_chunk_build_tasks, initialize_chunk_data,
     reset_chunk_height_data, update_chunk_visibility, ChunkHeightMapResource,
 }; */
-use terrain::{initialize_terrain, load_terrain_texture_from_image, load_terrain_normal_from_image};
+use terrain::{initialize_terrain, load_terrain_texture_from_image, load_terrain_normal_from_image,load_terrain_blend_height_from_image};
 
 use std::time::Duration;
 
@@ -90,7 +91,11 @@ impl Plugin for TerrainMeshPlugin {
         );
          
 
-        app.add_systems(Update, (load_terrain_texture_from_image,load_terrain_normal_from_image));
+        app.add_systems(Update, (
+            load_terrain_texture_from_image,
+            load_terrain_normal_from_image, 
+            load_terrain_blend_height_from_image
+            ));
 
         app.add_systems(Update, apply_tool_edits); //put this in a sub plugin ?
         app.add_systems(Update, apply_command_events);

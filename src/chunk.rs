@@ -1179,6 +1179,7 @@ pub fn finish_chunk_build_tasks(
 
             let array_texture = terrain_data.get_array_texture_image().clone();
             let normal_texture = terrain_data.get_normal_texture_image().clone();
+            let blend_height_texture = terrain_data.get_blend_height_texture_image().clone();
 
             let splat_index_map_texture = chunk_data.get_splat_index_texture_image().clone();
             let splat_strength_map_texture = chunk_data.get_splat_strength_texture_image().clone();
@@ -1211,6 +1212,7 @@ pub fn finish_chunk_build_tasks(
                         tool_preview_uniforms: ToolPreviewUniforms::default(),
                         diffuse_texture: array_texture,
                         normal_texture: normal_texture,
+                        blend_height_texture: blend_height_texture, 
 
                         splat_index_map_texture: splat_index_map_texture,
 
