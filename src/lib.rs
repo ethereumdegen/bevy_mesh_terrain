@@ -1,4 +1,5 @@
  
+use bevy::asset::embedded_asset;
 use bevy::time::common_conditions::on_timer;
 use bevy::{asset::load_internal_asset, prelude::*};
 /*use chunk::{
@@ -66,6 +67,12 @@ impl Plugin for TerrainMeshPlugin {
             "shaders/terrain.wgsl",
             Shader::from_wgsl
         );
+
+         embedded_asset!(app, "src/", "shaders/hsv_noise.png" );
+
+
+        
+
 
         app.insert_state( self.terrain_edit_mode.clone() ) ;
         

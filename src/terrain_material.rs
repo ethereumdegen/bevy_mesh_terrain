@@ -12,6 +12,8 @@ use bevy::pbr::MaterialExtension;
 
 pub const TERRAIN_SHADER_HANDLE: Handle<Shader> = Handle::weak_from_u128(5433284082028047579);
 
+ 
+
 #[derive(Clone, ShaderType, Default, Debug)]
 pub struct ChunkMaterialUniforms {
     pub color_texture_expansion_factor: f32,
@@ -70,6 +72,11 @@ pub struct TerrainMaterial {
     pub vertex_color_tint_texture: Option<Handle<Image>>,
 
 
+    #[texture(38)]
+    #[sampler(39)]
+    pub hsv_noise_texture: Option<Handle<Image>>,
+
+
 }
 
 impl MaterialExtension for TerrainMaterial {
@@ -81,3 +88,6 @@ impl MaterialExtension for TerrainMaterial {
         ShaderRef::Handle(TERRAIN_SHADER_HANDLE)
     }
 }
+
+
+ 

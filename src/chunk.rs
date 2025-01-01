@@ -1,4 +1,4 @@
- 
+
 use crate::TerrainEditMode;
 use crate::hypersplat::ChunkSplatDataRaw;
 use std::time::Duration;
@@ -164,9 +164,12 @@ pub struct ChunkData {
 
     pub material_handle: Option<Handle<TerrainMaterialExtension>>,
 
+    pub hsv_noise_texture: Option<Handle<Image>>,
 
     //add to me later.. 
-    pub vertex_color_tint_texture: Option<Handle<Image>>
+    pub vertex_color_tint_texture: Option<Handle<Image>>,
+
+
 }
 
 impl ChunkData {
@@ -402,7 +405,10 @@ pub fn initialize_chunk_data(
 
         let splat_strength_texture_handle: Handle<Image> = asset_server.load(splat_strength_texture_path);
 
-         
+            
+
+        let hsv_noise_texture = asset_server.load("embedded://bevy_mesh_terrain/shaders/hsv_noise.png");
+
             //to start off, render at low LOD 
         let chunk_base_lod = LOWEST_LOW_LEVEL; // hmm might cause issues .. base this off distance properly ? 
         let lod_level_offset = terrain_config.lod_level_offset;
@@ -423,6 +429,8 @@ pub fn initialize_chunk_data(
             material_handle: None,         //gets set later
 
             vertex_color_tint_texture: None, 
+
+            hsv_noise_texture: Some(hsv_noise_texture) , 
 
             splat_index_texture_is_loaded: false,
             splat_strength_texture_is_loaded: false, 
@@ -1186,6 +1194,8 @@ pub fn finish_chunk_build_tasks(
 
             let height_map_texture = chunk_data.get_height_map_texture_image().clone();
 
+            let hsv_noise_texture = chunk_data.hsv_noise_texture.clone(); 
+
             let chunk_terrain_material: Handle<TerrainMaterialExtension> =
                 terrain_materials.add(ExtendedMaterial {
                     base: StandardMaterial {
@@ -1217,6 +1227,8 @@ pub fn finish_chunk_build_tasks(
                         splat_index_map_texture: splat_index_map_texture,
 
                         splat_strength_map_texture: splat_strength_map_texture, 
+
+                        hsv_noise_texture,
 
                       //  splat_texture: splat_texture.clone(),
                         height_map_texture: height_map_texture.clone(),

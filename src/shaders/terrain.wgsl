@@ -1,4 +1,4 @@
- 
+
 //see bindings in terrain_material.rs 
  
  //https://github.com/nicopap/bevy_mod_paramap/blob/main/src/parallax_map.wgsl
@@ -130,7 +130,13 @@ var vertex_color_tint_sampler: sampler;
 
 
 
-const BLEND_HEIGHT_OVERRIDE_THRESHOLD:f32 = 0.6;
+@group(2) @binding(38)
+var hsv_noise_texture: texture_2d<f32>; 
+@group(2) @binding(39)
+var hsv_noise_sampler: sampler;
+
+
+const BLEND_HEIGHT_OVERRIDE_THRESHOLD:f32 = 0.8;
 
 
 
@@ -222,6 +228,10 @@ fn fragment(
 
 
 
+     let hsv_noise_sample = textureSample(hsv_noise_texture, hsv_noise_sampler, splat_uv  ).r;
+
+
+
     // Loop through each layer (max 4 layers)
     for (var i: u32 = 0u; i < 4u; i = i + 1u) {
 
@@ -281,16 +291,22 @@ fn fragment(
 
 
                 //renders above 
-                if ( blend_height_strength_f > highest_drawn_pixel_height
-                 || splat_strength_float > BLEND_HEIGHT_OVERRIDE_THRESHOLD
-                ) {
+                 if ( blend_height_strength_f > highest_drawn_pixel_height 
+                    || splat_strength_float >  BLEND_HEIGHT_OVERRIDE_THRESHOLD
+                 ) {
 
-                  
+                    //if we are higher, full render 
                     highest_drawn_pixel_height = blend_height_strength_f;
+                    splat_strength_float = splat_strength_float ; 
+
+                }else if ( splat_strength_float > hsv_noise_sample   ) {
+  
+                    //if we are rendering below , some pixels will kind of show through w noise 
+                    splat_strength_float = splat_strength_float * hsv_noise_sample ; 
 
                 }else {
-                    //artificially reduce our splat strength since we are below 
-                   splat_strength_float = splat_strength_float * 0.5 ; 
+                    //artificially reduce our splat strength since we are below and unlucky --  
+                   splat_strength_float = splat_strength_float * hsv_noise_sample  * hsv_noise_sample ; 
                 }
 
                   // Accumulate the blended color based on splat strength 
@@ -300,7 +316,7 @@ fn fragment(
                
             }
 
-           // blended_color = vec4<f32>( blend_height_strength,0.0,0.0,1.0   );
+          //  blended_color = vec4<f32>( hsv_noise_sample.r ,0.0,0.0,1.0   );
              
         }
     }
