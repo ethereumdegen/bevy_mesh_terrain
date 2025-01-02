@@ -347,7 +347,7 @@ where
       info!("saving splat image {} {} ", &width  ,   &height );
 
     // Ensure the format is Rgba8 or adapt this code block for other formats
-    if format == TextureFormat::Rgba8Uint // || format == TextureFormat::Rgba8UnormSrgb
+    if format == TextureFormat::Rgba8Unorm // || format == TextureFormat::Rgba8UnormSrgb
     //   || format == TextureFormat::Rgba16Unorm
     {
         // The data in Bevy's Image type is stored in a Vec<u8>, so we can use it directly

@@ -107,7 +107,7 @@ var splat_index_map_texture: texture_2d<u32>;
 var splat_index_map_sampler: sampler;
 
 @group(2) @binding(32)
-var splat_strength_map_texture: texture_2d<u32>; 
+var splat_strength_map_texture: texture_2d<f32>; 
  @group(2) @binding(33)
 var splat_strength_map_sampler: sampler;
 
@@ -177,22 +177,44 @@ fn fragment(
 
 
 
+    let hsv_noise_sample = textureSample(hsv_noise_texture, hsv_noise_sampler, splat_uv  ) ;
+
+
+
+
 
 
     let splat_map_texture_dimensions = textureDimensions(splat_index_map_texture);
+
+    let noise_distortion_amount = 2.0;
+    
+
+     //we do this to 'sloppily' sample to break up the pixelation 
+    let splat_uv_noise_1 =   vec2<f32>( hsv_noise_sample .r  , hsv_noise_sample .g ) * noise_distortion_amount * 0.5  ;
    
     let splat_map_sample_coord  = vec2<i32>(
-        i32(splat_uv.x * f32(splat_map_texture_dimensions.x)),
-        i32(splat_uv.y * f32(splat_map_texture_dimensions.y))
+        i32(splat_uv.x * f32(splat_map_texture_dimensions.x)  + splat_uv_noise_1.x - noise_distortion_amount ),
+        i32(splat_uv.y * f32(splat_map_texture_dimensions.y)  + splat_uv_noise_1.y - noise_distortion_amount )
+    );
+
+
+
+     //we do this to 'sloppily' sample to break up the pixelation AGAIN and mix :D for even more slop
+    let splat_uv_noise_2 =   vec2<f32>( hsv_noise_sample .b  , hsv_noise_sample .a ) * noise_distortion_amount * 0.5  ;
+
+    let splat_map_sample_coord_distorted  = vec2<i32>(
+        i32(splat_uv.x * f32(splat_map_texture_dimensions.x)  + splat_uv_noise_2.x - noise_distortion_amount),
+        i32(splat_uv.y * f32(splat_map_texture_dimensions.y)  + splat_uv_noise_2.y - noise_distortion_amount)
     );
  
 
      let splat_index_values_at_pixel :vec4<u32> = textureLoad(splat_index_map_texture,   vec2<i32>(  splat_map_sample_coord  ) , 0 ).rgba;
 
-     let splat_strength_values_at_pixel :vec4<u32> = textureLoad(splat_strength_map_texture,   vec2<i32>(  splat_map_sample_coord  ) , 0 ).rgba;
-     
+      let splat_index_values_at_pixel_distorted :vec4<u32> = textureLoad(splat_index_map_texture,   vec2<i32>(  splat_map_sample_coord_distorted  ) , 0 ).rgba;
 
-     //let splat_strength_values_at_pixel :vec4<f32> = textureSample(splat_strength_map_texture, splat_strength_map_sampler, splat_uv ).rgba;
+    
+
+     let splat_strength_values_at_pixel :vec4<f32> = textureSample(splat_strength_map_texture, splat_strength_map_sampler, splat_uv ).rgba;
 
 
 
@@ -208,8 +230,11 @@ fn fragment(
  
 
     // Initialize an array to store the splat strength values and the index values
-    var splat_strength_array: array<u32, 4> = array<u32, 4>(splat_strength_values_at_pixel.x  , splat_strength_values_at_pixel.y, splat_strength_values_at_pixel.z , splat_strength_values_at_pixel.w );
+    var splat_strength_array: array<f32, 4> = array<f32, 4>(splat_strength_values_at_pixel.x  , splat_strength_values_at_pixel.y, splat_strength_values_at_pixel.z , splat_strength_values_at_pixel.w );
+
     var splat_index_array: array<u32, 4> = array<u32, 4>(splat_index_values_at_pixel.x, splat_index_values_at_pixel.y, splat_index_values_at_pixel.z, splat_index_values_at_pixel.w);
+
+    var splat_index_array_distorted: array<u32, 4> = array<u32, 4>(splat_index_values_at_pixel_distorted.x, splat_index_values_at_pixel_distorted.y, splat_index_values_at_pixel_distorted.z, splat_index_values_at_pixel_distorted.w);
 
 
   
@@ -228,14 +253,17 @@ fn fragment(
 
 
 
-     let hsv_noise_sample = textureSample(hsv_noise_texture, hsv_noise_sampler, splat_uv  ).r;
+    
 
+      let hsv_noise_amount = hsv_noise_sample.r;
 
 
     // Loop through each layer (max 4 layers)
     for (var i: u32 = 0u; i < 4u; i = i + 1u) {
 
         let terrain_layer_index =  i32(splat_index_array[i]);
+        let terrain_layer_index_distorted = i32(splat_index_array_distorted[i]);  //if this is different than the original, we can blend !!! 
+
 
         //if there is only a base layer, it is always full strength. This allows for better blends so the base layer can be low strength (1). 
 
@@ -246,7 +274,7 @@ fn fragment(
 
 
 
-     let blend_height_strength_f = textureSample(blend_height_texture, blend_height_sampler, tiled_uv, terrain_layer_index). r ;
+        let blend_height_strength_f = textureSample(blend_height_texture, blend_height_sampler, tiled_uv, terrain_layer_index). r ;
 
          //helps us blend per-pixel based on a blend height map 
      //  let blend_height_strength :u32 = textureLoad(blend_height_texture,   vec2<i32>(  blend_height_sample_coord  ) , 0 , terrain_layer_index ).r; 
@@ -261,8 +289,11 @@ fn fragment(
 
 
         
-        if (splat_strength > 0 ) {   
+        if (splat_strength > 0.01 ) {   
            // texture_layers_used += 1u;
+
+
+
 
 
             // Look up the terrain layer index and sample the corresponding texture
@@ -272,18 +303,27 @@ fn fragment(
             
              
             
+
+            let color_from_diffuse_distorted = textureSample(base_color_texture, base_color_sampler, tiled_uv, terrain_layer_index_distorted);
+
+            
+            let distortion_lerp =   hsv_noise_sample.b    ; // make this lerp be noisy  
+            let mixed_color_from_diffuse = mix(color_from_diffuse_distorted, color_from_diffuse , distortion_lerp ) ;
+
+
           
-            var splat_strength_float =  f32( splat_strength ) / 255.0 ;   
+            var splat_strength_float =   splat_strength ;
             //from 0.0 to 1.0 
 
 
           // let splat_strength_with_blend_height =   splat_strength_float  * blend_height_strength_f ;
 
 
+        
  
 
             if i == 0u {
-                blended_color = color_from_diffuse;
+                blended_color = mixed_color_from_diffuse;
                 blended_normal = color_from_normal;
                 highest_drawn_pixel_height = blend_height_strength_f;
             }else {
@@ -297,20 +337,24 @@ fn fragment(
 
                     //if we are higher, full render 
                     highest_drawn_pixel_height = blend_height_strength_f;
-                    splat_strength_float = splat_strength_float ; 
+                    splat_strength_float = splat_strength_float; 
 
-                }else if ( splat_strength_float > hsv_noise_sample   ) {
+                }else if ( splat_strength_float > hsv_noise_amount   ) {
   
                     //if we are rendering below , some pixels will kind of show through w noise 
-                    splat_strength_float = splat_strength_float * hsv_noise_sample ; 
+                    splat_strength_float = splat_strength_float * hsv_noise_amount ; 
 
                 }else {
                     //artificially reduce our splat strength since we are below and unlucky --  
-                   splat_strength_float = splat_strength_float * hsv_noise_sample  * hsv_noise_sample ; 
-                }
+                   splat_strength_float = splat_strength_float * hsv_noise_amount  * hsv_noise_amount ; 
+                }   
+
+
+                // smooth out the blending slightly 
+                let splat_strength_float_noisy =   splat_strength_float  + (hsv_noise_amount * 0.2 )  - 0.1  ;
 
                   // Accumulate the blended color based on splat strength 
-                blended_color = mix( blended_color, color_from_diffuse, splat_strength_float  );
+                blended_color = mix( blended_color, mixed_color_from_diffuse,  splat_strength_float_noisy );
                  blended_normal = mix( blended_normal, color_from_normal, splat_strength_float  );
 
                

@@ -622,8 +622,9 @@ pub fn update_splat_image_formats(
 
                           // println!("splat strength map image format is {:?}", img.texture_descriptor.format);
 
-                        img.texture_descriptor.format = TextureFormat::Rgba8Uint;
-                        img.sampler = ImageSampler::nearest(); //need for bevy 0.15 
+                        img.texture_descriptor.format = TextureFormat::Rgba8Unorm;
+                        //  img.sampler = ImageSampler::nearest(); 
+                        img.sampler = ImageSampler::linear();   //we actually do filter the splat strength ..
                          
                         chunk_data.splat_strength_texture_is_loaded = true;
 

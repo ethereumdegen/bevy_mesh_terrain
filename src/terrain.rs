@@ -323,7 +323,7 @@ pub fn load_terrain_blend_height_from_image(
             let tex_image : Handle<Image> = asset_server.load_with_settings(
                 AssetPath::from_path(blend_height_texture_path),  |s: &mut ImageLoaderSettings| 
                  {
-                    
+                    // does this work ? no bugs ? 
                     s.sampler = ImageSampler::Descriptor(ImageSamplerDescriptor {
                         label: None,
                         address_mode_u: AddressMode::Repeat.into(),
