@@ -1,5 +1,5 @@
 use bevy::asset::{AssetPath, LoadState};
-use bevy::image::{ImageSampler, ImageSamplerDescriptor};
+use bevy::image::{ImageFormatSetting, ImageLoaderSettings, ImageSampler, ImageSamplerDescriptor};
 use bevy::prelude::*;
 use bevy::render::render_resource::{
     AddressMode, FilterMode, SamplerDescriptor, TextureDescriptor, TextureFormat,
@@ -151,7 +151,29 @@ pub fn load_terrain_texture_from_image(
         if terrain_data.texture_image_handle.is_none() {
             let array_texture_path = &terrain_config.diffuse_folder_path;
 
-            let tex_image = asset_server.load(AssetPath::from_path(array_texture_path));
+
+
+
+            let tex_image : Handle<Image> = asset_server.load_with_settings(
+                AssetPath::from_path(array_texture_path),  |s: &mut ImageLoaderSettings| 
+                 {
+
+                    s.sampler = ImageSampler::Descriptor(ImageSamplerDescriptor {
+                        label: None,
+                        address_mode_u: AddressMode::Repeat.into(),
+                        address_mode_v: AddressMode::Repeat.into(),
+                        address_mode_w: AddressMode::Repeat.into(),
+                        mag_filter: FilterMode::Linear.into(),
+                        min_filter: FilterMode::Linear.into(),
+                        mipmap_filter: FilterMode::Linear.into(),
+                        ..default()
+                    });
+                 }
+                );
+
+
+
+           // let tex_image = asset_server.load(AssetPath::from_path(array_texture_path));
             terrain_data.texture_image_handle = Some(tex_image);
         }
 
@@ -173,7 +195,7 @@ pub fn load_terrain_texture_from_image(
             };
 
             //https://github.com/bevyengine/bevy/pull/10254
-            texture_image.sampler = ImageSampler::Descriptor(ImageSamplerDescriptor {
+           /* texture_image.sampler = ImageSampler::Descriptor(ImageSamplerDescriptor {
                 label: None,
                 address_mode_u: AddressMode::Repeat.into(),
                 address_mode_v: AddressMode::Repeat.into(),
@@ -182,7 +204,7 @@ pub fn load_terrain_texture_from_image(
                 min_filter: FilterMode::Linear.into(),
                 mipmap_filter: FilterMode::Linear.into(),
                 ..default()
-            });
+            });*/
 
             // Create a new array texture asset from the loaded texture.
             let desired_array_layers = terrain_config.texture_image_sections;
@@ -195,29 +217,7 @@ pub fn load_terrain_texture_from_image(
 
                 texture_image.reinterpret_stacked_2d_as_array(desired_array_layers);
             }
-
-            /*
-
-                /// Takes a 2D image containing vertically stacked images of the same size, and reinterprets
-                /// it as a 2D array texture, where each of the stacked images becomes one layer of the
-                /// array. This is primarily for use with the `texture2DArray` shader uniform type.
-                ///
-                /// # Panics
-                /// Panics if the texture is not 2D, has more than one layers or is not evenly dividable into
-                /// the `layers`.
-                pub fn reinterpret_stacked_2d_as_array(&mut self, layers: u32) {
-                    // Must be a stacked image, and the height must be divisible by layers.
-                    assert_eq!(self.texture_descriptor.dimension, TextureDimension::D2);
-                    assert_eq!(self.texture_descriptor.size.depth_or_array_layers, 1);
-                    assert_eq!(self.height() % layers, 0);
-
-                    self.reinterpret_size(Extent3d {
-                        width: self.width(),
-                        height: self.height() / layers,
-                        depth_or_array_layers: layers,
-                    });
-                }
-            */
+ 
 
             terrain_data.texture_image_finalized = true;
         }
@@ -234,7 +234,25 @@ pub fn load_terrain_normal_from_image(
         if terrain_data.normal_image_handle.is_none() {
             let normal_texture_path = &terrain_config.normal_folder_path;
 
-            let tex_image = asset_server.load(AssetPath::from_path(normal_texture_path));
+
+            let tex_image : Handle<Image> = asset_server.load_with_settings(
+                AssetPath::from_path(normal_texture_path),  |s: &mut ImageLoaderSettings| 
+                 {
+
+                    s.sampler = ImageSampler::Descriptor(ImageSamplerDescriptor {
+                        label: None,
+                        address_mode_u: AddressMode::Repeat.into(),
+                        address_mode_v: AddressMode::Repeat.into(),
+                        address_mode_w: AddressMode::Repeat.into(),
+                        mag_filter: FilterMode::Linear.into(),
+                        min_filter: FilterMode::Linear.into(),
+                        mipmap_filter: FilterMode::Linear.into(),
+                        ..default()
+                    });
+                 }
+                );
+
+            // let tex_image = asset_server.load(AssetPath::from_path(normal_texture_path));
             terrain_data.normal_image_handle = Some(tex_image);
         }
 
@@ -256,7 +274,7 @@ pub fn load_terrain_normal_from_image(
             };
 
             //https://github.com/bevyengine/bevy/pull/10254
-            texture_image.sampler = ImageSampler::Descriptor(ImageSamplerDescriptor {
+            /*texture_image.sampler = ImageSampler::Descriptor(ImageSamplerDescriptor {
                 label: None,
                 address_mode_u: AddressMode::Repeat.into(),
                 address_mode_v: AddressMode::Repeat.into(),
@@ -265,7 +283,7 @@ pub fn load_terrain_normal_from_image(
                 min_filter: FilterMode::Linear.into(),
                 mipmap_filter: FilterMode::Linear.into(),
                 ..default()
-            });
+            });*/
 
             // Create a new array texture asset from the loaded texture.
             let desired_array_layers = terrain_config.texture_image_sections;
@@ -279,28 +297,7 @@ pub fn load_terrain_normal_from_image(
                 texture_image.reinterpret_stacked_2d_as_array(desired_array_layers);
             }
 
-            /*
-
-                /// Takes a 2D image containing vertically stacked images of the same size, and reinterprets
-                /// it as a 2D array texture, where each of the stacked images becomes one layer of the
-                /// array. This is primarily for use with the `texture2DArray` shader uniform type.
-                ///
-                /// # Panics
-                /// Panics if the texture is not 2D, has more than one layers or is not evenly dividable into
-                /// the `layers`.
-                pub fn reinterpret_stacked_2d_as_array(&mut self, layers: u32) {
-                    // Must be a stacked image, and the height must be divisible by layers.
-                    assert_eq!(self.texture_descriptor.dimension, TextureDimension::D2);
-                    assert_eq!(self.texture_descriptor.size.depth_or_array_layers, 1);
-                    assert_eq!(self.height() % layers, 0);
-
-                    self.reinterpret_size(Extent3d {
-                        width: self.width(),
-                        height: self.height() / layers,
-                        depth_or_array_layers: layers,
-                    });
-                }
-            */
+           
 
             terrain_data.normal_image_finalized = true;
         }
@@ -320,7 +317,27 @@ pub fn load_terrain_blend_height_from_image(
         if terrain_data.blend_height_image_handle.is_none() {
             let blend_height_texture_path = &terrain_config.blend_height_folder_path;
 
-            let tex_image = asset_server.load(AssetPath::from_path(blend_height_texture_path));
+        //    let tex_image = asset_server.load(AssetPath::from_path(blend_height_texture_path));
+
+
+            let tex_image : Handle<Image> = asset_server.load_with_settings(
+                AssetPath::from_path(blend_height_texture_path),  |s: &mut ImageLoaderSettings| 
+                 {
+                    
+                    s.sampler = ImageSampler::Descriptor(ImageSamplerDescriptor {
+                        label: None,
+                        address_mode_u: AddressMode::Repeat.into(),
+                        address_mode_v: AddressMode::Repeat.into(),
+                        address_mode_w: AddressMode::Repeat.into(),
+                        mag_filter: FilterMode::Linear.into(),
+                        min_filter: FilterMode::Linear.into(),
+                        mipmap_filter: FilterMode::Linear.into(),
+                        ..default()
+                    });
+                 }
+                );
+
+
             terrain_data.blend_height_image_handle = Some(tex_image);
         }
 
@@ -354,7 +371,7 @@ pub fn load_terrain_blend_height_from_image(
 
 
             //https://github.com/bevyengine/bevy/pull/10254
-            texture_image.sampler = ImageSampler::Descriptor(ImageSamplerDescriptor {
+           /* texture_image.sampler = ImageSampler::Descriptor(ImageSamplerDescriptor {
                 label: None,
                 address_mode_u: AddressMode::Repeat.into(),
                 address_mode_v: AddressMode::Repeat.into(),
@@ -363,7 +380,7 @@ pub fn load_terrain_blend_height_from_image(
                 min_filter: FilterMode::Linear.into(),
                 mipmap_filter: FilterMode::Linear.into(),
                 ..default()
-            });
+            });*/
 
             // Create a new array texture asset from the loaded texture.
             let desired_array_layers = terrain_config.texture_image_sections;
@@ -377,28 +394,7 @@ pub fn load_terrain_blend_height_from_image(
                 texture_image. reinterpret_stacked_2d_as_array(desired_array_layers);
             }
 
-            /*
-
-                /// Takes a 2D image containing vertically stacked images of the same size, and reinterprets
-                /// it as a 2D array texture, where each of the stacked images becomes one layer of the
-                /// array. This is primarily for use with the `texture2DArray` shader uniform type.
-                ///
-                /// # Panics
-                /// Panics if the texture is not 2D, has more than one layers or is not evenly dividable into
-                /// the `layers`.
-                pub fn reinterpret_stacked_2d_as_array(&mut self, layers: u32) {
-                    // Must be a stacked image, and the height must be divisible by layers.
-                    assert_eq!(self.texture_descriptor.dimension, TextureDimension::D2);
-                    assert_eq!(self.texture_descriptor.size.depth_or_array_layers, 1);
-                    assert_eq!(self.height() % layers, 0);
-
-                    self.reinterpret_size(Extent3d {
-                        width: self.width(),
-                        height: self.height() / layers,
-                        depth_or_array_layers: layers,
-                    });
-                }
-            */
+           
 
             terrain_data.blend_height_image_finalized = true;
         }
