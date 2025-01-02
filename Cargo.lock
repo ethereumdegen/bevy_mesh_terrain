@@ -919,7 +919,7 @@ dependencies = [
 
 [[package]]
 name = "bevy_mesh_terrain"
-version = "0.15.8"
+version = "0.15.9"
 dependencies = [
  "anyhow",
  "avian3d",

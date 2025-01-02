@@ -182,7 +182,7 @@ fn fragment(
 
 
 
-
+    // ----- sample splat ----
 
     let splat_map_texture_dimensions = textureDimensions(splat_index_map_texture);
 
@@ -191,24 +191,58 @@ fn fragment(
 
      //we do this to 'sloppily' sample to break up the pixelation 
     let splat_uv_noise_1 =   vec2<f32>( hsv_noise_sample .r  , hsv_noise_sample .g ) * noise_distortion_amount * 0.5  ;
-   
-    let splat_map_sample_coord  = vec2<i32>(
-        i32(splat_uv.x * f32(splat_map_texture_dimensions.x)  + splat_uv_noise_1.x - noise_distortion_amount ),
-        i32(splat_uv.y * f32(splat_map_texture_dimensions.y)  + splat_uv_noise_1.y - noise_distortion_amount )
+
+    let splat_map_sample_coord_float_1 = vec2<f32>(
+      splat_uv.x * f32(splat_map_texture_dimensions.x)  + splat_uv_noise_1.x - noise_distortion_amount,
+      splat_uv.y * f32(splat_map_texture_dimensions.y)  + splat_uv_noise_1.y - noise_distortion_amount 
+    );
+    
+
+       let clamped_splat_map_sample_coord_float_1 = clamp(
+        splat_map_sample_coord_float_1,
+        vec2<f32>(0.0, 0.0),
+        vec2<f32>(
+            f32(splat_map_texture_dimensions.x - 1), 
+            f32(splat_map_texture_dimensions.y - 1)
+        )
     );
 
+    let splat_map_sample_coord  = vec2<i32>(
+        i32(  clamped_splat_map_sample_coord_float_1.x    ),
+        i32(  clamped_splat_map_sample_coord_float_1.y   ),
+    );
+
+
+
+
+
+     let splat_index_values_at_pixel :vec4<u32> = textureLoad(splat_index_map_texture,   vec2<i32>(  splat_map_sample_coord  ) , 0 ).rgba;
 
 
      //we do this to 'sloppily' sample to break up the pixelation AGAIN and mix :D for even more slop
     let splat_uv_noise_2 =   vec2<f32>( hsv_noise_sample .b  , hsv_noise_sample .a ) * noise_distortion_amount * 0.5  ;
 
+
+    let splat_map_sample_coord_float_2 = vec2<f32>(
+      splat_uv.x * f32(splat_map_texture_dimensions.x)  + splat_uv_noise_2.x - noise_distortion_amount,
+      splat_uv.y * f32(splat_map_texture_dimensions.y)  + splat_uv_noise_2.y - noise_distortion_amount 
+    );
+
+    let clamped_splat_map_sample_coord_float_2 = clamp(
+        splat_map_sample_coord_float_2,
+        vec2<f32>(0.0, 0.0),
+        vec2<f32>(
+            f32(splat_map_texture_dimensions.x - 1), 
+            f32(splat_map_texture_dimensions.y - 1)
+        )
+    );
+
     let splat_map_sample_coord_distorted  = vec2<i32>(
-        i32(splat_uv.x * f32(splat_map_texture_dimensions.x)  + splat_uv_noise_2.x - noise_distortion_amount),
-        i32(splat_uv.y * f32(splat_map_texture_dimensions.y)  + splat_uv_noise_2.y - noise_distortion_amount)
+        i32(  clamped_splat_map_sample_coord_float_2.x    ),
+        i32(  clamped_splat_map_sample_coord_float_2.y   ),
     );
  
 
-     let splat_index_values_at_pixel :vec4<u32> = textureLoad(splat_index_map_texture,   vec2<i32>(  splat_map_sample_coord  ) , 0 ).rgba;
 
       let splat_index_values_at_pixel_distorted :vec4<u32> = textureLoad(splat_index_map_texture,   vec2<i32>(  splat_map_sample_coord_distorted  ) , 0 ).rgba;
 
@@ -217,7 +251,7 @@ fn fragment(
      let splat_strength_values_at_pixel :vec4<f32> = textureSample(splat_strength_map_texture, splat_strength_map_sampler, splat_uv ).rgba;
 
 
-
+     // --------- 
 
 
 
