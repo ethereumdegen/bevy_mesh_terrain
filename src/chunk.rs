@@ -70,6 +70,7 @@ pub fn chunks_plugin(app: &mut App){
             rebuild_chunk_from_lod, 
             build_chunk_height_data,
             finish_chunk_build_tasks,
+             
             build_chunk_meshes,
             update_chunk_visibility,
 
@@ -974,6 +975,8 @@ pub fn build_chunk_meshes(
     {
 
          if chunk_mesh_build_task_counter_resource.active_build_tasks >= MAX_CONCURRENT_CHUNK_BUILD_TASKS {
+            warn!("max concurrent terrain chunk build tasks reached");
+            println!("max concurrent terrain chunk build tasks reached");
             continue;
         }
 
@@ -989,17 +992,17 @@ pub fn build_chunk_meshes(
             let height_map_data = chunk_height_maps.chunk_height_maps.get(&chunk.chunk_id); // &chunk_data.height_map_data.clone();
 
             if height_map_data.is_none() {
-                println!("chunk is missing height map data .");
+                warn!("chunk is missing height map data .");
                 continue;
             }
 
             if chunk_data.height_map_image_handle.is_none() {
-                println!("chunk is missing height map _image_handle .");
+                warn!("chunk is missing height map _image_handle .");
                 continue;
             }
 
             if chunk_data.splat_index_texture_handle.is_none() {
-                println!("chunk is missing splat_image_handle .");
+                warn!("chunk is missing splat_image_handle .");
                 continue;
             }
 
@@ -1008,7 +1011,7 @@ pub fn build_chunk_meshes(
                 continue;
             }
 
-            println!("build chunk mesh {:?}  ", chunk_entity);
+            info!("build chunk mesh {:?}  ", chunk_entity);
 
             let thread_pool = AsyncComputeTaskPool::get();
 
@@ -1082,7 +1085,7 @@ pub fn build_chunk_meshes(
             let use_greedy_mesh = terrain_config.use_greedy_mesh;
 
             let task = thread_pool.spawn(async move {
-                println!("trying to build premesh");
+                info!("trying to build premesh");
 
                 //we add the +1 for stitching data
                 let sub_texture_dim = [
@@ -1107,7 +1110,7 @@ pub fn build_chunk_meshes(
                 }
                 .build();
 
-                println!("built premesh   ");
+                info!("built premesh   ");
 
                 BuiltChunkMeshData {
                     chunk_entity_id: chunk_entity.clone(),
@@ -1128,6 +1131,32 @@ pub fn build_chunk_meshes(
 
 #[derive(Component)]
 pub struct StartedTask;
+
+
+/*
+#[derive(Component)]
+pub struct TaskFailed;
+
+
+  fn handle_failed_tasks(
+    mut commands: Commands,
+      chunk_build_tasks: Query<(Entity, &  MeshBuilderTask), With <TaskFailed>> ) {
+
+    for (task_entity, &task) in chunk_build_tasks.iter(){
+
+        if let Some(mut cmd) = commands.get_entity( task_entity ){
+
+             cmd .despawn();  //despawn the task 
+
+             chunk_mesh_build_task_counter_resource.active_build_tasks -= 1 ;
+
+
+        }
+
+    }
+
+
+}*/
 
 pub fn finish_chunk_build_tasks(
     mut commands: Commands,
@@ -1158,6 +1187,16 @@ pub fn finish_chunk_build_tasks(
             let chunk_entity_id = built_chunk_mesh_data.chunk_entity_id;
 
             if chunk_query.get_mut(chunk_entity_id).is_ok() == false {
+
+               
+
+                warn!( "unable to complete mesh builder task: chunk entity is broken" );
+
+
+                commands.entity(entity).despawn();  //despawn the task  
+                chunk_mesh_build_task_counter_resource.active_build_tasks -= 1 ;
+
+
                 continue;
             }
             let (chunk_entity, chunk, mut chunk_data, terrain_entity) =
@@ -1180,6 +1219,11 @@ pub fn finish_chunk_build_tasks(
 
             //careful w this unwrap
             if terrain_query.get(terrain_entity_id).is_ok() == false {
+
+                warn!( "unable to complete mesh builder task: chunk entity terrain parent is broken" );
+                commands.entity(entity).despawn();  //despawn the task  
+                chunk_mesh_build_task_counter_resource.active_build_tasks -= 1 ;
+
                 continue;
             }
 
@@ -1237,20 +1281,7 @@ pub fn finish_chunk_build_tasks(
                     },
                 });
 
-            /*TerrainMaterial {
-                base_color_texture:None,
-                emissive_texture:None,
-                metallic_roughness_texture:None,
-                occlusion_texture: None,
-                uniforms: ChunkMaterialUniforms {
-                    color_texture_expansion_factor: 32.0, //why wont this apply to shader properly ?
-                    chunk_uv,
-                },
-
-                array_texture: array_texture.clone(),
-                splat_texture: splat_texture.clone(),
-                alpha_mask_texture: alpha_mask_texture.clone(),
-            });*/
+            
 
             let terrain_mesh_handle = meshes.add(mesh);
 
@@ -1274,8 +1305,7 @@ pub fn finish_chunk_build_tasks(
 
             println!("chunk fully built ");
 
-            commands.entity(entity).despawn();  //despawn the task 
-
+             commands.entity(entity).despawn();  //despawn the task  
              chunk_mesh_build_task_counter_resource.active_build_tasks -= 1 ;
         }
     }
