@@ -315,17 +315,13 @@ fn fragment(
 
       
 
-        /*if (texture_layers_used == 1u) {
-            splat_strength = 255u;
-        } else {
-            splat_strength = splat_strength_array[i];
-        }*/
 
 
         
-        if (splat_strength > 0.01 ) {   
-           // texture_layers_used += 1u;
-
+        if (splat_strength < 0.01 ) {   
+         continue ;
+         }
+        
 
 
 
@@ -350,10 +346,7 @@ fn fragment(
             //from 0.0 to 1.0 
 
 
-          // let splat_strength_with_blend_height =   splat_strength_float  * blend_height_strength_f ;
-
-
-        
+       
  
 
             if i == 0u {
@@ -396,15 +389,11 @@ fn fragment(
 
           //  blended_color = vec4<f32>( hsv_noise_sample.r ,0.0,0.0,1.0   );
              
-        }
+        
     }
 
-    // Normalize by dividing by the number of active layers if there are any
-    //this is too jarring ! 
-    /*if (texture_layers_used > 1u) {
-        blended_color /= f32(texture_layers_used);
-        blended_normal /= f32(texture_layers_used);
-    }*/
+    
+
 
     
 
@@ -444,24 +433,7 @@ fn fragment(
     //we mix the normal with our sample so shadows are affected by the normal map ! 
     let normal_mixed = mix( normalize( mesh.world_normal ) , normalize( tangent ) , 0.7 );
 
-   /*  let TBN = calculate_tbn_mikktspace(normalize( normal_mixed ), vec4(tangent,1.0 )  ) ;  //for anistropy ??
 
- 
-
-    let Nt = textureSampleBias(pbr_bindings::normal_map_texture, pbr_bindings::normal_map_sampler, mesh.uv, view.mip_bias).rgb;
-
-    
-
-    pbr_input.N =  apply_normal_mapping(
-        pbr_input.material.flags,
-       
-       TBN, 
-        
-        double_sided,
-        is_front,
-        
-        Nt
-    );*/
 
     pbr_input.N  = normal_mixed;
 
@@ -474,6 +446,7 @@ fn fragment(
     
     // apply lighting
     pbr_out.color = apply_pbr_lighting(pbr_input);
+
     // we can optionally modify the lit color before post-processing is applied
     // out.color = out.color;
     // apply in-shader post processing (fog, alpha-premultiply, and also tonemapping, debanding if the camera is non-hdr)

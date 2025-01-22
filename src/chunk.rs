@@ -1248,7 +1248,7 @@ pub fn finish_chunk_build_tasks(
                        // opaque_render_method: OpaqueRendererMethod::Auto,
                        // alpha_mode: AlphaMode::Mask(0.1),
 
-                        reflectance: 0.1,
+                        reflectance: 0.05,
                         perceptual_roughness: 0.9,
                     //    specular_transmission: 0.1, //kills the depth buffer
 
