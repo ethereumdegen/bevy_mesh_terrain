@@ -3,11 +3,11 @@ name = "bevy_mesh_terrain"
 description = "A simple and ergonomic heightmap terrain plugin for Bevy game engine"
  
  
-version = "0.15.11"
+version = "0.16.0"
  
  
  
-edition = "2021"
+edition = "2024"
 authors = [ "ethereumdegen" ]
 license = "MIT"
 readme = "readme.md"
@@ -23,8 +23,8 @@ physics = ["avian3d"]  # Enable physics by including avian3d for saving Collider
 
 [dependencies]
 anyhow = "1.0.75"
-bevy = { version = "0.15.0", features=["tga","png"] }
-#bevy_mod_sysfail = "6.0.0"
+bevy = { version = "0.16.0-rc.2", features=["tga","png"] }
+ 
 futures-lite = "1.13.0"
 image = "0.25.1" 
 png = "0.17.11"  # ?? 
