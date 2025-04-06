@@ -70,13 +70,13 @@ fn main() {
 /// set up a simple 3D scene
 fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
     commands
-        .spawn(SpatialBundle::default())
+        .spawn((Transform::default(),Visibility::default()))
         .insert(TerrainConfig::load_from_file("assets/default_terrain/terrain_config.ron").unwrap())
         .insert(TerrainData::new());
 
     // light
-    commands.spawn(DirectionalLightBundle {
-        directional_light: DirectionalLight {
+    commands.spawn( (
+         DirectionalLight {
             //shadow_depth_bias: 0.5,
             //shadow_normal_bias: 0.5,
             illuminance: 700.0,  
@@ -84,24 +84,38 @@ fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
 
             ..default()
         },
-        transform: Transform::from_xyz(4.0, 6.0, 4.0),
-        ..default()
-    });
+        Transform::from_xyz(4.0, 6.0, 4.0),
+       
+    ));
     // light
 
     commands.insert_resource(AmbientLight {
         color: Color::srgba(1.0, 1.0, 1.0, 1.0),
         brightness: 122.12,
+
+        ..default() 
     });
 
     // camera
     commands
-        .spawn(Camera3dBundle {
-            transform: Transform::from_xyz(20.0, 162.5, 20.0)
+        .spawn( (
+
+
+         Camera3d  {
+             ..default()
+           },
+
+        Transform::from_xyz(20.0, 162.5, 20.0)
                 .looking_at(Vec3::new(900.0, 0.0, 900.0), Vec3::Y),
-            ..default()
-        })
-        .insert(TerrainViewer::default())
+
+
+         TerrainViewer::default()
+        )
+
+
+
+        )
+        
        // .insert(ShadowFilteringMethod::Jimenez14)
        ;
 }
