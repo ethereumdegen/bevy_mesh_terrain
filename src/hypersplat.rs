@@ -1,4 +1,5 @@
 
+use bevy::ecs::relationship::Relationship;
 use crate::TerrainMaterialExtension;
 use crate::terrain::TerrainData;
 use crate::terrain::TerrainImageDataLoadStatus;
@@ -12,7 +13,7 @@ use crate::chunk::ChunkData;
 use serde::Serialize;
 use serde::Deserialize;
 use bevy::prelude::*;
-use bevy::utils::HashMap;
+ use bevy::platform_support::collections::hash_map::HashMap;
 
 use bevy::render::render_resource::{ Extent3d, TextureDimension, TextureFormat};
 use bevy::render::render_asset::RenderAssetUsages;
@@ -102,7 +103,12 @@ impl ChunkSplatDataRaw {
          
         let idx = Self::get_pixel_internal_index(x,y,layer,width); 
 
-        self.splat_index_map_texture.data[idx] = texture_type_index;       
+        if let Some( image_data ) = &mut self.splat_index_map_texture.data {
+
+            image_data[idx] = texture_type_index;       
+        }
+
+      //  self.splat_index_map_texture.data[idx] = texture_type_index;       
 
     }
 
@@ -124,8 +130,14 @@ impl ChunkSplatDataRaw {
         let width = self.splat_index_map_texture.width();
          
         let idx = Self::get_pixel_internal_index(x,y,layer,width); 
-        
-        self.splat_strength_map_texture.data[idx] = texture_strength;
+            
+
+        if let Some( image_data ) = &mut self.splat_strength_map_texture.data {
+
+            image_data[idx] = texture_strength;       
+        }
+
+     // self.splat_strength_map_texture.data[idx] = texture_strength;
 
 
     }
@@ -145,7 +157,10 @@ impl ChunkSplatDataRaw {
          
         let idx = Self::get_pixel_internal_index(x,y,layer,width); 
 
-         self.splat_index_map_texture.data[idx]      
+
+
+
+         self.splat_index_map_texture.data.as_ref().map(|d| d[idx] ).unwrap_or( 0 )      
 
     }
 
@@ -163,7 +178,8 @@ impl ChunkSplatDataRaw {
          
         let idx = Self::get_pixel_internal_index(x,y,layer,width); 
 
-         self.splat_strength_map_texture.data[idx]      
+
+         self.splat_strength_map_texture.data.as_ref().map(|d| d[idx] ).unwrap_or( 0 )       
 
     }
 
@@ -185,8 +201,18 @@ impl ChunkSplatDataRaw {
 
 
 
-                 self.splat_index_map_texture.data[idx] = 0;
-                 self.splat_strength_map_texture.data[idx] = 0;
+                  if let Some( image_data ) = &mut self.splat_index_map_texture.data {
+
+                    image_data[idx] = 0;       
+                }
+
+                   if let Some( image_data ) = &mut self.splat_strength_map_texture.data {
+
+                    image_data[idx] = 0;       
+                }
+
+                // self.splat_index_map_texture.data[idx] = 0;
+               //  self.splat_strength_map_texture.data[idx] = 0;
              }
 
 
@@ -218,7 +244,7 @@ impl ChunkSplatDataRaw {
 fn rebuild_chunk_splat_textures(
     mut commands:Commands,
 
-     mut chunk_query: Query<(Entity, &Chunk, &mut ChunkData,& ChunkSplatDataRaw, &Parent ), 
+     mut chunk_query: Query<(Entity, &Chunk, &mut ChunkData,& ChunkSplatDataRaw, &ChildOf ), 
        With<SplatMapDataUpdated >    >, 
 
      terrain_query: Query<(&TerrainData, &TerrainConfig)>,
@@ -234,7 +260,7 @@ fn rebuild_chunk_splat_textures(
     for (chunk_entity, chunk, mut chunk_data, chunk_splat_data, parent_terrain_entity ) in chunk_query.iter_mut() { 
 
 
-         if let Some(mut cmds) = commands.get_entity( chunk_entity ){
+         if let Some(mut cmds) = commands.get_entity( chunk_entity ).ok() {
 
 
                 cmds.remove::<SplatMapDataUpdated>();
@@ -305,7 +331,7 @@ where
     // Attempt to find the image in the Assets<Image> collection
 
     // Assuming the image format is Rgba8, which is common for splat maps
-    let image_data = &splat_image.data;
+  //  let image_data = &splat_image.data;
     // Create an image buffer from the raw image data
     let format = splat_image.texture_descriptor.format;
     let width = splat_image.texture_descriptor.size.width;
@@ -314,12 +340,20 @@ where
 
     info!("saving splat image {} {} ", &width  ,   &height );
 
+      let Some(image_data) =   &splat_image.data else {
+
+          return ; 
+      };
+
+
     // Ensure the format is Rgba8 or adapt this code block for other formats
     if format == TextureFormat::Rgba8Uint  
     //   || format == TextureFormat::Rgba16Unorm
     {
+
+
         // The data in Bevy's Image type is stored in a Vec<u8>, so we can use it directly
-        let img: RgbaImage = ImageBuffer::from_raw(width, height, image_data.clone())
+        let img: RgbaImage = ImageBuffer::from_raw(width, height, image_data .to_vec().into()  )
             .expect("Failed to create image buffer");
 
         // Save the image to the specified file path
@@ -338,7 +372,14 @@ where
     // Attempt to find the image in the Assets<Image> collection
 
     // Assuming the image format is Rgba8, which is common for splat maps
-    let image_data = &splat_image.data;
+   // let image_data = &splat_image.data;
+
+     let Some(image_data) =   &splat_image.data else {
+
+          return ; 
+      };
+
+
     // Create an image buffer from the raw image data
     let format = splat_image.texture_descriptor.format;
     let width = splat_image.texture_descriptor.size.width;
@@ -351,7 +392,7 @@ where
     //   || format == TextureFormat::Rgba16Unorm
     {
         // The data in Bevy's Image type is stored in a Vec<u8>, so we can use it directly
-        let img: RgbaImage = ImageBuffer::from_raw(width, height, image_data.clone())
+        let img: RgbaImage = ImageBuffer::from_raw(width, height, image_data .to_vec().into()    )
             .expect("Failed to create image buffer");
 
         // Save the image to the specified file path

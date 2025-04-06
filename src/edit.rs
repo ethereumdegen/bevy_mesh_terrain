@@ -1,4 +1,7 @@
 use crate::hypersplat::SplatMapDataUpdated;
+
+use bevy::ecs::relationship::Relationship;
+
 use crate::hypersplat::save_chunk_splat_index_map_to_disk;
 use crate::hypersplat::save_chunk_splat_strength_map_to_disk;
  
@@ -106,7 +109,7 @@ pub enum TerrainCommandEvent {
 pub fn apply_command_events(
     asset_server: Res<AssetServer>,
 
-      chunk_query: Query<(&Chunk, & ChunkData, &ChunkSplatDataRaw, &Parent, &Children)>, //chunks parent should have terrain data
+      chunk_query: Query<(&Chunk, & ChunkData, &ChunkSplatDataRaw, &ChildOf, &Children)>, //chunks parent should have terrain data
 
     mut images: ResMut<Assets<Image>>,
     mut terrain_materials: ResMut<Assets<TerrainMaterialExtension>>,
@@ -275,8 +278,8 @@ pub fn apply_tool_edits(
     mut commands: Commands, 
     mut asset_server: Res<AssetServer>,
 
-    mut chunk_query: Query<(Entity, &Chunk, &mut ChunkData, &Parent, &GlobalTransform, Option<&mut ChunkSplatDataRaw>)>, //chunks parent should have terrain data
-    chunk_mesh_query: Query<(&Parent, &GlobalTransform)>,
+    mut chunk_query: Query<(Entity, &Chunk, &mut ChunkData, &ChildOf, &GlobalTransform, Option<&mut ChunkSplatDataRaw>)>, //chunks parent should have terrain data
+    chunk_mesh_query: Query<(&ChildOf, &GlobalTransform)>,
 
     mut images: ResMut<Assets<Image>>,
     mut terrain_materials: ResMut<Assets<TerrainMaterialExtension>>,
@@ -507,7 +510,7 @@ pub fn apply_tool_edits(
                                                         );
 
                                                     // Generate a random value between -0.5 and 0.5, then scale it by the desired height variation
-                                                    let noise = rng.gen::<f32>() - 0.5;
+                                                    let noise = rng.r#gen::<f32>() - 0.5;
                                                     let noise_scaled = noise * *height as f32; // Adjust *height to control the scale of the noise
                                                     let new_height = noise_scaled as u16;
 
@@ -601,7 +604,7 @@ pub fn apply_tool_edits(
 
 
 
-                                            if let Some(mut cmds) = commands.get_entity( chunk_entity ){
+                                            if let Some(mut cmds) = commands.get_entity( chunk_entity ).ok() {
 
 
                                                 cmds.try_insert(SplatMapDataUpdated);
@@ -896,7 +899,7 @@ pub fn apply_tool_edits(
 
 
 
-                                            if let Some(mut cmds) = commands.get_entity( chunk_entity ){
+                                            if let Some(mut cmds) = commands.get_entity( chunk_entity ).ok() {
 
 
                                                 cmds.try_insert(SplatMapDataUpdated);

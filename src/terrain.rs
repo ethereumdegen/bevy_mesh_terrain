@@ -5,7 +5,7 @@ use bevy::render::render_resource::{
     AddressMode, FilterMode, SamplerDescriptor, TextureDescriptor, TextureFormat,
 };
  
-use bevy::utils::HashMap;
+ use bevy::platform_support::collections::hash_map::HashMap;
 
 use crate::chunk::{Chunk, ChunkCoordinates, ChunkCoords, ChunkData, TerrainMaterialExtension};
 use crate::heightmap::{HeightMap, HeightMapU16};
